@@ -9,9 +9,7 @@
 #include <Fonts/FreeSansBold24pt7b.h>
 #include <Fonts/FreeSansBold18pt7b.h>
 #include <Fonts/FreeSansBold12pt7b.h>
-
-
-
+#include <Fonts/FreeSansBold9pt7b.h>
 
 
 #define LCD_CS        10
@@ -62,10 +60,9 @@ class display
     void refresh();                              //refresh display
     void displayBrightness(byte brigthness);     //set display display brightness
 
-    void setPointer(seq *seq1Pointer, seq *seq2Pointer, setting *configPointer, status *statPointer){ //set pointer
+    void setPointer(seq *seq1Pointer, seq *seq2Pointer, status *statPointer){ //set pointer
       seq1 = seq1Pointer;
       seq2 = seq2Pointer;
-      config = configPointer;
       stat = statPointer;
     }
 
@@ -83,9 +80,13 @@ private:
 
     seq *seq1;
     seq *seq2;
-    setting *config;
     status *stat;
 
+    char valueToNote(byte noteIn);
+    char valueToOctave(byte noteIn);
+    char valueToSharp(byte noteIn);
+
+    const char*  tuningToChar(byte tuning);
 
 
     void initLCD(byte w, byte h, byte rotation);

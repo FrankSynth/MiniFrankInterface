@@ -1,10 +1,64 @@
 #include "interfaceData.h"
 
+
+//status
+void status::increaseStep(){
+if(!((stat.step+1) % STEPPERPAGE)){  //if we make a pageJump
+  if( getNumberPages() <= ((stat.step+1) / STEPPERPAGE)){ //newPage above number of pages
+  stat.step = 0;   //set step 0
+  }
+  else{ //new page is valid.
+   stat.step++;    //increase Step
+  }
+}
+else{
+  stat.step++;    //increase Step
+  }
+
+  calcBPM();
+}
+
+void status::decreaseStep(){
+  if(stat.step == 0){ //we jump to the last page?
+    stat.step =  getNumberPages() * STEPPERPAGE -1;    //set to max step
+
+  }
+  else if((!stat.step % STEPPERPAGE)){  //we make a pageJump?
+    if( getNumberPages() > (stat.step / STEPPERPAGE)){ //newPage above number of pages
+    stat.step = getNumberPages() * STEPPERPAGE -1;   //set jump to last step
+    }
+    else{ //new page is valid.
+     stat.step--;    //decrease Step
+    }
+  }
+  else{
+    stat.step--;    //decrease Step
+  }
+    calcBPM();
+}
+
+
+void status::setStep(byte step){
+  stat.step = testByte(step,0, STEPPERPAGE * getNumberPages());
+}
+
+void status::calcBPM(){
+static double bpmTimer = 0;
+setBPM((int)(60000. / (millis() - bpmTimer)));
+
+bpmTimer = millis();
+
+}
+
+
+
+
+//Sequence
 void seq::init(byte note, byte gate, byte gateLength, byte activePages , byte tuning){  //init sequence to default values
   for(int i = 0 ; i < LENGTH ; i++ ){
-    sequence.note[i] = note;
-    sequence.gate[i] = gate;
-    sequence.gateLength[i] = gateLength;
+    sequence.note[i] = i; //test
+    sequence.gate[i] = i%2; //test
+    sequence.gateLength[i] = i;
   }
   sequence.activePages = activePages;
   sequence.tuning = tuning;
@@ -188,19 +242,19 @@ byte seq::getTuning(){
 }
 
 //utility
-byte seq::testByte(byte value, byte minimum, byte maximum){  //test byte range and return valid byte
+byte testByte(byte value, byte minimum, byte maximum){  //test byte range and return valid byte
   if(value > maximum){
-    return maximum;
 
     #ifdef DEBUG
     Serial.println("testByte: value was to big");
     Serial.println("INPUT: ");
     Serial.println(value);
     #endif
+    return maximum;
+
 
   }
   else if(value < minimum){
-    return minimum;
 
     #ifdef DEBUG
     Serial.println("testByte: value was to small");
@@ -208,13 +262,16 @@ byte seq::testByte(byte value, byte minimum, byte maximum){  //test byte range a
     Serial.println(value);
     #endif
 
+    return minimum;
+
+
   }
   else{
     return value;
   }
 }
 
-byte seq::increaseByte(byte value, byte maximum){  //increase byte
+byte increaseByte(byte value, byte maximum){  //increase byte
   if(value == maximum){
     return value;
   }
@@ -223,7 +280,7 @@ byte seq::increaseByte(byte value, byte maximum){  //increase byte
   }
 }
 
-byte seq::decreaseByte(byte value, byte minimum){  //decrease byte
+byte decreaseByte(byte value, byte minimum){  //decrease byte
   if(value == minimum){
     return value;
   }
@@ -233,7 +290,7 @@ byte seq::decreaseByte(byte value, byte minimum){  //decrease byte
 }
 
 
-byte seq::changeByte(byte value, int change ,byte minimum, byte maximum){  //change byte value and check boundaries
+byte changeByte(byte value, int change ,byte minimum, byte maximum){  //change byte value and check boundaries
   if((int)value + change >= maximum){ //test max
     return maximum;
   }
