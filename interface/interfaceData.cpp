@@ -1,13 +1,15 @@
 #include "interfaceData.h"
 
-void seq::init(byte note, byte gate, byte gateLength, byte activePages){  //init sequence to default values
+void seq::init(byte note, byte gate, byte gateLength, byte activePages , byte tuning){  //init sequence to default values
   for(int i = 0 ; i < LENGTH ; i++ ){
     sequence.note[i] = note;
     sequence.gate[i] = gate;
     sequence.gateLength[i] = gateLength;
-    sequence.activePages = activePages;
   }
+  sequence.activePages = activePages;
+  sequence.tuning = tuning;
 }
+
 
 
 //Pages
@@ -38,14 +40,68 @@ void seq::setNotes(byte note){ //set note value
 
 byte seq::increaseNote(byte index) {  //increase note value and return new note
   index = testByte(index, 0, LENGTH); //testIndex
-  sequence.note[index] = increaseByte(sequence.note[index], NOTERANGE ); //increase note
+
+  byte note = sequence.note[index];
+
+  // no tuning
+  if (sequence.tuning == 255) {
+    // note up
+    sequence.note[index] = increaseByte(note, NOTERANGE );
+  }
+  else {  // tuning active
+    if (note < 88) {
+      switch (((note+1)+(12-sequence.tuning)) % 12) {
+        case 1:
+        case 4:
+        case 6:
+        case 9:
+        case 11:
+        if (note < 87) {
+          note = note + 2;
+        }
+        break;
+
+        default:
+        note++;
+        break;
+      }
+    }
+  }
+  sequence.note[index] = note;
   return sequence.note[index];  //return note
+
 }
 
 byte seq::decreaseNote(byte index){ //decrease  note value and return new note
-  index = testByte(index, 0, LENGTH); //test index
-  sequence.note[index] = decreaseByte(sequence.note[index], 0 ); //decrease note
+  index = testByte(index, 0, LENGTH); //testIndex
+  byte note = sequence.note[index];
 
+  // no tuning
+  if (sequence.tuning == 255) {
+    // note down
+    sequence.note[index] = decreaseByte(note, NOTERANGE );
+  }
+  else {  // tuning active
+    if (note > 0) {
+      switch (((note-1)+(12-sequence.tuning)) % 12) {
+        case 1:
+        case 4:
+        case 6:
+        case 9:
+        case 11:
+        if (note > 1) {
+          note = note - 2;
+        }
+        break;
+
+        default:
+        note--;
+        break;
+      }
+    }
+  }
+
+  sequence.note[index] = note;
   return sequence.note[index];  ///return new note
 }
 
@@ -120,6 +176,15 @@ structSequence* seq::getSequence(){ //return sequence struct pointer
 
 int seq::getSequenceSize(){ //return the struct size
   return (int)sizeof(structSequence);
+}
+
+
+void seq::setTuning(byte tuning){
+  sequence.tuning = tuning;
+}
+
+byte seq::getTuning(){
+  return sequence.tuning;
 }
 
 //utility

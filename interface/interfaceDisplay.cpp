@@ -15,12 +15,16 @@ void display::displayBrightness(byte brightness){
 
 void display::initBuffer(){
   bufferHead = new dispBuffer16(w, 15);
-  bufferFoot = new dispBuffer16(w, 98);
-  bufferBody = new dispBuffer16(w, 15);
+  bufferBody = new dispBuffer16(w, 98);
+  bufferFoot = new dispBuffer16(w, 15);
+
 }
 
 void display::drawBuffer(){
   drawHead();
+  drawBody();
+  drawFoot();
+
 }
 
 void display::refresh(){
@@ -29,58 +33,127 @@ void display::refresh(){
 }
 
 void display::updateDisplay(){
-  if(updateHead) {
-    writeRGBMap(0, 0, bufferHead,w,15);
-  }
+  writeRGBMap(0, 0, bufferHead,w,15);
+  writeRGBMap(0, 15, bufferBody,w,98);
+  writeRGBMap(0, 113, bufferFoot,w,15);
 
-  //   lcd.drawRGBBitmap(0, 0, pBuffer_TOP->getBuffer(), w, 15, WHITE, BLACK);
-  // }
-  //
-  // if(updateBottom){
-  //
-  // }
-  // if(updateMain){s
-  // }
 }
 
 void display::drawHead(){
-  static byte test = 0;
 
   //setup
-  bufferHead->fillScreen(BLACK);
+  bufferHead->fillScreen(BLACK); //all Black
   bufferHead->setTextColor(WHITE, BLACK);
   bufferHead->setTextSize(1);
 
   //line
   bufferHead->drawRect(0,14,w,1,WHITE);     //box
-  bufferHead->drawRect(57,0,1,15,WHITE);   //spacer
-  bufferHead->drawRect(107,0,1,15,WHITE);  //spacer
+  bufferHead->fillRect(0,0,56,15,WHITE);   //spacer
+  //bufferHead->drawRect(105  ,0,1,15,WHITE);  //spacer
 
   bufferHead->setCursor(2, 3);
+  bufferHead->setTextColor(BLACK, WHITE);
   bufferHead->print("MiniFrank");
-  bufferHead->setCursor(75, 3);
-  bufferHead->print(test);
 
-  //AreaTwo
-  bufferHead->setCursor(110, 3);
+  //BPM
+  bufferHead->setTextColor(WHITE, BLACK);
+  bufferHead->setCursor(61, 3);
+  bufferHead->print("BPM:");
+  bufferHead->setTextColor(COLOR, BLACK);
+  bufferHead->print(stat->getBPM());
+
+  //MIDI Settings
+  bufferHead->setCursor(109, 3);
+  bufferHead->setTextColor(WHITE, BLACK);
   bufferHead->print("MIDI:");
-  if(0){
-    bufferHead->setTextColor(GREEN, BLACK);
+  bufferHead->setTextColor(COLOR, BLACK);
+
+  if(config->getMidiType()){
     bufferHead->print("USB");
-    bufferHead->setTextColor(WHITE, BLACK);
+
   }
   else{
-    bufferHead->setTextColor(GREEN, BLACK);
     bufferHead->print("DIN");
-    bufferHead->setTextColor(WHITE, BLACK);
   }
-  updateHead = 1;
-  test++;
+}
+
+void display::drawFoot(){
+  //setup
+  bufferFoot->fillScreen(BLACK); //all Black
+  bufferFoot->setTextColor(WHITE, BLACK);
+  bufferFoot->setTextSize(1);
+
+  //line
+  bufferFoot->drawRect(0,0,w,1,WHITE);     //box
+  bufferFoot->fillRect(0,0,35,15,WHITE);   //spacer
+  //bufferFoot->drawRect(105  ,0,1,15,WHITE);  //spacer
+
+   bufferFoot->setCursor(2, 4);
+   bufferFoot->setTextColor(BLACK, WHITE);
+   bufferFoot->print("SEQ:");
+
+   bufferFoot->print(stat->getActiveSeq());
+
+  //BPM
+  bufferFoot->setTextColor(WHITE, BLACK);
+  bufferFoot->setCursor(61, 4);
+  bufferFoot->print("CLK:");
+  bufferFoot->setTextColor(COLOR, BLACK);
+  bufferFoot->print(stat->getClock());
+
+  //MIDI Settings
+  bufferFoot->setCursor(115, 4);
+  bufferFoot->setTextColor(WHITE, BLACK);
+  bufferFoot->print("PAGE:");
+  bufferFoot->setTextColor(COLOR, BLACK);
+  bufferFoot->print(config->getNumberPages());
 
 }
-void display::drawFoot(){
-}
+
 void display::drawBody(){
+  bufferBody->fillScreen(0x39E7); //all Black
+
+  bufferBody->setTextColor(WHITE, BLACK);
+  bufferBody->setFont(&FreeSansBold12pt7b);
+
+  for(int x = 0; x < 4 ; x++){
+    for(int y = 0; y < 2 ; y++){
+      bufferBody->drawRect(x*40,y*35,40,35,BLACK);     //box
+      bufferBody->setCursor(x*40 +5, y*35+25);
+
+      bufferBody->print("A0");
+
+    }
+  }
+
+
+  byte width = 160 / config->getNumberPages();
+
+  for(int x = 0; x < config->getNumberPages() ; x++){
+    if(x == stat->getActivePage()){
+      bufferBody->fillRect(x*width,70,width,38,COLOR);     //box
+      bufferBody->drawRect(x*width,70,width,38,0x39E7);     //box
+    }
+    else{
+      bufferBody->fillRect(x*width,70,width,38,BLACK);     //box
+      bufferBody->drawRect(x*width,70,width,38,0x39E7);     //box
+
+    }
+  }
+
+
+  // static byte test = 0;
+  //
+  //
+  // bufferBody->setFont(&FreeSansBold24pt7b);
+  // bufferBody->setTextSize(1);
+  // bufferBody->setCursor(52  , 60);
+  // bufferBody->setTextColor(WHITE, BLACK);
+  // bufferBody->print("A");
+  // bufferBody->print(test);
+  //
+  // test = (test + 1)%8;
+
 }
 
 void display::writeRGBMap(int16_t x, int16_t y, dispBuffer16 *bufferObj, int16_t w, int16_t h) {
@@ -105,7 +178,7 @@ dispBuffer16::dispBuffer16(uint16_t w, uint16_t h) : Adafruit_GFX(w, h) {
     memset(buffer, 0, bytes);
   }
   if((buffer2 = (uint16_t *)malloc(bytes))) {
-    memset(buffer, 0, bytes);
+    memset(buffer2, 0, bytes);
   }
 }
 
