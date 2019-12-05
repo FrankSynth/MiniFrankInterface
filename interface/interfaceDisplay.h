@@ -97,7 +97,11 @@ private:
     void drawBuffer();
     void drawHead();
     void drawFoot();
-    void drawBody();
+
+    //different Panes
+    void drawBodyNote();
+    void drawBodyGate();
+
     void updateDisplay();
 };
 #endif

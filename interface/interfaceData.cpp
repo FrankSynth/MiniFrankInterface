@@ -39,7 +39,7 @@ void status::decreaseStep(){
 
 
 void status::setStep(byte step){
-  stat.step = testByte(step,0, STEPPERPAGE * getNumberPages());
+  stat.step = testByte(step,0, STEPPERPAGE * getNumberPages()-1);
 }
 
 void status::calcBPM(){
@@ -54,26 +54,16 @@ bpmTimer = millis();
 
 
 //Sequence
-void seq::init(byte note, byte gate, byte gateLength, byte activePages , byte tuning){  //init sequence to default values
+void seq::init(byte note, byte gate, byte gateLength, byte tuning){  //init sequence to default values
   for(int i = 0 ; i < LENGTH ; i++ ){
     sequence.note[i] = i; //test
     sequence.gate[i] = i%2; //test
     sequence.gateLength[i] = i;
   }
-  sequence.activePages = activePages;
   sequence.tuning = tuning;
 }
 
 
-
-//Pages
-byte seq::getActivePages(){   //return number of active pages
-  return sequence.activePages;
-}
-
-void seq::setActivePages(byte page){  //set number of active pages
-  sequence.activePages = testByte(page, 1, PAGES);
-}
 
 //Note
 byte seq::getNote(byte index){  //return note value

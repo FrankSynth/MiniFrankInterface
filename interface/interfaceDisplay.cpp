@@ -22,8 +22,13 @@ void display::initBuffer(){
 
 void display::drawBuffer(){
   drawHead();
-  drawBody();
   drawFoot();
+
+  //select active pane
+  switch(stat->getActivePane()){
+  case 0:  drawBodyNote(); break;
+  case 1:  drawBodyGate(); break;
+  }
 
 }
 
@@ -142,7 +147,69 @@ void display::drawFoot(){
   bufferFoot->print("v0.1");
 }
 
-void display::drawBody(){
+void display::drawBodyGate(){
+  seq *activeSeq;
+  if(stat->getActiveSeq() == 0){ //SEQ 1 active
+    activeSeq = seq1;
+  }
+  else{ //SEQ 2 active
+    activeSeq = seq2;
+  }
+
+  bufferBody->fillScreen(0x39E7); //all Black
+
+
+  //NoteBlocks
+  for(int x = 0; x < 4 ; x++){
+    for(int y = 0; y < 2 ; y++){
+
+      bufferBody->setFont(); //reset Font
+      bufferBody->drawRect(x*40,y*35+1,40,35,0x2965); //
+
+      //GateLength Value
+
+      //Gate
+      if(activeSeq->getGate(x + y*4)){
+        bufferBody->drawRect(x*40+1,y*35+2,38,33,COLOR); //Blue Gate on Rectangle
+        bufferBody->setTextColor(WHITE, 0x39E7);  //Note  Color GateOn
+      }
+      else{
+        bufferBody->setTextColor(0x94B2, 0x39E7); //Note Color GateOff
+      }
+      bufferBody->setCursor(x*40 +7, y*35+20);
+
+      //Note Value
+      bufferBody->setFont(&FreeSansBold12pt7b);
+      bufferBody->print(activeSeq->getGateLength(x + y*4 + stat->getActivePage() * 8));
+      //bufferBody->print("%");
+
+
+      //CurrentStep
+      if(stat->getStepOnPage() == (x + y*4)){
+        bufferBody->fillRect(x*40+2,y*35+30,36,4,RED); //red bar for active Step
+      }
+    }
+  }
+
+  //PageBlocks
+  byte width = 160 / stat->getCurrentNumberPages();  //block width
+  byte offset = (160 - stat->getCurrentNumberPages() * width) /2; //center blocks
+
+  for(int x = 0; x < stat->getCurrentNumberPages() ; x++){
+    bufferBody->drawRect(x*width+offset,72,width,25,0x2965);     //dark Rectangle
+    bufferBody->fillRect(x*width+1+offset,72+1,width-2,23,0x4208);     //grey box
+
+    if(x == stat->getActivePage()){
+      bufferBody->fillRect(x*width+1+offset,72+1,width-2,23,RED);     //RedBlock of active
+    }
+  }
+}
+
+
+
+
+
+void display::drawBodyNote(){
   seq *activeSeq;
   if(stat->getActiveSeq() == 0){ //SEQ 1 active
     activeSeq = seq1;

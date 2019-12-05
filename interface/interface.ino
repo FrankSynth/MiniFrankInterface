@@ -9,18 +9,13 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-
 #define DEBUG
-
-String inString = "";    // string to hold input
-
 
 seq seq1;
 seq seq2;
 status stat;   //init status object;
 
 display lcd = display(160,128,1); //create display object, (width, heigh, rotation)
-
 
 IntervalTimer myTimer;
 
@@ -38,8 +33,7 @@ void setup() {
   seq1.init();
 
   //Set timer interrupt
-  myTimer.begin(updateDisplay, 40000);
-
+  myTimer.begin(updateDisplay, 40000);  //display refresh
 
   //init Serial connection
   #ifdef DEBUG
@@ -51,25 +45,5 @@ void setup() {
 }
 
 void loop() {
-  static double tmp= 0;
-  if(millis() -tmp  > 499){
-    stat.increaseStep();
-    tmp = millis();
 
-  }
-
-
-  if(Serial.available()){
-    inString = Serial.read(); //readSerial
-
-    byte tmp = (byte)inString.toInt(); //convert to byte
-    stat.setNumberPages(tmp);     //testValue
-
-    seq1.setTuning(tmp);     //testValue
-    seq2.setTuning(tmp);     //testValue
-
-    while(Serial.available()){//empty Serial
-      tmp = Serial.read();
-    }
-  }
 }

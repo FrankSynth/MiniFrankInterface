@@ -4,8 +4,8 @@
 #include <Arduino.h>
 
 
-#define LENGTH 64
-#define PAGES 8
+#define LENGTH 128
+#define PAGES 16
 #define NOTERANGE 88
 #define STEPPERPAGE 8
 
@@ -14,14 +14,13 @@ typedef struct{
   byte note[LENGTH];
   byte gate[LENGTH];
   byte gateLength[LENGTH];
-  byte activePages;
   byte tuning;
 } structSequence;
 
 //Settings struct for all settings
 typedef struct{
   byte midiType = 1;            //active MidiDevice (usb = 1, din = 0)
-  byte nbPages = 4;
+  byte nbPages = 16;
   byte direction = 0;
 } structSettings;
 
@@ -30,6 +29,7 @@ typedef struct{
   int bpm = 0;
   byte activeSeq = 0;  //0 -> seq 1,  1 -> seq2
   byte play = 0;
+  byte pane = 0;  //change active menu
 } structStatus;
 
 //utility
@@ -41,8 +41,6 @@ byte changeByte(byte value, int change ,byte minimum = 0, byte maximum = 255);  
 
 class status{
 public:
-  //Sequence
-
 
 //Status
   void setBPM(int bpm){stat.bpm = bpm;}
@@ -58,12 +56,17 @@ public:
 
   byte getActivePage(){return  (stat.step / STEPPERPAGE);}
   byte getStepOnPage(){return (stat.step - (getActivePage() * STEPPERPAGE)); }
-
   byte getStep(){return stat.step;}  //return MidiType
+
+//menu
+  void increasePane(){stat.pane = testByte(stat.pane+1,0,2);}  //switch menu max 3 menu pages
+  void decreasePane(){stat.pane = testByte(stat.pane-1,0,2);}  //switch menu max 3 menu pages;
+  void setPane(byte pane){stat.pane = testByte(pane,0,2);}
+  byte getActivePane(){return stat.pane;};
+
 
 
 //config
-
   byte getPlayStop(){return stat.play;}
   void setPlayStop(byte mode){stat.play = mode;}
 
@@ -81,28 +84,19 @@ public:
 
   void setNumberPages(byte nbPages){ config.nbPages = testByte(nbPages,1,PAGES);}
 
-
-
   void setSequence(structSettings *copySet);   //set all sequence values at once
   structSettings* getSettings();               //return the sequence struct pointer
-
-
 
 private:
   structStatus stat;
   structSettings config;
-
 };
 
 //Sequence class
 class seq
 {
 public:
-  void init(byte note = 0, byte gate = 1, byte gateLength = 50, byte activePages= 2, byte tuning = 10); //init sequence to default values
-
-//Pages , wird hier nicht gebraucht
-  byte getActivePages();            //return number of active pages
-  void setActivePages(byte page);   //set number of active pages
+  void init(byte note = 0, byte gate = 1, byte gateLength = 50, byte tuning = 10); //init sequence to default values
 
 //Note
   byte getNote(byte index);             //return note value
@@ -143,10 +137,6 @@ private:
   //Sequence
   structSequence sequence;
 };
-
-
-
-//utility
 
 
 #endif
