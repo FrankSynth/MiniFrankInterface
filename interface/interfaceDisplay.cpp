@@ -162,6 +162,7 @@ void display::drawBodyGate(){
   //NoteBlocks
   for(int x = 0; x < 4 ; x++){
     for(int y = 0; y < 2 ; y++){
+      byte myStep = x + y*4 + stat->getActivePage() * 8;
 
       bufferBody->setFont(); //reset Font
       bufferBody->drawRect(x*40,y*35+1,40,35,0x2965); //
@@ -169,18 +170,27 @@ void display::drawBodyGate(){
       //GateLength Value
 
       //Gate
-      if(activeSeq->getGate(x + y*4)){
+      if(activeSeq->getGate(myStep)){
         bufferBody->drawRect(x*40+1,y*35+2,38,33,COLOR); //Blue Gate on Rectangle
         bufferBody->setTextColor(WHITE, 0x39E7);  //Note  Color GateOn
       }
       else{
         bufferBody->setTextColor(0x94B2, 0x39E7); //Note Color GateOff
       }
-      bufferBody->setCursor(x*40 +7, y*35+20);
 
-      //Note Value
-      bufferBody->setFont(&FreeSansBold12pt7b);
-      bufferBody->print(activeSeq->getGateLength(x + y*4 + stat->getActivePage() * 8));
+      //Gate Value
+      if(activeSeq->getGateLength(myStep) < 100){
+        bufferBody->setFont(&FreeSansBold12pt7b);
+        bufferBody->setCursor(x*40+7, y*35+25);
+
+      }
+      else{
+        bufferBody->setFont(&FreeSansBold9pt7b);
+        bufferBody->setCursor(x*40 +4, y*35+24);
+
+      }
+      bufferBody->print(activeSeq->getGateLength(myStep));
+
       //bufferBody->print("%");
 
 
@@ -225,6 +235,9 @@ void display::drawBodyNote(){
   for(int x = 0; x < 4 ; x++){
     for(int y = 0; y < 2 ; y++){
 
+      byte myStep = x + y*4 + stat->getActivePage() * 8;
+
+
       bufferBody->setFont(); //reset Font
       bufferBody->setCursor(x*40 +5, y*35+20);
       bufferBody->drawRect(x*40,y*35+1,40,35,0x2965); //
@@ -232,11 +245,11 @@ void display::drawBodyNote(){
       //Note Value
 
       byte noteValue = 0;
-      noteValue = activeSeq->getNote(x + y*4 + stat->getActivePage() * 8);
+      noteValue = activeSeq->getNote(myStep);
 
 
       //Gate
-      if(activeSeq->getGate(x + y*4)){
+      if(activeSeq->getGate(myStep)){
         bufferBody->drawRect(x*40+1,y*35+2,38,33,COLOR); //Blue Gate on Rectangle
         bufferBody->setTextColor(WHITE, 0x39E7);  //Note  Color GateOn
       }

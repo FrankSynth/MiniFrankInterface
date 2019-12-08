@@ -4,8 +4,8 @@
 #include <Arduino.h>
 
 
-#define LENGTH 128
-#define PAGES 16
+#define LENGTH 64
+#define PAGES 8
 #define NOTERANGE 88
 #define STEPPERPAGE 8
 
@@ -20,7 +20,7 @@ typedef struct{
 //Settings struct for all settings
 typedef struct{
   byte midiType = 1;            //active MidiDevice (usb = 1, din = 0)
-  byte nbPages = 16;
+  byte nbPages = 4;
   byte direction = 0;
 } structSettings;
 
@@ -64,6 +64,8 @@ public:
   void setPane(byte pane){stat.pane = testByte(pane,0,2);}
   byte getActivePane(){return stat.pane;};
 
+  byte getActiveMenu(){return getActivePane();}
+
 
 
 //config
@@ -96,7 +98,7 @@ private:
 class seq
 {
 public:
-  void init(byte note = 0, byte gate = 1, byte gateLength = 50, byte tuning = 10); //init sequence to default values
+  void init(byte note = 12, byte gate = 1, byte gateLength = 50, byte tuning = 10); //init sequence to default values
 
 //Note
   byte getNote(byte index);             //return note value

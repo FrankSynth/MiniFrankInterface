@@ -56,9 +56,9 @@ bpmTimer = millis();
 //Sequence
 void seq::init(byte note, byte gate, byte gateLength, byte tuning){  //init sequence to default values
   for(int i = 0 ; i < LENGTH ; i++ ){
-    sequence.note[i] = i; //test
+    sequence.note[i] = note; //test
     sequence.gate[i] = i%2; //test
-    sequence.gateLength[i] = i;
+    sequence.gateLength[i] = gateLength;
   }
   sequence.tuning = tuning;
 }
@@ -83,6 +83,8 @@ void seq::setNotes(byte note){ //set note value
 }
 
 byte seq::increaseNote(byte index) {  //increase note value and return new note
+
+
   index = testByte(index, 0, LENGTH); //testIndex
 
   byte note = sequence.note[index];
@@ -189,7 +191,7 @@ byte seq::getGateLength(byte index){  //return gate length
 
 byte seq::changeGateLength(byte index, int change){  //change gate length
   index = testByte(index, 0, LENGTH); //test index
-  sequence.gateLength[index] = changeByte(sequence.gateLength[index], change);
+  sequence.gateLength[index] = changeByte(sequence.gateLength[index], change,0,100);
 
   return sequence.gateLength[index];
 }
@@ -284,10 +286,10 @@ byte changeByte(byte value, int change ,byte minimum, byte maximum){  //change b
   if((int)value + change >= maximum){ //test max
     return maximum;
   }
-  else if((int)value - change <= minimum){  //test min
+  else if((int)value + change <= minimum){  //test min
     return minimum;
   }
   else{
-    return value + change;  //return new value
+    return (byte)((int)value + change);  //return new value
   }
 }
