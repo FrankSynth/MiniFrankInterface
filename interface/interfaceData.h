@@ -19,17 +19,18 @@ typedef struct{
 
 //Settings struct for all settings
 typedef struct{
-  byte midiType = 1;            //active MidiDevice (usb = 1, din = 0)
-  byte nbPages = 4;
-  byte direction = 0;
+  byte midiType = 1;              // active MidiDevice (usb -> 1, din -> 0)
+  byte nbPages = 4;               // nb Pages  1 -> 8
+  byte direction = 0;             // 0 -> reverse ; 1 -> forward
+  byte displayBrightness = 150;   // 0-255;
 } structSettings;
 
 typedef struct{
-  byte step = 0;
-  int bpm = 0;
-  byte activeSeq = 0;  //0 -> seq 1,  1 -> seq2
-  byte play = 0;
-  byte pane = 0;  //change active menu
+  byte step = 0;                  //current Step
+  int bpm = 0;                    //current bpm
+  byte activeSeq = 0;             //0 -> seq 1,  1 -> seq2
+  byte play = 0;                  //play stop
+  byte pane = 0;                  //active menu 0-> Note; 1->Gate; 2->Replay; 2->Settings
 } structStatus;
 
 //utility
@@ -58,17 +59,6 @@ public:
   byte getStepOnPage(){return (stat.step - (getActivePage() * STEPPERPAGE)); }
   byte getStep(){return stat.step;}  //return MidiType
 
-//menu
-  void increasePane(){stat.pane = testByte(stat.pane+1,0,2);}  //switch menu max 3 menu pages
-  void decreasePane(){stat.pane = testByte(stat.pane-1,0,2);}  //switch menu max 3 menu pages;
-  void setPane(byte pane){stat.pane = testByte(pane,0,2);}
-  byte getActivePane(){return stat.pane;};
-
-  byte getActiveMenu(){return getActivePane();}
-
-
-
-//config
   byte getPlayStop(){return stat.play;}
   void setPlayStop(byte mode){stat.play = mode;}
 
@@ -76,15 +66,28 @@ public:
   void setDirection(byte direction){config.direction =  direction;}
 
 
+//menu
+  void increasePane(){stat.pane = testByte(stat.pane+1,0,2);}  //switch menu max 3 menu pages
+  void decreasePane(){stat.pane = testByte(stat.pane-1,0,2);}  //switch menu max 3 menu pages;
+  void setPane(byte pane){stat.pane = testByte(pane,0,2);}
+  byte getActivePane(){return stat.pane;};
 
+  byte getActiveMenu(){return getActivePane();} ///nochmal pane und menu auf eins bringen.....
+
+
+//config
+  byte getDisplayBrightness(){return display.brightness;}
+  void setDisplayBrightness(byte brightness){display.brightness = brightness;}
+
+  void setMidiType(byte midi){config.midiType = testByte(midi,0,1);}
   byte getMidiType(){return config.midiType;}
+
+  void setNumberPages(byte nbPages){ config.nbPages = testByte(nbPages,1,PAGES);}
   byte getNumberPages(){return config.nbPages;}
   byte getCurrentNumberPages(){ //number of pages, takes care if page number has changed
     if(config.nbPages > (getStep()/8)) return config.nbPages; //is our step above the current number of pages?
     return (getStep()/8 +1);  //return current step page until the next page jump
   }
-
-  void setNumberPages(byte nbPages){ config.nbPages = testByte(nbPages,1,PAGES);}
 
   void setSequence(structSettings *copySet);   //set all sequence values at once
   structSettings* getSettings();               //return the sequence struct pointer
@@ -101,9 +104,9 @@ public:
   void init(byte note = 12, byte gate = 1, byte gateLength = 50, byte tuning = 10); //init sequence to default values
 
 //Note
-  byte getNote(byte index);             //return note value
   void setNote(byte index, byte note);  //set note value
   void setNotes( byte note);            //set all note values
+  byte getNote(byte index);             //return note value
 
   byte increaseNote(byte index);  //increase note value and return new note, function take care of tuning
   byte decreaseNote(byte index);  //decrease note value and return new note, function take care of tuning
@@ -112,12 +115,12 @@ public:
   void changeNotes(int change);             //change all note values
 
 //TUNE
-  byte getTuning();
   void setTuning(byte tuning);
+  byte getTuning();
 
 //Gate
-  byte getGate(byte index);             //return gate value
   void setGate(byte index, byte gate);  //set gate value
+  byte getGate(byte index);             //return gate value
   byte toggleGate(byte index);          //toggle gate and return new status;
 
 //GateLength

@@ -5,6 +5,7 @@
 #include "interfaceData.h"
 
 
+
 //Controls object for the incoming UART messages
 class controls
 {
@@ -21,6 +22,8 @@ class controls
     }
 
 private:
+    seq* getActiveSeqPointer();
+
     seq *seq1;
     seq *seq2;
     status *stat;

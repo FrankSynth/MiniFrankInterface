@@ -26,8 +26,8 @@ IntervalTimer myTimer;
 
 
 
-//Interrupt on UART message
-void readSerial(){
+//readSerial4
+void readSerial4(){
   byte rcv;
   rcv = Serial4.read();
 
@@ -46,22 +46,18 @@ void updateDisplay(){ //update interrupt
 
 
 void setup() {
-  //transfer the pointer to our data objects to the display library
-  lcd.displayBrightness(175); //Set display brightness
+  //pin setup
+  pinMode(5, OUTPUT);
+  digitalWrite(5, LOW);
 
+  //transfer the pointer to our data objects to the display library
   lcd.setPointer(&seq1, &seq2, &stat);
   //and to the control object
   cntrl.setPointer(&seq1, &seq2, &stat);
 
-
   //intSeq
   seq2.init();
   seq1.init();
-
-
-  //Set timer interrupt
-
-  myTimer.begin(updateDisplay, 40000);  //display refresh
 
   //init Serial connection
   #ifdef DEBUG
@@ -71,29 +67,39 @@ void setup() {
 
   ////////////////////////
   //Start Devices
-  pinMode(5, OUTPUT);
-  digitalWrite(5, LOW);
-  delay(10);
   digitalWrite(5, HIGH);
   delay(10);
 
-  //Connect to Control uC
+
   Serial4.begin(1000000);
-  //SayHello
+
+  //SayHello to the uC
   byte send = B01010101;
-
-  while(!Serial4.available()){  //wait for response
+  double timer = millis();  //timeout
+  byte timeout = 0;
+  while(!Serial4.available() || timeout){  //send hello until uC response (max 2seconds)
     Serial4.write(send);
+
+    if(millis() - timeout > 2000){
+      timeout = 1; //we timed out
+      stat.setErr(1); //set error status
+      #ifdef DEBUG
+      Serial.println("uC : connection failed (timeout)");
+      #endif
+    }
   }
 
-  if(B01010101 == Serial4.read()){
-    #ifdef DEBUG
+  #ifdef DEBUG
+  if(B01010101 == Serial4.read() & !timeout){
     Serial.println("Connected");
-    #endif
   }
+  #endif
   ////////////////////////
 
+  //Set timer interrupt (display refresh)
+  myTimer.begin(updateDisplay, 40000);  //display refresh
 }
+
 
 void loop() {
   while(Serial4.available()){

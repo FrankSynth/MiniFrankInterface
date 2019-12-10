@@ -2,7 +2,6 @@
 
 void display::initLCD(byte w, byte h, byte rotation){
   pinMode(LCD_BL ,OUTPUT);
-  displayBrightness(255);
 
   lcd.initR(INITR_GREENTAB);      // Init ST7735S chip, green tab   ST7735_MADCTL_BGR changed to 0x00 !!!!!
   lcd.setRotation(rotation);      // set display rotation
@@ -33,6 +32,7 @@ void display::drawBuffer(){
 }
 
 void display::refresh(){
+  displayBrightness(stat.getDisplayBrightness()); //set display Brightness
   drawBuffer();
   updateDisplay();
 }
@@ -45,7 +45,6 @@ void display::updateDisplay(){
 }
 
 void display::drawHead(){
-
   //setup
   bufferHead->fillScreen(BLACK); //all Black
   bufferHead->setTextColor(WHITE, BLACK);
@@ -149,15 +148,9 @@ void display::drawFoot(){
 
 void display::drawBodyGate(){
   seq *activeSeq;
-  if(stat->getActiveSeq() == 0){ //SEQ 1 active
-    activeSeq = seq1;
-  }
-  else{ //SEQ 2 active
-    activeSeq = seq2;
-  }
+  activeSeq = getActiveSeqPointer();
 
-  bufferBody->fillScreen(0x39E7); //all Black
-
+  bufferBody->fillScreen(0x39E7); //resetBuffer
 
   //NoteBlocks
   for(int x = 0; x < 4 ; x++){
@@ -215,21 +208,11 @@ void display::drawBodyGate(){
   }
 }
 
-
-
-
-
 void display::drawBodyNote(){
-  seq *activeSeq;
-  if(stat->getActiveSeq() == 0){ //SEQ 1 active
-    activeSeq = seq1;
-  }
-  else{ //SEQ 2 active
-    activeSeq = seq2;
-  }
+  seq* activeSeq;
 
-  bufferBody->fillScreen(0x39E7); //all Black
-
+  activeSeq = getActiveSeqPointer();  //get active Sequence
+  bufferBody->fillScreen(0x39E7);     //resetBuffer
 
   //NoteBlocks
   for(int x = 0; x < 4 ; x++){
@@ -360,9 +343,20 @@ char display::valueToSharp(byte noteIn){
   }
 
   return '\0';
+}
 
+seq* display::getActiveSeqPointer(){
+      if( stat->getActiveSeq() == 0){
+    return seq1;
+  }
+  else if(stat->getActiveSeq() == 1){
+    return seq2;
+  }
+  return NULL; //notValid
 
 }
+
+
 
 const char* display::tuningToChar(byte tuning){
 

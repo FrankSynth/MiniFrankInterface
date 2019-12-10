@@ -12,23 +12,13 @@ void controls::encode(byte message){
     else{ //seems to be an encoder
       rotate(id, message & B00010000);
     }
-  
+
 }
 
 void controls::rotate(byte id ,byte dir){ //rotate message
   byte activePage = stat->getActivePage();
   byte offset = activePage * STEPPERPAGE;
   seq *activeSeq;
-
-  if( stat->getActiveSeq() == 0){
-    activeSeq = seq1;
-  }
-  else if(stat->getActiveSeq() == 1){
-    activeSeq = seq2;
-  }
-  else{
-    return; //notValid
-  }
 
   if(stat->getActiveMenu() == 0){ //Note menu
     if(id < 8){//noteGate encoder
@@ -61,15 +51,7 @@ void controls::push( byte id,byte push){ //switch message
   byte offset = activePage * STEPPERPAGE;
   seq *activeSeq;
 
-  if( stat->getActiveSeq() == 0){
-    activeSeq = seq1;
-  }
-  else if(stat->getActiveSeq() == 1){
-    activeSeq = seq2;
-  }
-  else{
-    return; //notValid
-  }
+  activeSeq = getActiveSeqPointer();
 
   if(stat->getActiveMenu() == 0){ //Note menu
     if(id < 8){//noteGate encoder
@@ -89,4 +71,17 @@ void controls::push( byte id,byte push){ //switch message
     else{ //menu encoder
     }
   }
+}
+
+
+//utility
+seq* controls::getActiveSeqPointer(){
+      if( stat->getActiveSeq() == 0){
+    return seq1;
+  }
+  else if(stat->getActiveSeq() == 1){
+    return seq2;
+  }
+  return NULL; //notValid
+
 }

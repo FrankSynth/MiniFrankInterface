@@ -86,6 +86,8 @@ private:
     char valueToOctave(byte noteIn);
     char valueToSharp(byte noteIn);
 
+    seq* getActiveSeqPointer();
+
     const char*  tuningToChar(byte tuning);
 
 
