@@ -1,23 +1,69 @@
 #include "interfaceData.h"
 
-void seq::init(byte note, byte gate, byte gateLength, byte activePages){  //init sequence to default values
-  for(int i = 0 ; i < LENGTH ; i++ ){
-    sequence.note[i] = note;
-    sequence.gate[i] = gate;
-    sequence.gateLength[i] = gateLength;
-    sequence.activePages = activePages;
+
+//status
+void status::increaseStep(){
+if(!((stat.step+1) % STEPPERPAGE)){  //if we make a pageJump
+  if( getNumberPages() <= ((stat.step+1) / STEPPERPAGE)){ //newPage above number of pages
+  stat.step = 0;   //set step 0
+  }
+  else{ //new page is valid.
+   stat.step++;    //increase Step
   }
 }
+else{
+  stat.step++;    //increase Step
+  }
 
-
-//Pages
-byte seq::getActivePages(){   //return number of active pages
-  return sequence.activePages;
+  calcBPM();
 }
 
-void seq::setActivePages(byte page){  //set number of active pages
-  sequence.activePages = testByte(page, 1, PAGES);
+void status::decreaseStep(){
+  if(stat.step == 0){ //we jump to the last page?
+    stat.step =  getNumberPages() * STEPPERPAGE -1;    //set to max step
+
+  }
+  else if((!stat.step % STEPPERPAGE)){  //we make a pageJump?
+    if( getNumberPages() > (stat.step / STEPPERPAGE)){ //newPage above number of pages
+    stat.step = getNumberPages() * STEPPERPAGE -1;   //set jump to last step
+    }
+    else{ //new page is valid.
+     stat.step--;    //decrease Step
+    }
+  }
+  else{
+    stat.step--;    //decrease Step
+  }
+    calcBPM();
 }
+
+
+void status::setStep(byte step){
+  stat.step = testByte(step,0, STEPPERPAGE * getNumberPages()-1);
+}
+
+void status::calcBPM(){
+static double bpmTimer = 0;
+setBPM((int)(60000. / (millis() - bpmTimer)));
+
+bpmTimer = millis();
+
+}
+
+
+
+
+//Sequence
+void seq::init(byte note, byte gate, byte gateLength, byte tuning){  //init sequence to default values
+  for(int i = 0 ; i < LENGTH ; i++ ){
+    sequence.note[i] = note; //test
+    sequence.gate[i] = i%2; //test
+    sequence.gateLength[i] = gateLength;
+  }
+  sequence.tuning = tuning;
+}
+
+
 
 //Note
 byte seq::getNote(byte index){  //return note value
@@ -37,15 +83,71 @@ void seq::setNotes(byte note){ //set note value
 }
 
 byte seq::increaseNote(byte index) {  //increase note value and return new note
+
+
   index = testByte(index, 0, LENGTH); //testIndex
-  sequence.note[index] = increaseByte(sequence.note[index], NOTERANGE ); //increase note
+
+  byte note = sequence.note[index];
+
+  // no tuning
+  if (sequence.tuning == 255) {
+    // note up
+    sequence.note[index] = increaseByte(note, NOTERANGE );
+  }
+  else {  // tuning active
+    if (note < 88) {
+      switch (((note+1)+(12-sequence.tuning)) % 12) {
+        case 1:
+        case 4:
+        case 6:
+        case 9:
+        case 11:
+        if (note < 87) {
+          note = note + 2;
+        }
+        break;
+
+        default:
+        note++;
+        break;
+      }
+    }
+  }
+  sequence.note[index] = note;
   return sequence.note[index];  //return note
+
 }
 
 byte seq::decreaseNote(byte index){ //decrease  note value and return new note
-  index = testByte(index, 0, LENGTH); //test index
-  sequence.note[index] = decreaseByte(sequence.note[index], 0 ); //decrease note
+  index = testByte(index, 0, LENGTH); //testIndex
+  byte note = sequence.note[index];
 
+  // no tuning
+  if (sequence.tuning == 255) {
+    // note down
+    sequence.note[index] = decreaseByte(note, NOTERANGE );
+  }
+  else {  // tuning active
+    if (note > 0) {
+      switch (((note-1)+(12-sequence.tuning)) % 12) {
+        case 1:
+        case 4:
+        case 6:
+        case 9:
+        case 11:
+        if (note > 1) {
+          note = note - 2;
+        }
+        break;
+
+        default:
+        note--;
+        break;
+      }
+    }
+  }
+
+  sequence.note[index] = note;
   return sequence.note[index];  ///return new note
 }
 
@@ -89,7 +191,7 @@ byte seq::getGateLength(byte index){  //return gate length
 
 byte seq::changeGateLength(byte index, int change){  //change gate length
   index = testByte(index, 0, LENGTH); //test index
-  sequence.gateLength[index] = changeByte(sequence.gateLength[index], change);
+  sequence.gateLength[index] = changeByte(sequence.gateLength[index], change,0,100);
 
   return sequence.gateLength[index];
 }
@@ -122,20 +224,29 @@ int seq::getSequenceSize(){ //return the struct size
   return (int)sizeof(structSequence);
 }
 
+
+void seq::setTuning(byte tuning){
+  sequence.tuning = tuning;
+}
+
+byte seq::getTuning(){
+  return sequence.tuning;
+}
+
 //utility
-byte seq::testByte(byte value, byte minimum, byte maximum){  //test byte range and return valid byte
+byte testByte(byte value, byte minimum, byte maximum){  //test byte range and return valid byte
   if(value > maximum){
-    return maximum;
 
     #ifdef DEBUG
     Serial.println("testByte: value was to big");
     Serial.println("INPUT: ");
     Serial.println(value);
     #endif
+    return maximum;
+
 
   }
   else if(value < minimum){
-    return minimum;
 
     #ifdef DEBUG
     Serial.println("testByte: value was to small");
@@ -143,13 +254,16 @@ byte seq::testByte(byte value, byte minimum, byte maximum){  //test byte range a
     Serial.println(value);
     #endif
 
+    return minimum;
+
+
   }
   else{
     return value;
   }
 }
 
-byte seq::increaseByte(byte value, byte maximum){  //increase byte
+byte increaseByte(byte value, byte maximum){  //increase byte
   if(value == maximum){
     return value;
   }
@@ -158,7 +272,7 @@ byte seq::increaseByte(byte value, byte maximum){  //increase byte
   }
 }
 
-byte seq::decreaseByte(byte value, byte minimum){  //decrease byte
+byte decreaseByte(byte value, byte minimum){  //decrease byte
   if(value == minimum){
     return value;
   }
@@ -168,14 +282,14 @@ byte seq::decreaseByte(byte value, byte minimum){  //decrease byte
 }
 
 
-byte seq::changeByte(byte value, int change ,byte minimum, byte maximum){  //change byte value and check boundaries
+byte changeByte(byte value, int change ,byte minimum, byte maximum){  //change byte value and check boundaries
   if((int)value + change >= maximum){ //test max
     return maximum;
   }
-  else if((int)value - change <= minimum){  //test min
+  else if((int)value + change <= minimum){  //test min
     return minimum;
   }
   else{
-    return value + change;  //return new value
+    return (byte)((int)value + change);  //return new value
   }
 }
