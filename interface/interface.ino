@@ -6,6 +6,7 @@
 #include "interfaceDisplay.h"
 #include "interfaceData.h"
 #include "interfaceIn.h"
+#include "interfaceMidi.h"
 
 
 #include <avr/io.h>
@@ -16,6 +17,8 @@
 seq seq1;
 seq seq2;
 status stat;   //init status object;
+mfMidi midi0; //create midi object
+
 controls cntrl;
 
 display lcd = display(160,128,1); //create display object, (width, heigh, rotation)
@@ -23,6 +26,7 @@ display lcd = display(160,128,1); //create display object, (width, heigh, rotati
 IntervalTimer myTimer;
 
 
+void ISRSwitch();  //Switch Interrupt
 
 
 
@@ -36,7 +40,7 @@ void readSerial4(){
   Serial.println(rcv,BIN);
   #endif
 
- cntrl.encode(rcv);
+  cntrl.encode(rcv);
 }
 
 
@@ -58,8 +62,13 @@ void setup() {
   //intSeq
   seq2.init();
   seq1.init();
+  midi0.init();
 
-  //init Serial connection
+  //Interrupt for the SWITCHES .... macht noch probleme mit dem DisplayUpdateInterrupt
+  attachInterrupt (digitalPinToInterrupt(SWSYNC), ISRSwitch, CHANGE);
+  attachInterrupt (digitalPinToInterrupt(SWSEQ), ISRSwitch, CHANGE);
+  attachInterrupt (digitalPinToInterrupt(SWREC), ISRSwitch, CHANGE);
+
   #ifdef DEBUG
   Serial.begin(115200);
   Serial.println("HELLO");
@@ -70,19 +79,19 @@ void setup() {
   digitalWrite(5, HIGH);
   delay(10);
 
-
+  //Start Connection to the uC
   Serial4.begin(1000000);
 
   //SayHello to the uC
   byte send = B01010101;
-  double timer = millis();  //timeout
+  long timer = millis();
   byte timeout = 0;
-  while(!Serial4.available() || timeout){  //send hello until uC response (max 2seconds)
+  while(!Serial4.available() && !timeout ){  //send hello until uC response (max 2seconds)
     Serial4.write(send);
 
-    if(millis() - timeout > 2000){
+    if(millis() - timer > 2000){
       timeout = 1; //we timed out
-      stat.setErr(1); //set error status
+      stat.setError(1); //set error status
       #ifdef DEBUG
       Serial.println("uC : connection failed (timeout)");
       #endif
@@ -90,7 +99,7 @@ void setup() {
   }
 
   #ifdef DEBUG
-  if(B01010101 == Serial4.read() & !timeout){
+  if((B01010101 == Serial4.read()) && !timeout){
     Serial.println("Connected");
   }
   #endif
@@ -100,18 +109,31 @@ void setup() {
   myTimer.begin(updateDisplay, 40000);  //display refresh
 }
 
-
 void loop() {
-  while(Serial4.available()){
-    readSerial();
+  //NEW Midi Signal
+  while(midi0.available()){
+    midi0.updateMidi();
   }
+
+  //Read uC UART Data
+  while(Serial4.available()){
+    encode(Serial4.read());
+  }
+
   /////////Temp Clock
   static long timer = 0;
-
   if(millis()- timer > 500){
-  stat.increaseStep();
-  timer = millis();
+    stat.increaseStep();
+    timer = millis();
   }
-
   ///////
+}
+
+
+void ISRSwitch(){
+  cntrl.readSwitches();
+  #ifdef DEBUG
+  Serial.println("INPUT: SWChange");
+  #endif
+
 }

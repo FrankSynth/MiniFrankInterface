@@ -3,7 +3,6 @@
 
 #include <Arduino.h>
 
-
 #define LENGTH 64
 #define PAGES 8
 #define NOTERANGE 88
@@ -31,6 +30,9 @@ typedef struct{
   byte activeSeq = 0;             //0 -> seq 1,  1 -> seq2
   byte play = 0;                  //play stop
   byte pane = 0;                  //active menu 0-> Note; 1->Gate; 2->Replay; 2->Settings
+  byte error = 0;                 //ErrorFlag
+  byte sync = 0;                  //Sync Active
+  byte rec = 0;                   //Rec Active
 } structStatus;
 
 //utility
@@ -38,12 +40,20 @@ byte testByte(byte value, byte minimum, byte maximum);  //test byte range and re
 byte increaseByte(byte value, byte maximum);  //increase byte
 byte decreaseByte(byte value, byte minimum);  //decrease byte
 byte changeByte(byte value, int change ,byte minimum = 0, byte maximum = 255);  //change byte
-
+byte changeByte2(byte value, int change ,byte minimum = 0, byte maximum = 255);  //change byte (keeps original value if change not possible)
 
 class status{
 public:
 
 //Status
+
+  byte getSync(){return stat.sync;}
+  void setSync(byte sync){stat.sync = sync;}
+
+
+  void setRec(byte rec){stat.rec = rec;}
+  byte getRec(){return stat.rec;}
+
   void setBPM(int bpm){stat.bpm = bpm;}
   void calcBPM();
   int getBPM(){return stat.bpm;}  //return MidiType
@@ -65,6 +75,8 @@ public:
   byte getDirection(){return config.direction;}
   void setDirection(byte direction){config.direction =  direction;}
 
+  byte getError(){return stat.error;}
+  void setError(byte error){stat.error = error;}
 
 //menu
   void increasePane(){stat.pane = testByte(stat.pane+1,0,2);}  //switch menu max 3 menu pages
@@ -76,8 +88,8 @@ public:
 
 
 //config
-  byte getDisplayBrightness(){return display.brightness;}
-  void setDisplayBrightness(byte brightness){display.brightness = brightness;}
+  byte getDisplayBrightness(){return config.displayBrightness;}
+  void setDisplayBrightness(byte brightness){config.displayBrightness = brightness;}
 
   void setMidiType(byte midi){config.midiType = testByte(midi,0,1);}
   byte getMidiType(){return config.midiType;}
@@ -113,6 +125,11 @@ public:
 
   byte changeNote(byte index, int change);  //change note value and return new note
   void changeNotes(int change);             //change all note values
+
+  void octaveUp();               //All notes one octave down (if possible)
+  void octaveDown();             //All notes one octave down (if possible)
+
+
 
 //TUNE
   void setTuning(byte tuning);
