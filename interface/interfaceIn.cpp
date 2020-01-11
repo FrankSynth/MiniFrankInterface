@@ -18,7 +18,7 @@ void controls::encode(byte message){
 void controls::rotate(byte id ,byte dir){ //rotate message
   byte activePage = stat->getActivePage();
   byte offset = activePage * STEPPERPAGE;
-  seq *activeSeq;
+  seq *activeSeq = getActiveSeqPointer();
 
   if(stat->getActiveMenu() == 0){ //Note menu
     if(id < 8){//noteGate encoder
@@ -49,9 +49,8 @@ void controls::rotate(byte id ,byte dir){ //rotate message
 void controls::push( byte id,byte push){ //switch message
   byte activePage = stat->getActivePage();
   byte offset = activePage * STEPPERPAGE;
-  seq *activeSeq;
+  seq *activeSeq = getActiveSeqPointer();
 
-  activeSeq = getActiveSeqPointer();
 
   if(stat->getActiveMenu() == 0){ //Note menu
     if(id < 8){//noteGate encoder

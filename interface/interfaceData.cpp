@@ -164,6 +164,22 @@ void seq::changeNotes(int change){  //change note
   }
 }
 
+
+void seq::octaveUp(){  //change note
+  for(int i = 0; i < LENGTH ; i++ ){
+    sequence.note[i] = changeByte2(sequence.note[i], 12 ,0 , NOTERANGE);
+  }
+}
+
+void seq::octaveDown(){  //change note
+  for(int i = 0; i < LENGTH ; i++ ){
+    sequence.note[i] = changeByte2(sequence.note[i], -12 ,0 , NOTERANGE);
+  }
+}
+
+
+
+
 //Gate
 byte seq::getGate(byte index){  //return gate value
   return sequence.gate[testByte(index, 0, LENGTH)];
@@ -233,6 +249,15 @@ byte seq::getTuning(){
   return sequence.tuning;
 }
 
+
+
+
+
+
+
+
+
+
 //utility
 byte testByte(byte value, byte minimum, byte maximum){  //test byte range and return valid byte
   if(value > maximum){
@@ -288,6 +313,19 @@ byte changeByte(byte value, int change ,byte minimum, byte maximum){  //change b
   }
   else if((int)value + change <= minimum){  //test min
     return minimum;
+  }
+  else{
+    return (byte)((int)value + change);  //return new value
+  }
+}
+
+
+byte changeByte2(byte value, int change ,byte minimum, byte maximum){  //change byte (keeps original value if change not possible)
+  if((int)value + change >= maximum){ //test max
+    return value;
+  }
+  else if((int)value + change <= minimum){  //test min
+    return value;
   }
   else{
     return (byte)((int)value + change);  //return new value
