@@ -4,6 +4,13 @@
 #include <Adafruit_GFX.h>    // Core graphics library
 #include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
 #include <SPI.h>
+#include "interfaceData.h"
+
+#include <Fonts/FreeSansBold24pt7b.h>
+#include <Fonts/FreeSansBold18pt7b.h>
+#include <Fonts/FreeSansBold12pt7b.h>
+#include <Fonts/FreeSansBold9pt7b.h>
+
 
 #define LCD_CS        10
 #define LCD_RST       9
@@ -19,6 +26,8 @@
 #define MAGENTA    ST77XX_MAGENTA
 #define YELLOW     ST77XX_YELLOW
 #define ORANGE     ST77XX_ORANGE
+#define COLOR     0x0410
+
 
 ///  A 16-bit double buffer from the adafruit canvas
 class dispBuffer16 : public Adafruit_GFX{
@@ -51,6 +60,12 @@ class display
     void refresh();                              //refresh display
     void displayBrightness(byte brigthness);     //set display display brightness
 
+    void setPointer(seq *seq1Pointer, seq *seq2Pointer, status *statPointer){ //set pointer
+      seq1 = seq1Pointer;
+      seq2 = seq2Pointer;
+      stat = statPointer;
+    }
+
 private:
     Adafruit_ST7735 lcd = Adafruit_ST7735(LCD_CS, LCD_DC, LCD_RST);  //initialize LCD
 
@@ -63,9 +78,18 @@ private:
     uint8_t h;
     uint8_t rotation;
 
-    uint8_t updateHead = 0;
-    uint8_t updateFoot = 0;
-    uint8_t updateBody = 0;
+    seq *seq1;
+    seq *seq2;
+    status *stat;
+
+    char valueToNote(byte noteIn);
+    char valueToOctave(byte noteIn);
+    char valueToSharp(byte noteIn);
+
+    seq* getActiveSeqPointer();
+
+    const char*  tuningToChar(byte tuning);
+
 
     void initLCD(byte w, byte h, byte rotation);
     void initBuffer();
@@ -75,7 +99,11 @@ private:
     void drawBuffer();
     void drawHead();
     void drawFoot();
-    void drawBody();
+
+    //different Panes
+    void drawBodyNote();
+    void drawBodyGate();
+
     void updateDisplay();
 };
 #endif
