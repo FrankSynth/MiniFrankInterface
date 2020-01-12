@@ -1,12 +1,11 @@
 //MIDI input library
 //collecting data from USB and din
-//Ring Buffer for multiple inputs
 
 #pragma once
 
 
-// #include <Arduino.h>
-// #include <midi.h>
+#include <Arduino.h>
+#include <MIDI.h>
 
 #include "interfaceData.h"
 

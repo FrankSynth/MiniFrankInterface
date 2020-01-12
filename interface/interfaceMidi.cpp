@@ -1,5 +1,7 @@
 #include "interfaceMidi.h"
 
+MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI); // Which serial???
+
 // #define DEBUG
 
 // callback handles
@@ -8,7 +10,7 @@ void midiNoteOff(byte channel, byte note, byte velocity);
 void midiCC(byte channel, byte control, byte value);
 void midiAfterTouch(byte channel, byte pressure);
 void midiClock();
-void midiSongPosition(uint16_t spp);
+void midiSongPosition(unsigned int spp);
 void midiStart();
 void midiContinue();
 void midiStop();
@@ -27,20 +29,24 @@ void usbMidiStop() {                                            if (settings::ge
 void usbMidiSystemReset() {                                     if (settings::getMidiSource() == 1) { midiSystemReset();                      } }
 
 // DIN
-// void dinMidiNoteOn(byte channel, byte note, byte velocity) {    if (settings::getMidiSource() == 0) { midiNoteOn(channel, note, velocity);    } }
-// void dinMidiNoteOff(byte channel, byte note, byte velocity) {   if (settings::getMidiSource() == 0) { midiNoteOff(channel, note, velocity);   } }
-// void dinMidiCC(byte channel, byte control, byte value) {        if (settings::getMidiSource() == 0) { midiCC(channel, control, value);        } }
-// void dinMidiAfterTouch(byte channel, byte pressure) {           if (settings::getMidiSource() == 0) { midiAfterTouch(channel, pressure);      } }
-// void dinMidiClock() {                                           if (settings::getMidiSource() == 0) { midiClock();                            } }
-// void dinMidiSongPosition(uint16_t spp) {                        if (settings::getMidiSource() == 0) { midiSongPosition(spp);                  } }
-// void dinMidiStart() {                                           if (settings::getMidiSource() == 0) { midiStart();                            } }
-// void dinMidiContinue() {                                        if (settings::getMidiSource() == 0) { midiContinue();                         } }
-// void dinMidiStop() {                                            if (settings::getMidiSource() == 0) { midiStop();                             } }
-// void dinMidiSystemReset() {                                     if (settings::getMidiSource() == 0) { midiSystemReset();                      } }
+void dinMidiNoteOn(byte channel, byte note, byte velocity) {    if (settings::getMidiSource() == 0) { midiNoteOn(channel, note, velocity);    } }
+void dinMidiNoteOff(byte channel, byte note, byte velocity) {   if (settings::getMidiSource() == 0) { midiNoteOff(channel, note, velocity);   } }
+void dinMidiCC(byte channel, byte control, byte value) {        if (settings::getMidiSource() == 0) { midiCC(channel, control, value);        } }
+void dinMidiAfterTouch(byte channel, byte pressure) {           if (settings::getMidiSource() == 0) { midiAfterTouch(channel, pressure);      } }
+void dinMidiClock() {                                           if (settings::getMidiSource() == 0) { midiClock();                            } }
+void dinMidiSongPosition(unsigned int spp) {                    if (settings::getMidiSource() == 0) { midiSongPosition(spp);                  } }
+void dinMidiStart() {                                           if (settings::getMidiSource() == 0) { midiStart();                            } }
+void dinMidiContinue() {                                        if (settings::getMidiSource() == 0) { midiContinue();                         } }
+void dinMidiStop() {                                            if (settings::getMidiSource() == 0) { midiStop();                             } }
+void dinMidiSystemReset() {                                     if (settings::getMidiSource() == 0) { midiSystemReset();                      } }
 
 
 // run once at startup
 void initMidi() {
+
+    #ifdef DEBUG
+    Serial.println("Init Midi");
+    #endif
 
     //set USB handles
     usbMIDI.setHandleNoteOn(usbMidiNoteOn);
@@ -55,20 +61,16 @@ void initMidi() {
     usbMIDI.setHandleSystemReset(usbMidiSystemReset);
 
     // set DIN handles
-    // dinMIDI.setHandleNoteOn(dinMidiNoteOn);
-    // dinMIDI.setHandleNoteOff(dinMidiNoteOff);
-    // dinMIDI.setHandleControlChange(dinMidiCC);
-    // dinMIDI.setHandleAfterTouch(dinMidiAfterTouch);
-    // dinMIDI.setHandleSongPosition(dinMidiSongPosition);
-    // dinMIDI.setHandleClock(dinMidiClock);
-    // dinMIDI.setHandleStart(dinMidiStart);
-    // dinMIDI.setHandleContinue(dinMidiContinue);
-    // dinMIDI.setHandleStop(dinMidiStop);
-    // dinMIDI.setHandleSystemReset(dinMidiSystemReset);
-
-    #ifdef DEBUG
-    Serial.println("Init Midi");
-    #endif
+    MIDI.setHandleNoteOn(dinMidiNoteOn);
+    MIDI.setHandleNoteOff(dinMidiNoteOff);
+    MIDI.setHandleControlChange(dinMidiCC);
+    MIDI.setHandleAfterTouchChannel(dinMidiAfterTouch);
+    MIDI.setHandleSongPosition(dinMidiSongPosition);
+    MIDI.setHandleClock(dinMidiClock);
+    MIDI.setHandleStart(dinMidiStart);
+    MIDI.setHandleContinue(dinMidiContinue);
+    MIDI.setHandleStop(dinMidiStop);
+    MIDI.setHandleSystemReset(dinMidiSystemReset);
 }
 
 
@@ -76,7 +78,7 @@ void initMidi() {
 void updateMidi() {
 
     while(usbMIDI.read()) {}
-    // while(dinMIDI.read()) {}
+    while(MIDI.read()) {}
 
 }
 
@@ -115,7 +117,7 @@ void midiClock() {
     receivedMidiClock();
 };
 
-void midiSongPosition(uint16_t spp) {
+void midiSongPosition(unsigned int spp) {
     receivedMidiSongPosition(spp);
 };
 
@@ -132,5 +134,5 @@ void midiStop() {
 };
 
 void midiSystemReset() {
-
+    receivedReset();
 };

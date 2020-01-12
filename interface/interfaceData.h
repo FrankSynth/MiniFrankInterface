@@ -71,8 +71,8 @@ typedef struct{
   byte error = 0;                 //ErrorFlag
 
   byte bpmSync = 0;               //Sync Active
-  byte midiClock = 0;
-  byte bpm16thCount = 0;
+  byte midiClockCount = 5;
+  byte bpm16thCount = 31;
   uint16_t bpmPoti = 0;               //sync= 0 ? 0-1023 bpm log : divider /4, /2, 1, *2, *4 ; Range is 0-1023
 } structStatus;
 
@@ -117,7 +117,7 @@ class LiveMidi {
 public:
   LiveMidi() {
     this->mod = 0;
-    this->pitchbend = 0;
+    this->pitchbend = 64;
     this->aftertouch = 0;
     this->sustain = 0;
   }
@@ -139,6 +139,8 @@ public:
   byte getPitchbend();
   byte getAftertouch();
   byte getSustain();
+
+  void reset();
 };
 
 
@@ -151,10 +153,11 @@ void receivedAftertouch(byte channel, byte data);
 void receivedSustain(byte channel, byte data);
 
 void receivedMidiClock();
-void receivedMidiSongPosition(uint16_t spp);
+void receivedMidiSongPosition(unsigned int spp);
 void receivedStart();
 void receivedContinue();
 void receivedStop();
+void receivedReset();
 
 
 //utility
@@ -164,59 +167,64 @@ byte decreaseByte(byte value, byte minimum);  //decrease byte
 byte changeByte(byte value, int change ,byte minimum = 0, byte maximum = 255);  //change byte
 byte changeByte2(byte value, int change ,byte minimum = 0, byte maximum = 255);  //change byte (keeps original value if change not possible)
 
+// clock
+void increaseMidiClock();
+void increaseBpm16thCount();
+void setBpm16thCount(unsigned int spp);
+void resetClock();
 
 // status clas contains everything that does not need to be saved permanently
 //Status
 namespace settings {
   void setSync(byte bpmSync);
-    byte getSync();
+  byte getSync();
 
-    void setRec(byte rec);
-    byte getRec();
+  void setRec(byte rec);
+  byte getRec();
 
-    void setBPM(int bpm);
-    void calcBPM();
-    int getBPM();  //return MidiSource
+  void setBPM(int bpm);
+  void calcBPM();
+  int getBPM();  //return MidiSource
 
-    byte getActiveSeq();
-    void setActiveSeq(byte activeSeq);
+  byte getActiveSeq();
+  void setActiveSeq(byte activeSeq);
 
-    void setStep(byte stepSeq);
-    byte getStep();  //return MidiSource
-    void increaseStep();
-    void decreaseStep();
+  void setStep(byte stepSeq);
+  byte getStep();  //return MidiSource
+  void increaseStep();
+  void decreaseStep();
 
-    byte getActivePage();
-    byte getStepOnPage();
+  byte getActivePage();
+  byte getStepOnPage();
 
-    void setPlayStop(byte mode);
-    byte getPlayStop();
+  void setPlayStop(byte mode);
+  byte getPlayStop();
 
-    void setDirection(byte direction);
-    byte getDirection();
+  void setDirection(byte direction);
+  byte getDirection();
 
-    void setError(byte error);
-    byte getError();
+  void setError(byte error);
+  byte getError();
 
 
-    //menu
-    void setPane(byte pane);
-    byte getActivePane();
-    byte getActiveMenu(); ///nochmal pane und menu auf eins bringen.....
-    void increasePane();  //switch menu max 3 menu pages
-    void decreasePane();  //switch menu max 3 menu pages;
+  //menu
+  void setPane(byte pane);
+  byte getActivePane();
+  byte getActiveMenu(); ///nochmal pane und menu auf eins bringen.....
+  void increasePane();  //switch menu max 3 menu pages
+  void decreasePane();  //switch menu max 3 menu pages;
 
 
   //config
   void setDisplayBrightness(byte brightness);
-    byte getDisplayBrightness();
+  byte getDisplayBrightness();
 
-    void setMidiSource(byte midi);
-    byte getMidiSource();
+  void setMidiSource(byte midi);
+  byte getMidiSource();
 
-    void setNumberPages(byte nbPages);
-    byte getNumberPages();
-    byte getCurrentNumberPages();
+  void setNumberPages(byte nbPages);
+  byte getNumberPages();
+  byte getCurrentNumberPages();
 }
 
 

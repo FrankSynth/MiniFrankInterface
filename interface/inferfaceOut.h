@@ -1,6 +1,4 @@
-//MIDI input library
-//collecting data from USB and din
-//Ring Buffer for multiple inputs
+//MIDI Output library
 
 #pragma once
 

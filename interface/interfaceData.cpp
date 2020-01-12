@@ -241,6 +241,14 @@ byte LiveMidi::getSustain() {
     return sustain;
 }
 
+void LiveMidi::reset() {
+    noteList.deleteAllKeys();
+    mod = 0;
+    pitchbend = 64;
+    aftertouch = 0;
+    sustain = 0;
+}
+
 
 
 
@@ -295,9 +303,18 @@ void receivedSustain(byte channel, byte data) {
     }
 }
 
-void receivedMidiClock() {}
-void receivedMidiSongPosition(uint16_t spp) {}
+
+
+
+void receivedMidiClock() {
+    increaseMidiClock();
+}
+void receivedMidiSongPosition(unsigned int spp) {
+    setBpm16thCount(spp);
+}
 void receivedStart() {
+    stat.midiClockCount = 5;
+    stat.bpm16thCount = 31;
     settings::setPlayStop(1);
 }
 void receivedContinue() {
@@ -306,6 +323,38 @@ void receivedContinue() {
 void receivedStop() {
     settings::setPlayStop(0);
 }
+
+void receivedReset() {
+    stat.midiClockCount = 5;
+    stat.bpm16thCount = 31;
+    settings::setPlayStop(0);
+
+    for (byte x = 0; x < OUTPUTS; x++ ) {
+        liveMidi[x].reset();
+    }
+}
+
+
+void increaseMidiClock() {
+     stat.midiClockCount++;
+     if (stat.midiClockCount == 6) {
+         stat.midiClockCount = 0;
+         increaseBpm16thCount();
+     }
+}
+
+void increaseBpm16thCount() {
+    stat.bpm16thCount++;
+    if (stat.bpm16thCount == 32) {
+        stat.bpm16thCount = 0;
+    }
+}
+
+void setBpm16thCount(unsigned int spp) {
+    stat.midiClockCount = 5;
+    stat.bpm16thCount = spp - 1;
+}
+
 
 
 //stat
