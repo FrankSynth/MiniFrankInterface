@@ -1,5 +1,4 @@
-#ifndef MF_IN_H_
-#define MF_IN_H_
+#pragma once
 
 #include <Arduino.h>
 #include "interfaceData.h"
@@ -37,34 +36,31 @@ class controls
       Serial.println(digitalRead(SWREC));
       #endif
 
-      stat->setSync(digitalRead(SWSYNC));
-      stat->setActiveSeq(digitalRead(SWSEQ));
-      stat->setRec(digitalRead(SWREC));
+      settings::setSync(digitalRead(SWSYNC));
+      settings::setActiveSeq(digitalRead(SWSEQ));
+      settings::setRec(digitalRead(SWREC));
     }
 
     void readSync(){
-      stat->setSync(digitalRead(SWSYNC));
+      settings::setSync(digitalRead(SWSYNC));
     }
     void readSeq(){
-      stat->setActiveSeq(digitalRead(SWSEQ));
+      settings::setActiveSeq(digitalRead(SWSEQ));
     }
     void readRec(){
-      stat->setRec(digitalRead(SWREC));
+      settings::setRec(digitalRead(SWREC));
     }
 
-    void setPointer(seq *seq1Pointer, seq *seq2Pointer, status *statPointer){ //set pointer
+    void setPointer(Seq *seq1Pointer, Seq *seq2Pointer){ //set pointer
       seq1 = seq1Pointer;
       seq2 = seq2Pointer;
-      stat = statPointer;
+      // settings = getStatus();;
     }
 
 private:
-    seq* getActiveSeqPointer();
+    Seq* getActiveSeqPointer();
 
-    seq *seq1;
-    seq *seq2;
-    status *stat;
+    Seq *seq1;
+    Seq *seq2;
 
 };
-
-#endif

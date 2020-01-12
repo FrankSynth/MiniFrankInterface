@@ -1,60 +1,432 @@
 #include "interfaceData.h"
 
+#define DEBUG
 
-//status
-void status::increaseStep(){
-if(!((stat.step+1) % STEPPERPAGE)){  //if we make a pageJump
-  if( getNumberPages() <= ((stat.step+1) / STEPPERPAGE)){ //newPage above number of pages
-  stat.step = 0;   //set step 0
-  }
-  else{ //new page is valid.
-   stat.step++;    //increase Step
-  }
+
+
+// private data
+structStatus stat;
+structSettings config;
+
+LiveMidi liveMidi[OUTPUTS];
+
+
+//class Output Routing
+byte OutputRouting::getOut() {
+    return out;
 }
-else{
-  stat.step++;    //increase Step
-  }
-
-  calcBPM();
+byte OutputRouting::getChannel() {
+    return channel;
+}
+byte OutputRouting::getSeq() {
+    return seq;
+}
+byte OutputRouting::getArp() {
+    return arp;
+}
+byte OutputRouting::getCc() {
+    return cc;
 }
 
-void status::decreaseStep(){
-  if(stat.step == 0){ //we jump to the last page?
-    stat.step =  getNumberPages() * STEPPERPAGE -1;    //set to max step
+void OutputRouting::setOut(byte data) {
+    out = data;
+}
+void OutputRouting::setChannel(byte data) {
+    channel = data;
+}
+void OutputRouting::setSeq(byte data) {
+    seq = data;
+}
+void OutputRouting::setArp(byte data) {
+    arp = data;
+}
+void OutputRouting::setCc(byte data) {
+    cc = data;
+}
 
-  }
-  else if((!stat.step % STEPPERPAGE)){  //we make a pageJump?
-    if( getNumberPages() > (stat.step / STEPPERPAGE)){ //newPage above number of pages
-    stat.step = getNumberPages() * STEPPERPAGE -1;   //set jump to last step
+
+
+
+
+
+// class PressedNotesList
+void PressedNotesList::appendKey(byte note, byte velocity) {
+    PressedNotesElement *listElement = pressedNoteElement;
+    if (listElement) {
+        while (listElement->next != NULL) {
+            listElement = listElement->next;
+        }
+
+        listElement->next = new PressedNotesElement(note, velocity);
     }
-    else{ //new page is valid.
-     stat.step--;    //decrease Step
+
+    else {
+
+        pressedNoteElement = new PressedNotesElement(note, velocity);
     }
-  }
-  else{
-    stat.step--;    //decrease Step
-  }
-    calcBPM();
 }
 
 
-void status::setStep(byte step){
-  stat.step = testByte(step,0, STEPPERPAGE * getNumberPages()-1);
+void PressedNotesList::deleteKey(byte note) {
+    PressedNotesElement *listElement = pressedNoteElement;
+    if (listElement) {
+
+        PressedNotesElement *listElementPrev = listElement;
+
+        while (listElement->note != note) {
+
+            if(listElement->next) {
+                listElementPrev = listElement;
+                listElement = listElement->next;
+            }
+            else {
+                return;
+            }
+        }
+        if (pressedNoteElement->next == NULL) {
+            delete listElement;
+            pressedNoteElement = NULL;
+        }
+        else {
+            if (listElementPrev->next == listElement->next) {
+                pressedNoteElement = pressedNoteElement->next;
+            }
+            else {
+                listElementPrev->next = listElement->next;
+            }
+            delete listElement;
+        }
+    }
 }
 
-void status::calcBPM(){
-static double bpmTimer = 0;
-setBPM((int)(60000. / (millis() - bpmTimer)));
 
-bpmTimer = millis();
+void PressedNotesList::deleteAllKeys() {
+    if (pressedNoteElement) {
+        while(pressedNoteElement->next) {
+            PressedNotesElement *listElement = pressedNoteElement;
+            pressedNoteElement = pressedNoteElement->next;
+            delete listElement;
+        }
 
+        delete pressedNoteElement;
+        pressedNoteElement = NULL;
+    }
+}
+
+
+bool PressedNotesList::containsElements() {
+    return pressedNoteElement ? 1 : 0;
+}
+
+
+PressedNotesElement* PressedNotesList::getKeyHighest() {
+    PressedNotesElement *listElement = pressedNoteElement;
+    if (listElement) {
+        PressedNotesElement *highestElement;
+        highestElement = listElement;
+
+        while (listElement->next) {
+            listElement = listElement->next;
+            if (listElement->note > highestElement->note) {
+                highestElement = listElement;
+            }
+
+        }
+        return highestElement;
+
+    }
+    return NULL;
+}
+
+PressedNotesElement* PressedNotesList::getKeyLowest() {
+    PressedNotesElement *listElement = pressedNoteElement;
+    if (listElement) {
+        PressedNotesElement *lowestElement;
+        lowestElement = listElement;
+
+        while (listElement->next) {
+            listElement = listElement->next;
+            if (listElement->note < lowestElement->note) {
+                lowestElement = listElement;
+            }
+
+        }
+        return lowestElement;
+
+    }
+    return NULL;
+}
+
+PressedNotesElement* PressedNotesList::getKeyLatest() {
+    PressedNotesElement *listElement = pressedNoteElement;
+    if (listElement) {
+
+        while (listElement->next) {
+            listElement = listElement->next;
+        }
+
+        return listElement;
+
+    }
+    return NULL;
+}
+
+
+// class LiveMidi
+void LiveMidi::keyPressed(byte note, byte velocity) {
+    noteList.appendKey(note, velocity);
+}
+
+void LiveMidi::keyReleased(byte note) {
+    noteList.deleteKey(note);
+}
+
+bool LiveMidi::keysPressed() {
+    return noteList.containsElements() ? 1 : 0;
+}
+
+void LiveMidi::setMod(byte data) {
+    mod = data;
+}
+
+void LiveMidi::setPitchbend(byte data) {
+    pitchbend = data;
+}
+
+void LiveMidi::setAftertouch(byte data) {
+    aftertouch = data;
+}
+
+void LiveMidi::setSustain(byte data) {
+    sustain = data;
+}
+
+structKey LiveMidi::getKeyHighest() {
+    structKey key;
+    PressedNotesElement *listElement = noteList.getKeyHighest();
+    key.note = listElement->note;
+    key.velocity = listElement->velocity;
+    return key;
+}
+
+structKey LiveMidi::getKeyLowest() {
+    structKey key;
+    PressedNotesElement *listElement = noteList.getKeyLowest();
+    key.note = listElement->note;
+    key.velocity = listElement->velocity;
+    return key;
+}
+
+structKey LiveMidi::getKeyLatest() {
+    structKey key;
+    PressedNotesElement *listElement = noteList.getKeyLatest();
+    key.note = listElement->note;
+    key.velocity = listElement->velocity;
+    return key;
+}
+
+byte LiveMidi::getMod() {
+    return mod;
+}
+
+byte LiveMidi::getPitchbend() {
+    return pitchbend;
+}
+
+byte LiveMidi::getAftertouch() {
+    return aftertouch;
+}
+
+byte LiveMidi::getSustain() {
+    return sustain;
 }
 
 
 
+
+
+// receive Midi
+void receivedKeyPressed(byte channel, byte note, byte velocity) {
+    for (byte x = 0; x < OUTPUTS; x++ ) {
+        if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
+            liveMidi[x].keyPressed(note, velocity);
+        }
+    }
+}
+
+
+void receivedKeyReleased(byte channel, byte note) {
+    for (byte x = 0; x < OUTPUTS; x++ ) {
+        if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
+            liveMidi[x].keyReleased(note);
+        }
+    }
+}
+
+void receivedMod(byte channel, byte data) {
+    for (byte x = 0; x < OUTPUTS; x++ ) {
+        if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
+            liveMidi[x].setMod(data);
+        }
+    }
+}
+
+void receivedPitchbend(byte channel, byte data) {
+    for (byte x = 0; x < OUTPUTS; x++ ) {
+        if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
+            liveMidi[x].setPitchbend(data);
+        }
+    }
+}
+
+void receivedAftertouch(byte channel, byte data) {
+    for (byte x = 0; x < OUTPUTS; x++ ) {
+        if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
+            liveMidi[x].setAftertouch(data);
+        }
+    }
+}
+
+void receivedSustain(byte channel, byte data) {
+    for (byte x = 0; x < OUTPUTS; x++ ) {
+        if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
+            liveMidi[x].setSustain(data);
+        }
+    }
+}
+
+void receivedMidiClock() {}
+void receivedMidiSongPosition(uint16_t spp) {}
+void receivedStart() {
+    settings::setPlayStop(1);
+}
+void receivedContinue() {
+    settings::setPlayStop(1);
+}
+void receivedStop() {
+    settings::setPlayStop(0);
+}
+
+
+//stat
+namespace settings {
+
+    byte getSync() {
+      return stat.bpmSync;
+    }
+
+    void setSync(byte bpmSync) {
+      stat.bpmSync = bpmSync;
+    }
+
+    void setRec(byte rec) {
+      stat.rec = rec;
+    }
+
+    byte getRec() {
+      return stat.rec;
+    }
+
+    void setBPM(int bpm) {
+      stat.bpm = bpm;
+    }
+
+    void calcBPM() {
+      static double bpmTimer = 0;
+      setBPM((int)(60000. / (millis() - bpmTimer)));
+
+      bpmTimer = millis();
+    }
+
+    int getBPM(){return stat.bpm;}  //return MidiSource
+
+    byte getActiveSeq(){return stat.activeSeq;}
+    void setActiveSeq(byte activeSeq){stat.activeSeq = activeSeq;}
+
+
+    void increaseStep(){
+    if(!((stat.stepSeq+1) % STEPPERPAGE)){  //if we make a pageJump
+      if( getNumberPages() <= ((stat.stepSeq+1) / STEPPERPAGE)){ //newPage above number of pages
+      stat.stepSeq = 0;   //set stepSeq 0
+      }
+      else{ //new page is valid.
+       stat.stepSeq++;    //increase Step
+      }
+    }
+    else{
+      stat.stepSeq++;    //increase Step
+      }
+
+      calcBPM();
+    }
+
+    void decreaseStep(){
+      if(stat.stepSeq == 0){ //we jump to the last page?
+        stat.stepSeq =  getNumberPages() * STEPPERPAGE -1;    //set to max stepSeq
+
+      }
+      else if((!stat.stepSeq % STEPPERPAGE)){  //we make a pageJump?
+        if( getNumberPages() > (stat.stepSeq / STEPPERPAGE)){ //newPage above number of pages
+        stat.stepSeq = getNumberPages() * STEPPERPAGE -1;   //set jump to last stepSeq
+        }
+        else{ //new page is valid.
+         stat.stepSeq--;    //decrease Step
+        }
+      }
+      else{
+        stat.stepSeq--;    //decrease Step
+      }
+        calcBPM();
+    }
+
+
+    void setStep(byte stepSeq){
+      stat.stepSeq = testByte(stepSeq,0, STEPPERPAGE * getNumberPages()-1);
+    }
+
+
+
+    byte getActivePage(){return  (stat.stepSeq / STEPPERPAGE);}
+    byte getStepOnPage(){return (stat.stepSeq - (getActivePage() * STEPPERPAGE)); }
+    byte getStep(){return stat.stepSeq;}  //return MidiSource
+
+    byte getPlayStop(){return stat.play;}
+    void setPlayStop(byte mode){stat.play = mode;}
+
+    byte getDirection(){return config.direction;}
+    void setDirection(byte direction){config.direction =  direction;}
+
+    byte getError(){return stat.error;}
+    void setError(byte error){stat.error = error;}
+
+
+
+    //menu
+    void increasePane(){stat.pane = testByte(stat.pane+1,0,2);}  //switch menu max 3 menu pages
+    void decreasePane(){stat.pane = testByte(stat.pane-1,0,2);}  //switch menu max 3 menu pages;
+    void setPane(byte pane){stat.pane = testByte(pane,0,2);}
+    byte getActivePane(){return stat.pane;};
+
+    byte getActiveMenu(){return getActivePane();} ///nochmal pane und menu auf eins bringen.....
+
+
+    //config
+    byte getDisplayBrightness(){return config.displayBrightness;}
+    void setDisplayBrightness(byte brightness){config.displayBrightness = brightness;}
+
+    void setMidiSource(byte midi){config.midiSource = testByte(midi,0,1);}
+    byte getMidiSource(){return config.midiSource;}
+
+    void setNumberPages(byte nbPages){ config.nbPages = testByte(nbPages,1,PAGES);}
+    byte getNumberPages(){return config.nbPages;}
+    byte getCurrentNumberPages(){ //number of pages, takes care if page number has changed
+      if(config.nbPages > (getStep()/8)) return config.nbPages; //is our stepSeq above the current number of pages?
+      return (getStep()/8 +1);  //return current stepSeq page until the next page jump
+    }
+}
 
 //Sequence
-void seq::init(byte note, byte gate, byte gateLength, byte tuning){  //init sequence to default values
+void Seq::init(byte note, byte gate, byte gateLength, byte tuning){  //init sequence to default values
   for(int i = 0 ; i < LENGTH ; i++ ){
     sequence.note[i] = note; //test
     sequence.gate[i] = i%2; //test
@@ -66,15 +438,15 @@ void seq::init(byte note, byte gate, byte gateLength, byte tuning){  //init sequ
 
 
 //Note
-byte seq::getNote(byte index){  //return note value
+byte Seq::getNote(byte index){  //return note value
   return sequence.note[testByte(index, 0, LENGTH)];
 }
 
-void seq::setNote(byte index, byte note){ //set note value
+void Seq::setNote(byte index, byte note){ //set note value
   sequence.note[testByte(index, 0, LENGTH)] = testByte(note, 0, NOTERANGE);
 }
 
-void seq::setNotes(byte note){ //set note value
+void Seq::setNotes(byte note){ //set note value
   note =  testByte(note, 0, 88); //test note value in range
 
   for(int i = 0; i < LENGTH ; i++ ){
@@ -82,7 +454,7 @@ void seq::setNotes(byte note){ //set note value
   }
 }
 
-byte seq::increaseNote(byte index) {  //increase note value and return new note
+byte Seq::increaseNote(byte index) {  //increase note value and return new note
 
 
   index = testByte(index, 0, LENGTH); //testIndex
@@ -118,7 +490,7 @@ byte seq::increaseNote(byte index) {  //increase note value and return new note
 
 }
 
-byte seq::decreaseNote(byte index){ //decrease  note value and return new note
+byte Seq::decreaseNote(byte index){ //decrease  note value and return new note
   index = testByte(index, 0, LENGTH); //testIndex
   byte note = sequence.note[index];
 
@@ -151,27 +523,27 @@ byte seq::decreaseNote(byte index){ //decrease  note value and return new note
   return sequence.note[index];  ///return new note
 }
 
-byte seq::changeNote(byte index, int change){  //change note
+byte Seq::changeNote(byte index, int change){  //change note
   index = testByte(index, 0, LENGTH); //test index
   sequence.note[index] = changeByte(sequence.note[index], change ,0 , NOTERANGE);
 
   return sequence.note[index];
 }
 
-void seq::changeNotes(int change){  //change note
+void Seq::changeNotes(int change){  //change note
   for(int i = 0; i < LENGTH ; i++ ){
     sequence.note[i] = changeByte(sequence.note[i], change ,0 , NOTERANGE);
   }
 }
 
 
-void seq::octaveUp(){  //change note
+void Seq::octaveUp(){  //change note
   for(int i = 0; i < LENGTH ; i++ ){
     sequence.note[i] = changeByte2(sequence.note[i], 12 ,0 , NOTERANGE);
   }
 }
 
-void seq::octaveDown(){  //change note
+void Seq::octaveDown(){  //change note
   for(int i = 0; i < LENGTH ; i++ ){
     sequence.note[i] = changeByte2(sequence.note[i], -12 ,0 , NOTERANGE);
   }
@@ -181,15 +553,15 @@ void seq::octaveDown(){  //change note
 
 
 //Gate
-byte seq::getGate(byte index){  //return gate value
+byte Seq::getGate(byte index){  //return gate value
   return sequence.gate[testByte(index, 0, LENGTH)];
 }
 
-void seq::setGate(byte index, byte gate) {  //set gate value
+void Seq::setGate(byte index, byte gate) {  //set gate value
   sequence.gate[testByte(index, 0, LENGTH)] = testByte(gate, 0, 1);
 }
 
-byte seq::toggleGate(byte index){ //toggle gate and return new status;
+byte Seq::toggleGate(byte index){ //toggle gate and return new stat;
   index = testByte(index, 0, LENGTH); //test index
   sequence.gate[index] = !sequence.gate[index]; //toggle gate
 
@@ -197,15 +569,15 @@ byte seq::toggleGate(byte index){ //toggle gate and return new status;
 }
 
 //one gate length
-void seq::setGateLength(byte index, byte gateLength) {  //set gate length
+void Seq::setGateLength(byte index, byte gateLength) {  //set gate length
   sequence.gateLength[testByte(index, 0, LENGTH)] = testByte(gateLength, 0, 255);
 }
 
-byte seq::getGateLength(byte index){  //return gate length
+byte Seq::getGateLength(byte index){  //return gate length
   return sequence.gateLength[testByte(index, 0, LENGTH)];
 }
 
-byte seq::changeGateLength(byte index, int change){  //change gate length
+byte Seq::changeGateLength(byte index, int change){  //change gate length
   index = testByte(index, 0, LENGTH); //test index
   sequence.gateLength[index] = changeByte(sequence.gateLength[index], change,0,100);
 
@@ -214,38 +586,38 @@ byte seq::changeGateLength(byte index, int change){  //change gate length
 
 
 //all gate lengths
-void seq::setGateLengths(byte gateLength){  //set all gates at once
+void Seq::setGateLengths(byte gateLength){  //set all gates at once
   gateLength =  testByte(gateLength, 0, 255); //test gate length
   for(int i = 0; i < LENGTH ; i++ ){
     sequence.gate[i] = gateLength;  //set new gates
   }
 }
 
-void seq::changeGateLengths(int change){  //change gate length
+void Seq::changeGateLengths(int change){  //change gate length
   for(int i = 0; i < LENGTH ; i++ ){
     sequence.gateLength[i] = changeByte(sequence.gateLength[i], change);
   }
 }
 
 //Sequence
-void seq::setSequence(structSequence *copySeq){ //set complete suquence struct
+void Seq::setSequence(structSequence *copySeq){ //set complete suquence struct
   sequence = *copySeq;  //copy struct
 }
 
-structSequence* seq::getSequence(){ //return sequence struct pointer
+structSequence* Seq::getSequence(){ //return sequence struct pointer
   return &sequence;
 }
 
-int seq::getSequenceSize(){ //return the struct size
+int Seq::getSequenceSize(){ //return the struct size
   return (int)sizeof(structSequence);
 }
 
 
-void seq::setTuning(byte tuning){
+void Seq::setTuning(byte tuning){
   sequence.tuning = tuning;
 }
 
-byte seq::getTuning(){
+byte Seq::getTuning(){
   return sequence.tuning;
 }
 

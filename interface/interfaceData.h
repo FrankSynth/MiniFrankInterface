@@ -1,5 +1,4 @@
-#ifndef MF_DATA_H_
-#define MF_DATA_H_
+#pragma once
 
 #include <Arduino.h>
 
@@ -8,32 +7,155 @@
 #define NOTERANGE 88
 #define STEPPERPAGE 8
 
+#define OUTPUTS 2 // Number of outputs
+
+class OutputRouting {
+  byte out; // 0 = live, 1 = seq
+  byte channel; // 0 = all, 1 = channel 1, ...
+  byte seq; // 0 = seq0, 1 = seq1
+  byte arp; // 0 = off, 1 = on
+  byte cc;  // 0 = vel, 1 = mod, 2 = pitchbend, 3 = aftertouch, 4 = sustain
+public:
+  OutputRouting() {
+    this->out = 0;
+    this->channel = 0;
+    this->seq = 0;
+    this->arp = 0;
+    this->cc = 0;
+  }
+
+  byte getOut();
+  byte getChannel();
+  byte getSeq();
+  byte getArp();
+  byte getCc();
+
+  void setOut(byte data);
+  void setChannel(byte data);
+  void setSeq(byte data);
+  void setArp(byte data);
+  void setCc(byte data);
+
+};
+
 //Sequence struct holding all values for a sequence
 typedef struct{
   byte note[LENGTH];
   byte gate[LENGTH];
   byte gateLength[LENGTH];
-  byte tuning;
+  byte velocity[LENGTH];
+  byte tuning; // tuning offset
 } structSequence;
 
 //Settings struct for all settings
 typedef struct{
-  byte midiType = 1;              // active MidiDevice (usb -> 1, din -> 0)
-  byte nbPages = 4;               // nb Pages  1 -> 8
-  byte direction = 0;             // 0 -> reverse ; 1 -> forward
-  byte displayBrightness = 150;   // 0-255;
+  byte midiSource = 1;              // active MidiDevice (usb -> 1, din -> 0)
+  byte nbPages = 4;                 // nb Pages  1 -> 8
+  byte direction = 0;               // 0 -> reverse ; 1 -> forward
+  byte displayBrightness = 150;     // 0-255;
+  OutputRouting routing[OUTPUTS];
+  byte clockOut0 = 0;               // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
+  byte clockOut1 = 1;               // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
 } structSettings;
 
 typedef struct{
-  byte step = 0;                  //current Step
-  int bpm = 0;                    //current bpm
   byte activeSeq = 0;             //0 -> seq 1,  1 -> seq2
-  byte play = 0;                  //play stop
   byte pane = 0;                  //active menu 0-> Note; 1->Gate; 2->Replay; 2->Settings
-  byte error = 0;                 //ErrorFlag
-  byte sync = 0;                  //Sync Active
+
+  byte stepSeq = 0;                  //current Step
+  byte stepArp = 0;
+
+  int bpm = 0;                    //current bpm
+  byte play = 0;                  //play stop
   byte rec = 0;                   //Rec Active
+  byte error = 0;                 //ErrorFlag
+
+  byte bpmSync = 0;               //Sync Active
+  byte midiClock = 0;
+  byte bpm16thCount = 0;
+  uint16_t bpmPoti = 0;               //sync= 0 ? 0-1023 bpm log : divider /4, /2, 1, *2, *4 ; Range is 0-1023
 } structStatus;
+
+typedef struct {
+  byte note = 0;
+  byte velocity = 0;
+} structKey;
+
+
+// pressed Notes
+class PressedNotesElement {
+public:
+  PressedNotesElement(byte note, byte velocity) {
+    this->note = note;
+    this->velocity = velocity;
+    this->next = NULL;
+  }
+  byte note;
+  byte velocity;
+  PressedNotesElement *next;
+};
+
+class PressedNotesList {
+public:
+  PressedNotesElement *pressedNoteElement = NULL;
+  void appendKey(byte note, byte velocity);
+  void deleteKey(byte note);
+  void deleteAllKeys();
+  bool containsElements();
+  PressedNotesElement* getKeyHighest();
+  PressedNotesElement* getKeyLowest();
+  PressedNotesElement* getKeyLatest();
+};
+
+// save live midi data
+class LiveMidi {
+  PressedNotesList noteList;
+  byte mod;
+  byte pitchbend;
+  byte aftertouch;
+  byte sustain;
+public:
+  LiveMidi() {
+    this->mod = 0;
+    this->pitchbend = 0;
+    this->aftertouch = 0;
+    this->sustain = 0;
+  }
+  void keyPressed(byte note, byte velocity);
+  void keyReleased(byte note);
+
+  bool keysPressed();
+
+  void setMod(byte data);
+  void setPitchbend(byte data);
+  void setAftertouch(byte data);
+  void setSustain(byte data);
+
+  structKey getKeyHighest();
+  structKey getKeyLowest();
+  structKey getKeyLatest();
+
+  byte getMod();
+  byte getPitchbend();
+  byte getAftertouch();
+  byte getSustain();
+};
+
+
+//receive MIDI
+void receivedKeyPressed(byte channel, byte note, byte velocity);
+void receivedKeyReleased(byte channel, byte note);
+void receivedMod(byte channel, byte data);
+void receivedPitchbend(byte channel, byte data);
+void receivedAftertouch(byte channel, byte data);
+void receivedSustain(byte channel, byte data);
+
+void receivedMidiClock();
+void receivedMidiSongPosition(uint16_t spp);
+void receivedStart();
+void receivedContinue();
+void receivedStop();
+
 
 //utility
 byte testByte(byte value, byte minimum, byte maximum);  //test byte range and return valid byte
@@ -42,75 +164,64 @@ byte decreaseByte(byte value, byte minimum);  //decrease byte
 byte changeByte(byte value, int change ,byte minimum = 0, byte maximum = 255);  //change byte
 byte changeByte2(byte value, int change ,byte minimum = 0, byte maximum = 255);  //change byte (keeps original value if change not possible)
 
-class status{
-public:
 
+// status clas contains everything that does not need to be saved permanently
 //Status
+namespace settings {
+  void setSync(byte bpmSync);
+    byte getSync();
 
-  byte getSync(){return stat.sync;}
-  void setSync(byte sync){stat.sync = sync;}
+    void setRec(byte rec);
+    byte getRec();
 
+    void setBPM(int bpm);
+    void calcBPM();
+    int getBPM();  //return MidiSource
 
-  void setRec(byte rec){stat.rec = rec;}
-  byte getRec(){return stat.rec;}
+    byte getActiveSeq();
+    void setActiveSeq(byte activeSeq);
 
-  void setBPM(int bpm){stat.bpm = bpm;}
-  void calcBPM();
-  int getBPM(){return stat.bpm;}  //return MidiType
+    void setStep(byte stepSeq);
+    byte getStep();  //return MidiSource
+    void increaseStep();
+    void decreaseStep();
 
-  byte getActiveSeq(){return stat.activeSeq;}
-  void setActiveSeq(byte activeSeq){stat.activeSeq = activeSeq;}
+    byte getActivePage();
+    byte getStepOnPage();
 
-  void increaseStep();
-  void decreaseStep();
-  void setStep(byte step);
+    void setPlayStop(byte mode);
+    byte getPlayStop();
 
-  byte getActivePage(){return  (stat.step / STEPPERPAGE);}
-  byte getStepOnPage(){return (stat.step - (getActivePage() * STEPPERPAGE)); }
-  byte getStep(){return stat.step;}  //return MidiType
+    void setDirection(byte direction);
+    byte getDirection();
 
-  byte getPlayStop(){return stat.play;}
-  void setPlayStop(byte mode){stat.play = mode;}
-
-  byte getDirection(){return config.direction;}
-  void setDirection(byte direction){config.direction =  direction;}
-
-  byte getError(){return stat.error;}
-  void setError(byte error){stat.error = error;}
-
-//menu
-  void increasePane(){stat.pane = testByte(stat.pane+1,0,2);}  //switch menu max 3 menu pages
-  void decreasePane(){stat.pane = testByte(stat.pane-1,0,2);}  //switch menu max 3 menu pages;
-  void setPane(byte pane){stat.pane = testByte(pane,0,2);}
-  byte getActivePane(){return stat.pane;};
-
-  byte getActiveMenu(){return getActivePane();} ///nochmal pane und menu auf eins bringen.....
+    void setError(byte error);
+    byte getError();
 
 
-//config
-  byte getDisplayBrightness(){return config.displayBrightness;}
-  void setDisplayBrightness(byte brightness){config.displayBrightness = brightness;}
+    //menu
+    void setPane(byte pane);
+    byte getActivePane();
+    byte getActiveMenu(); ///nochmal pane und menu auf eins bringen.....
+    void increasePane();  //switch menu max 3 menu pages
+    void decreasePane();  //switch menu max 3 menu pages;
 
-  void setMidiType(byte midi){config.midiType = testByte(midi,0,1);}
-  byte getMidiType(){return config.midiType;}
 
-  void setNumberPages(byte nbPages){ config.nbPages = testByte(nbPages,1,PAGES);}
-  byte getNumberPages(){return config.nbPages;}
-  byte getCurrentNumberPages(){ //number of pages, takes care if page number has changed
-    if(config.nbPages > (getStep()/8)) return config.nbPages; //is our step above the current number of pages?
-    return (getStep()/8 +1);  //return current step page until the next page jump
-  }
+  //config
+  void setDisplayBrightness(byte brightness);
+    byte getDisplayBrightness();
 
-  void setSequence(structSettings *copySet);   //set all sequence values at once
-  structSettings* getSettings();               //return the sequence struct pointer
+    void setMidiSource(byte midi);
+    byte getMidiSource();
 
-private:
-  structStatus stat;
-  structSettings config;
-};
+    void setNumberPages(byte nbPages);
+    byte getNumberPages();
+    byte getCurrentNumberPages();
+}
+
 
 //Sequence class
-class seq
+class Seq
 {
 public:
   void init(byte note = 12, byte gate = 1, byte gateLength = 50, byte tuning = 10); //init sequence to default values
@@ -128,8 +239,6 @@ public:
 
   void octaveUp();               //All notes one octave down (if possible)
   void octaveDown();             //All notes one octave down (if possible)
-
-
 
 //TUNE
   void setTuning(byte tuning);
@@ -154,11 +263,7 @@ public:
 
   int getSequenceSize();                        //return the struct size
 
-
 private:
   //Sequence
   structSequence sequence;
 };
-
-
-#endif

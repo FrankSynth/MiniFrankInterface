@@ -14,16 +14,19 @@
 
 #define DEBUG
 
-seq seq1;
-seq seq2;
-status stat;   //init status object;
-mfMidi midi0; //create midi object
+Seq seq1;
+Seq seq2;
+// status settings;   //init status object;
+// mfMidi midi0; //create midi object
 
 controls cntrl;
 
 display lcd = display(160,128,1); //create display object, (width, heigh, rotation)
 
 IntervalTimer myTimer;
+
+// PressedNotesList noteList0;
+// PressedNotesList noteList1;
 
 
 void ISRSwitch();  //Switch Interrupt
@@ -55,23 +58,20 @@ void setup() {
   digitalWrite(5, LOW);
 
   //transfer the pointer to our data objects to the display library
-  lcd.setPointer(&seq1, &seq2, &stat);
+  lcd.setPointer(&seq1, &seq2);
   //and to the control object
-  cntrl.setPointer(&seq1, &seq2, &stat);
+  cntrl.setPointer(&seq1, &seq2);
 
   //intSeq
   seq2.init();
   seq1.init();
-  midi0.init();
 
-  //Interrupt for the SWITCHES .... macht noch probleme mit dem DisplayUpdateInterrupt
-  attachInterrupt (digitalPinToInterrupt(SWSYNC), ISRSwitch, CHANGE);
-  attachInterrupt (digitalPinToInterrupt(SWSEQ), ISRSwitch, CHANGE);
-  attachInterrupt (digitalPinToInterrupt(SWREC), ISRSwitch, CHANGE);
+  initMidi();
+
 
   #ifdef DEBUG
   Serial.begin(115200);
-  Serial.println("HELLO");
+  Serial.println("HELLO FRANK Mini");
   #endif
 
   ////////////////////////
@@ -91,7 +91,7 @@ void setup() {
 
     if(millis() - timer > 2000){
       timeout = 1; //we timed out
-      stat.setError(1); //set error status
+      settings::setError(1); //set error status
       #ifdef DEBUG
       Serial.println("uC : connection failed (timeout)");
       #endif
@@ -104,6 +104,10 @@ void setup() {
   }
   #endif
   ////////////////////////
+  //Interrupt for the SWITCHES .... macht noch probleme mit dem DisplayUpdateInterrupt
+  attachInterrupt (digitalPinToInterrupt(SWSYNC), ISRSwitch, CHANGE);
+  attachInterrupt (digitalPinToInterrupt(SWSEQ), ISRSwitch, CHANGE);
+  attachInterrupt (digitalPinToInterrupt(SWREC), ISRSwitch, CHANGE);
 
   //Set timer interrupt (display refresh)
   myTimer.begin(updateDisplay, 40000);  //display refresh
@@ -111,19 +115,16 @@ void setup() {
 
 void loop() {
   //NEW Midi Signal
-  while(midi0.available()){
-    midi0.updateMidi();
-  }
-
+ updateMidi();
   //Read uC UART Data
   while(Serial4.available()){
-    encode(Serial4.read());
+    // encode(Serial4.read());
   }
 
   /////////Temp Clock
   static long timer = 0;
   if(millis()- timer > 500){
-    stat.increaseStep();
+    settings::increaseStep();
     timer = millis();
   }
   ///////
