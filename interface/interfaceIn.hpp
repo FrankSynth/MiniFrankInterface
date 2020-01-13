@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
-#include "interfaceData.h"
+#include "interfaceData.hpp"
 
 #define SWSYNC 6
 #define SWSEQ 7

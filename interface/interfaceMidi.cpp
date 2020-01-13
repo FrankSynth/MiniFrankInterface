@@ -1,4 +1,4 @@
-#include "interfaceMidi.h"
+#include "interfaceMidi.hpp"
 
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI); // Which serial???
 

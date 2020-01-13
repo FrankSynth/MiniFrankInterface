@@ -3,10 +3,10 @@
 #include <Wire.h>
 #include <MIDI.h>
 
-#include "interfaceDisplay.h"
-#include "interfaceData.h"
-#include "interfaceIn.h"
-#include "interfaceMidi.h"
+#include "interfaceDisplay.hpp"
+#include "interfaceData.hpp"
+#include "interfaceIn.hpp"
+#include "interfaceMidi.hpp"
 
 
 #include <avr/io.h>

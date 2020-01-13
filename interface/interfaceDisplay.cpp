@@ -1,4 +1,4 @@
-#include "interfaceDisplay.h"
+#include "interfaceDisplay.hpp"
 
 void display::initLCD(byte w, byte h, byte rotation) {
   pinMode(LCD_BL , OUTPUT);
