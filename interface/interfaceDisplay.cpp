@@ -1,4 +1,4 @@
-#include "interfaceDisplay.h"
+#include "interfaceDisplay.hpp"
 
 void display::initLCD(byte w, byte h, byte rotation) {
   pinMode(LCD_BL , OUTPUT);
@@ -24,7 +24,7 @@ void display::drawBuffer() {
   drawFoot();
 
   //select active pane
-  switch (stat->getActivePane()) {
+  switch (settings::getActivePane()) {
     case 0:  drawBodyNote(); break;
     case 1:  drawBodyGate(); break;
   }
@@ -32,7 +32,7 @@ void display::drawBuffer() {
 }
 
 void display::refresh() {
-  displayBrightness(stat->getDisplayBrightness()); //set display Brightness
+  displayBrightness(settings::getDisplayBrightness()); //set display Brightness
   drawBuffer();
   updateDisplay();
 }
@@ -64,7 +64,7 @@ void display::drawHead() {
   bufferHead->setCursor(61, 3);
   bufferHead->print("BPM:");
   bufferHead->setTextColor(COLOR, BLACK);
-  bufferHead->print(stat->getBPM());
+  bufferHead->print(settings::getBPM());
 
   //MIDI Settings
   bufferHead->setCursor(109, 3);
@@ -72,7 +72,7 @@ void display::drawHead() {
   bufferHead->print("MIDI:");
   bufferHead->setTextColor(COLOR, BLACK);
 
-  if (stat->getMidiType()) {
+  if (settings::getMidiSource()) {
     bufferHead->print("USB");
 
   }
@@ -96,7 +96,7 @@ void display::drawFoot() {
   bufferFoot->setTextColor(WHITE, COLOR);
   bufferFoot->print("SEQ:");
 
-  bufferFoot->print(stat->getActiveSeq());
+  bufferFoot->print(settings::getActiveSeq());
 
   //STOP PLAY
   bufferFoot->fillRect(36, 1, 40, 14, COLOR); //spacer
@@ -104,7 +104,7 @@ void display::drawFoot() {
   bufferFoot->setCursor(40, 5);
   bufferFoot->setTextColor(WHITE, COLOR);
 
-  if (stat->getPlayStop()) {
+  if (settings::getPlayStop()) {
     bufferFoot->print("PLAY");
   }
   else {
@@ -116,7 +116,7 @@ void display::drawFoot() {
   bufferFoot->setCursor(67, 5);
   bufferFoot->setTextColor(WHITE, COLOR);
 
-  if (stat->getDirection()) {
+  if (settings::getDirection()) {
     bufferFoot->print((char)175);
   }
   else {
@@ -130,10 +130,10 @@ void display::drawFoot() {
   bufferFoot->setTextColor(WHITE, COLOR);
 
   bufferFoot->print("TUNE:");
-  if (stat->getActiveSeq() == 0) { //SEQ 1 aktiv
+  if (settings::getActiveSeq() == 0) { //SEQ 1 aktiv
     bufferFoot->print(tuningToChar(seq1->getTuning()));
   }
-  else if (stat->getActiveSeq() == 1) { //SEQ 2 aktiv
+  else if (settings::getActiveSeq() == 1) { //SEQ 2 aktiv
     bufferFoot->print(tuningToChar(seq2->getTuning()));
   }
 
@@ -147,7 +147,7 @@ void display::drawFoot() {
 }
 
 void display::drawBodyGate() {
-  seq *activeSeq;
+  Seq *activeSeq;
   activeSeq = getActiveSeqPointer();
 
   bufferBody->fillScreen(0x39E7); //resetBuffer
@@ -155,7 +155,7 @@ void display::drawBodyGate() {
   //NoteBlocks
   for (int x = 0; x < 4 ; x++) {
     for (int y = 0; y < 2 ; y++) {
-      byte myStep = x + y * 4 + stat->getActivePage() * 8;
+      byte myStep = x + y * 4 + settings::getActivePage() * 8;
 
       bufferBody->setFont(); //reset Font
       bufferBody->drawRect(x * 40, y * 35 + 1, 40, 35, 0x2965); //
@@ -188,28 +188,28 @@ void display::drawBodyGate() {
 
 
       //CurrentStep
-      if (stat->getStepOnPage() == (x + y * 4)) {
+      if (settings::getStepOnPage() == (x + y * 4)) {
         bufferBody->fillRect(x * 40 + 2, y * 35 + 30, 36, 4, RED); //red bar for active Step
       }
     }
   }
 
   //PageBlocks
-  byte width = 160 / stat->getCurrentNumberPages();  //block width
-  byte offset = (160 - stat->getCurrentNumberPages() * width) / 2; //center blocks
+  byte width = 160 / settings::getCurrentNumberPages();  //block width
+  byte offset = (160 - settings::getCurrentNumberPages() * width) / 2; //center blocks
 
-  for (int x = 0; x < stat->getCurrentNumberPages() ; x++) {
+  for (int x = 0; x < settings::getCurrentNumberPages() ; x++) {
     bufferBody->drawRect(x * width + offset, 72, width, 25, 0x2965); //dark Rectangle
     bufferBody->fillRect(x * width + 1 + offset, 72 + 1, width - 2, 23, 0x4208); //grey box
 
-    if (x == stat->getActivePage()) {
+    if (x == settings::getActivePage()) {
       bufferBody->fillRect(x * width + 1 + offset, 72 + 1, width - 2, 23, RED); //RedBlock of active
     }
   }
 }
 
 void display::drawBodyNote() {
-  seq* activeSeq;
+  Seq* activeSeq;
 
   activeSeq = getActiveSeqPointer();  //get active Sequence
   bufferBody->fillScreen(0x39E7);     //resetBuffer
@@ -218,7 +218,7 @@ void display::drawBodyNote() {
   for (int x = 0; x < 4 ; x++) {
     for (int y = 0; y < 2 ; y++) {
 
-      byte myStep = x + y * 4 + stat->getActivePage() * 8;
+      byte myStep = x + y * 4 + settings::getActivePage() * 8;
 
 
       bufferBody->setFont(); //reset Font
@@ -253,21 +253,21 @@ void display::drawBodyNote() {
       bufferBody->print(valueToOctave(noteValue));
 
       //CurrentStep
-      if (stat->getStepOnPage() == (x + y * 4)) {
+      if (settings::getStepOnPage() == (x + y * 4)) {
         bufferBody->fillRect(x * 40 + 2, y * 35 + 30, 36, 4, RED); //red bar for active Step
       }
     }
   }
 
   //PageBlocks
-  byte width = 160 / stat->getCurrentNumberPages();  //block width
-  byte offset = (160 - stat->getCurrentNumberPages() * width) / 2; //center blocks
+  byte width = 160 / settings::getCurrentNumberPages();  //block width
+  byte offset = (160 - settings::getCurrentNumberPages() * width) / 2; //center blocks
 
-  for (int x = 0; x < stat->getCurrentNumberPages() ; x++) {
+  for (int x = 0; x < settings::getCurrentNumberPages() ; x++) {
     bufferBody->drawRect(x * width + offset, 72, width, 25, 0x2965); //dark Rectangle
     bufferBody->fillRect(x * width + 1 + offset, 72 + 1, width - 2, 23, 0x4208); //grey box
 
-    if (x == stat->getActivePage()) {
+    if (x == settings::getActivePage()) {
       bufferBody->fillRect(x * width + 1 + offset, 72 + 1, width - 2, 23, RED); //RedBlock of active
     }
   }
@@ -345,11 +345,11 @@ char display::valueToSharp(byte noteIn) {
   return '\0';
 }
 
-seq* display::getActiveSeqPointer() {
-  if ( stat->getActiveSeq() == 0) {
+Seq* display::getActiveSeqPointer() {
+  if ( settings::getActiveSeq() == 0) {
     return seq1;
   }
-  else if (stat->getActiveSeq() == 1) {
+  else if (settings::getActiveSeq() == 1) {
     return seq2;
   }
   return NULL; //notValid
@@ -377,10 +377,6 @@ const char* display::tuningToChar(byte tuning) {
     default: return "-";
   }
 }
-
-
-
-
 
 
 //Display Buffer based on the adafruit canvas, with 2 sepereate buffers for comparison
