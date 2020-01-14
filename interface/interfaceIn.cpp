@@ -1,4 +1,4 @@
-#include "interfaceIn.h"
+#include "interfaceIn.hpp"
 
 
 void controls::encode(byte message){
@@ -16,11 +16,11 @@ void controls::encode(byte message){
 }
 
 void controls::rotate(byte id ,byte dir){ //rotate message
-  byte activePage = stat->getActivePage();
+  byte activePage = settings::getActivePage();
   byte offset = activePage * STEPPERPAGE;
-  seq *activeSeq = getActiveSeqPointer();
+  Seq *activeSeq = getActiveSeqPointer();
 
-  if(stat->getActiveMenu() == 0){ //Note menu
+  if(settings::getActiveMenu() == 0){ //Note menu
     if(id < 8){//noteGate encoder
       if(dir){
         activeSeq->increaseNote(offset + id) ;
@@ -32,7 +32,7 @@ void controls::rotate(byte id ,byte dir){ //rotate message
     else{ //menu encoder
     }
   }
-  else if (stat->getActiveMenu() == 1){  //Gate length menu
+  else if (settings::getActiveMenu() == 1){  //Gate length menu
     if(id < 8){ //noteGate encoder
       if(dir){
         activeSeq->changeGateLength(offset + id, 5) ;
@@ -47,12 +47,12 @@ void controls::rotate(byte id ,byte dir){ //rotate message
 }
 
 void controls::push( byte id,byte push){ //switch message
-  byte activePage = stat->getActivePage();
+  byte activePage = settings::getActivePage();
   byte offset = activePage * STEPPERPAGE;
-  seq *activeSeq = getActiveSeqPointer();
+  Seq *activeSeq = getActiveSeqPointer();
 
 
-  if(stat->getActiveMenu() == 0){ //Note menu
+  if(settings::getActiveMenu() == 0){ //Note menu
     if(id < 8){//noteGate encoder
       if(push){
         activeSeq->toggleGate(offset + id) ;
@@ -61,7 +61,7 @@ void controls::push( byte id,byte push){ //switch message
     else{ //menu encoder
     }
   }
-  else if (stat->getActiveMenu() == 1){  //Gate length menu
+  else if (settings::getActiveMenu() == 1){  //Gate length menu
     if(id < 8){ //noteGate encoder
       if(push){
         activeSeq->toggleGate(offset + id) ;
@@ -74,11 +74,11 @@ void controls::push( byte id,byte push){ //switch message
 
 
 //utility
-seq* controls::getActiveSeqPointer(){
-      if( stat->getActiveSeq() == 0){
+Seq* controls::getActiveSeqPointer(){
+      if( settings::getActiveSeq() == 0){
     return seq1;
   }
-  else if(stat->getActiveSeq() == 1){
+  else if(settings::getActiveSeq() == 1){
     return seq2;
   }
   return NULL; //notValid

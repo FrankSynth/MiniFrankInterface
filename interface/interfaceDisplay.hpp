@@ -1,10 +1,9 @@
-#ifndef MF_DISPLAY_H_
-#define MF_DISPLAY_H_
+#pragma once
 
 #include <Adafruit_GFX.h>    // Core graphics library
 #include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
 #include <SPI.h>
-#include "interfaceData.h"
+#include "interfaceData.hpp"
 
 #include <Fonts/FreeSansBold24pt7b.h>
 #include <Fonts/FreeSansBold18pt7b.h>
@@ -60,10 +59,9 @@ class display
     void refresh();                              //refresh display
     void displayBrightness(byte brigthness);     //set display display brightness
 
-    void setPointer(seq *seq1Pointer, seq *seq2Pointer, status *statPointer){ //set pointer
+    void setPointer(Seq *seq1Pointer, Seq *seq2Pointer){ //set pointer
       seq1 = seq1Pointer;
       seq2 = seq2Pointer;
-      stat = statPointer;
     }
 
 private:
@@ -78,15 +76,15 @@ private:
     uint8_t h;
     uint8_t rotation;
 
-    seq *seq1;
-    seq *seq2;
-    status *stat;
+    Seq *seq1;
+    Seq *seq2;
+    // status *stat;
 
     char valueToNote(byte noteIn);
     char valueToOctave(byte noteIn);
     char valueToSharp(byte noteIn);
 
-    seq* getActiveSeqPointer();
+    Seq* getActiveSeqPointer();
 
     const char*  tuningToChar(byte tuning);
 
@@ -106,4 +104,3 @@ private:
 
     void updateDisplay();
 };
-#endif
