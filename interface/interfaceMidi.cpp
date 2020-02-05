@@ -4,6 +4,7 @@ MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI); // Which serial???
 
 // #define DEBUG
 
+
 // callback handles
 void midiNoteOn(byte channel, byte note, byte velocity);
 void midiNoteOff(byte channel, byte note, byte velocity);

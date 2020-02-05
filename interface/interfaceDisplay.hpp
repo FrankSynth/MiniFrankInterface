@@ -25,7 +25,7 @@
 #define MAGENTA    ST77XX_MAGENTA
 #define YELLOW     ST77XX_YELLOW
 #define ORANGE     ST77XX_ORANGE
-#define COLOR     0x0410
+#define COLOR      0x0410
 
 
 ///  A 16-bit double buffer from the adafruit canvas
