@@ -1,4 +1,4 @@
-//MIDI Output library
+// MIDI Output library
 
 #pragma once
 
@@ -6,13 +6,9 @@
 #define DAC_1 6
 // #define DAC_1 7
 
-
-#include <Arduino.h>
 #include "interfaceData.hpp"
+#include <Arduino.h>
 
-
-
-class dac
-{
+class dac {
   public:
 };
