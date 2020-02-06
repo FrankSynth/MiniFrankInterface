@@ -7,14 +7,15 @@
 #include "interfaceDisplay.hpp"
 #include "interfaceIn.hpp"
 #include "interfaceMidi.hpp"
+#include "interfaceMiddleman.hpp"
+#include "interfaceOut.hpp"
+
 
 #include <avr/interrupt.h>
 #include <avr/io.h>
 
 // #define DEBUG
 
-Seq seq1;
-Seq seq2;
 // status settings;   //init status object;
 // mfMidi midi0; //create midi object
 
@@ -52,15 +53,16 @@ void setup() {
     digitalWrite(5, LOW);
 
     // transfer the pointer to our data objects to the display library
-    lcd.setPointer(&seq1, &seq2);
+    lcd.init();
     // and to the control object
-    cntrl.setPointer(&seq1, &seq2);
+    cntrl.init();
 
     // intSeq
-    seq2.init();
-    seq1.init();
+    initData();
 
     initMidi();
+    initMiddleman();
+
 
 #ifdef DEBUG
     Serial.begin(115200);
@@ -70,7 +72,7 @@ void setup() {
     ////////////////////////
     // Start Devices
     digitalWrite(5, HIGH);
-    delay(10);
+    delay(10u);
 
     // Start Connection to the uC
     Serial4.begin(1000000);
@@ -96,7 +98,7 @@ void setup() {
         Serial.println("Connected");
     }
 #endif
-    ////////////////////////
+
     // Interrupt for the SWITCHES .... macht noch probleme mit dem DisplayUpdateInterrupt
     attachInterrupt(digitalPinToInterrupt(SWSYNC), ISRSwitch, CHANGE);
     attachInterrupt(digitalPinToInterrupt(SWSEQ), ISRSwitch, CHANGE);
@@ -107,20 +109,23 @@ void setup() {
 }
 
 void loop() {
-    // NEW Midi Signal
+    // receive all new MIDI signals
     updateMidi();
+
     // Read uC UART Data
     while (Serial4.available()) {
         // encode(Serial4.read());
     }
 
-    /////////Temp Clock
+    //Temp Clock
     static long timer = 0;
     if (millis() - timer > 500) {
         settings::increaseStep();
         timer = millis();
     }
-    ///////
+
+    // activate middleman
+    updateAllOutputs();
 }
 
 void ISRSwitch() {

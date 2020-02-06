@@ -162,6 +162,7 @@ void updateMidi() {
 }
 
 // Midi actions
+
 void midiNoteOn(byte channel, byte note, byte velocity) {
 #ifdef DEBUG
     Serial.println("Key pressed");
@@ -185,30 +186,16 @@ void midiCC(byte channel, byte cc, byte data) {
     }
 };
 
-void midiAfterTouch(byte channel, byte data) {
-    receivedAftertouch(channel, data);
-};
+void midiAfterTouch(byte channel, byte data) { receivedAftertouch(channel, data); };
 
-void midiClock() {
-    receivedMidiClock();
-};
+void midiClock() { receivedMidiClock(); };
 
-void midiSongPosition(unsigned int spp) {
-    receivedMidiSongPosition(spp);
-};
+void midiSongPosition(unsigned int spp) { receivedMidiSongPosition(spp); };
 
-void midiStart() {
-    receivedStart();
-};
+void midiStart() { receivedStart(); };
 
-void midiContinue() {
-    receivedContinue();
-};
+void midiContinue() { receivedContinue(); };
 
-void midiStop() {
-    receivedStop();
-};
+void midiStop() { receivedStop(); };
 
-void midiSystemReset() {
-    receivedReset();
-};
+void midiSystemReset() { receivedReset(); };

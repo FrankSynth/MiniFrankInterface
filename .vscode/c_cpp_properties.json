@@ -4,10 +4,10 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${userprofile}/Documents/Arduino/libraries/**",
                 "C:/Program Files (x86)/Arduino/hardware/teensy/avr/cores/teensy4/**",
                 "C:/Program Files (x86)/Arduino/hardware/teensy/avr/libraries/**",
-                "C:/Program Files (x86)/Arduino/hardware/tools/**"
+                "C:/Program Files (x86)/Arduino/hardware/tools/**",
+                "${userprofile}/Documents/Arduino/libraries/**"
             ],
             "defines": [
                 "_DEBUG",
@@ -16,7 +16,7 @@
             ],
             "intelliSenseMode": "msvc-x64",
             "forcedInclude": [
-                "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\cores\\arduino\\Arduino.h"
+                "C:\\Program Files (x86)\\Arduino\\hardware\\teensy\\avr\\cores\\teensy4\\Arduino.h"
             ]
         }
     ],

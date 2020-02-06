@@ -59,9 +59,9 @@ class display {
     void refresh();                          // refresh display
     void displayBrightness(byte brigthness); // set display display brightness
 
-    void setPointer(Seq *seq1Pointer, Seq *seq2Pointer) { // set pointer
-        seq1 = seq1Pointer;
-        seq2 = seq2Pointer;
+    void init() { // set pointer
+        seq1 = &getSeq()[0];
+        seq2 = &getSeq()[1];
     }
 
   private:
