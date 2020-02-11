@@ -1,7 +1,8 @@
 #pragma once
 
-#include <Arduino.h>
 #include "interfaceData.hpp"
+#include <Arduino.h>
+
 
 #define SWSYNC 6
 #define SWSEQ 7
@@ -9,58 +10,55 @@
 
 //#define DEBUG
 
-
-//Controls object for the incoming UART messages
-class controls
-{
+// Controls object for the incoming UART messages
+class controls {
   public:
-    controls(){   //SWITCHES init
-      pinMode(SWSYNC,INPUT_PULLUP);
-      pinMode(SWSEQ,INPUT_PULLUP);
-      pinMode(SWREC,INPUT_PULLUP);
-      readSwitches();
+    controls() { // SWITCHES init
+        pinMode(SWSYNC, INPUT_PULLUP);
+        pinMode(SWSEQ, INPUT_PULLUP);
+        pinMode(SWREC, INPUT_PULLUP);
+        readSwitches();
     }
 
-    void encode(byte message);  //encode message
-    void rotate(byte id ,byte dir); // is a rotate message
-    void push( byte id,byte push);  //is a switch message
+    void encode(byte message);      // encode message
+    void rotate(byte id, byte dir); // is a rotate message
+    void push(byte id, byte push);  // is a switch message
 
-    void readSwitches(){
+    void readSwitches() {
 
-      #ifdef DEBUG
-      Serial.print("INPUT: SYNC set: ");
-      Serial.println(digitalRead(SWSYNC));
-      Serial.print("INPUT: SEQ set: ");
-      Serial.println(digitalRead(SWSEQ));
-      Serial.print("INPUT: REC set: ");
-      Serial.println(digitalRead(SWREC));
-      #endif
+#ifdef DEBUG
+        Serial.print("INPUT: SYNC set: ");
+        Serial.println(digitalRead(SWSYNC));
+        Serial.print("INPUT: SEQ set: ");
+        Serial.println(digitalRead(SWSEQ));
+        Serial.print("INPUT: REC set: ");
+        Serial.println(digitalRead(SWREC));
+#endif
 
-      settings::setSync(digitalRead(SWSYNC));
-      settings::setActiveSeq(digitalRead(SWSEQ));
-      settings::setRec(digitalRead(SWREC));
+        settings::setSync(digitalRead(SWSYNC));
+        settings::setActiveSeq(digitalRead(SWSEQ));
+        settings::setRec(digitalRead(SWREC));
     }
 
-    void readSync(){
-      settings::setSync(digitalRead(SWSYNC));
+    void readSync() {
+        settings::setSync(digitalRead(SWSYNC));
     }
-    void readSeq(){
-      settings::setActiveSeq(digitalRead(SWSEQ));
+    void readSeq() {
+        settings::setActiveSeq(digitalRead(SWSEQ));
     }
-    void readRec(){
-      settings::setRec(digitalRead(SWREC));
-    }
-
-    void setPointer(Seq *seq1Pointer, Seq *seq2Pointer){ //set pointer
-      seq1 = seq1Pointer;
-      seq2 = seq2Pointer;
-      // settings = getStatus();;
+    void readRec() {
+        settings::setRec(digitalRead(SWREC));
     }
 
-private:
-    Seq* getActiveSeqPointer();
+    void init() { // set pointer
+        seq1 = &getSeq()[0];
+        seq2 = &getSeq()[1];
+        // settings = getStatus();;
+    }
+
+  private:
+    Seq *getActiveSeqPointer();
 
     Seq *seq1;
     Seq *seq2;
-
 };

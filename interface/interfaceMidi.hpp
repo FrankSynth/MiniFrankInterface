@@ -1,8 +1,7 @@
-//MIDI input library
-//collecting data from USB and din
+// MIDI input library
+// collecting data from USB and din
 
 #pragma once
-
 
 #include <Arduino.h>
 #include <MIDI.h>
