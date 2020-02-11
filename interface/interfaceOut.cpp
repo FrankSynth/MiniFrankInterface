@@ -1,3 +1,3 @@
-#include "interfaceOut.hpp"
-
-float noteOffset[OUTPUTS][88];
+// #include "interfaceOut.hpp"
+//
+// float noteOffset[OUTPUTS][88];

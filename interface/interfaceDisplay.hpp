@@ -12,9 +12,9 @@
 
 
 #define LCD_CS        10
-#define LCD_RST       9
-#define LCD_DC        8
-#define LCD_BL        15
+#define LCD_RST       20
+#define LCD_DC        18
+#define LCD_BL        19
 
 #define BLACK      ST77XX_BLACK
 #define WHITE      ST77XX_WHITE

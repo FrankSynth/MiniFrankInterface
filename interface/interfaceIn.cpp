@@ -51,7 +51,6 @@ void controls::push( byte id,byte push){ //switch message
   byte offset = activePage * STEPPERPAGE;
   Seq *activeSeq = getActiveSeqPointer();
 
-
   if(settings::getActiveMenu() == 0){ //Note menu
     if(id < 8){//noteGate encoder
       if(push){

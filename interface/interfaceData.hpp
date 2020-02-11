@@ -50,7 +50,7 @@ typedef struct{
 //Settings struct for all settings
 typedef struct{
   byte midiSource = 1;              // active MidiDevice (usb -> 1, din -> 0)
-  byte nbPages = 4;                 // nb Pages  1 -> 8
+  byte nbPages = 1;                 // nb Pages  1 -> 8
   byte direction = 0;               // 0 -> reverse ; 1 -> forward
   byte displayBrightness = 150;     // 0-255;
   OutputRouting routing[OUTPUTS];

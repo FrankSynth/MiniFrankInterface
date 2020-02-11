@@ -21,7 +21,7 @@ Seq seq2;
 
 controls cntrl;
 
-display lcd = display(160,128,1); //create display object, (width, heigh, rotation)
+display lcd = display(160,128,3); //create display object, (width, heigh, rotation)
 
 IntervalTimer myTimer;
 
@@ -34,12 +34,12 @@ void ISRSwitch();  //Switch Interrupt
 
 
 //readSerial4
-void readSerial4(){
+void readSerial3(){
   byte rcv;
-  rcv = Serial4.read();
+  rcv = Serial3.read();
 
   #ifdef DEBUG
-  //Serial.print("Message: ");
+  Serial.print("Message: ");
   Serial.println(rcv,BIN);
   #endif
 
@@ -80,14 +80,14 @@ void setup() {
   delay(10);
 
   //Start Connection to the uC
-  Serial4.begin(1000000);
+  Serial3.begin(115200);
 
   //SayHello to the uC
   byte send = B01010101;
   long timer = millis();
   byte timeout = 0;
-  while(!Serial4.available() && !timeout ){  //send hello until uC response (max 2seconds)
-    Serial4.write(send);
+  while(!Serial3.available() && !timeout ){  //send hello until uC response (max 2seconds)
+    Serial3.write(send);
 
     if(millis() - timer > 2000){
       timeout = 1; //we timed out
@@ -99,7 +99,7 @@ void setup() {
   }
 
   #ifdef DEBUG
-  if((B01010101 == Serial4.read()) && !timeout){
+  if((B01010101 == Serial3.read()) && !timeout){
     Serial.println("Connected");
   }
   #endif
@@ -117,9 +117,13 @@ void loop() {
   //NEW Midi Signal
  updateMidi();
   //Read uC UART Data
-  while(Serial4.available()){
+  //while(Serial4.available()){
     // encode(Serial4.read());
-  }
+  //}
+  while(Serial3.available()){
+
+  readSerial3();
+}
 
   /////////Temp Clock
   static long timer = 0;
