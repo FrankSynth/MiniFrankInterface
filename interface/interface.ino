@@ -21,7 +21,7 @@
 
 controls cntrl;
 
-display lcd = display(160, 128, 1); // create display object, (width, heigh, rotation)
+display lcd = display(160,128,3); //create display object, (width, heigh, rotation)
 
 IntervalTimer myTimer;
 
@@ -35,12 +35,17 @@ void readSerial4() {
     byte rcv;
     rcv = Serial4.read();
 
-#ifdef DEBUG
-    // Serial.print("Message: ");
-    Serial.println(rcv, BIN);
-#endif
+//readSerial3
+void readSerial3(){
+  byte rcv;
+  rcv = Serial3.read();
 
-    cntrl.encode(rcv);
+  #ifdef DEBUG
+  Serial.print("Message: ");
+  Serial.println(rcv,BIN);
+  #endif
+
+  cntrl.encode(rcv);
 }
 
 void updateDisplay() { // update interrupt
@@ -111,11 +116,21 @@ void setup() {
 void loop() {
     // receive all new MIDI signals
     updateMidi();
+=======
+  
+void loop() {
+  //NEW Midi Signal
+ updateMidi();
+  //Read uC UART Data
+  //while(Serial4.available()){
+    // encode(Serial4.read());
+  //}
+  while(Serial3.available()){
 
-    // Read uC UART Data
-    while (Serial4.available()) {
-        // encode(Serial4.read());
-    }
+  readSerial3();
+}
+
+
 
     //Temp Clock
     static long timer = 0;

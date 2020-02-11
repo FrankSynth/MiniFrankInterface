@@ -51,6 +51,7 @@ typedef struct {
     byte tuning; // tuning offset
 } structSequence;
 
+
 // Settings struct for all settings that will get saved permanently
 typedef struct {
     byte midiSource = 1;          // active MidiDevice (usb -> 1, din -> 0)
@@ -60,6 +61,7 @@ typedef struct {
     OutputRouting routing[OUTPUTS]; // hold settings for that many outputs
     byte clockOut0 = 0; // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
     byte clockOut1 = 1; // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
+
 } structSettings;
 
 // all Settings that don't need to be saved permanently

@@ -11,21 +11,22 @@
 #include <Fonts/FreeSansBold24pt7b.h>
 #include <Fonts/FreeSansBold9pt7b.h>
 
-#define LCD_CS 10
-#define LCD_RST 9
-#define LCD_DC 8
-#define LCD_BL 15
+#define LCD_CS        10
+#define LCD_RST       20
+#define LCD_DC        18
+#define LCD_BL        19
 
-#define BLACK ST77XX_BLACK
-#define WHITE ST77XX_WHITE
-#define RED ST77XX_RED
-#define GREEN ST77XX_GREEN
-#define BLUE ST77XX_BLUE
-#define CYAN ST77XX_CYAN
-#define MAGENTA ST77XX_MAGENTA
-#define YELLOW ST77XX_YELLOW
-#define ORANGE ST77XX_ORANGE
-#define COLOR 0x0410
+#define BLACK      ST77XX_BLACK
+#define WHITE      ST77XX_WHITE
+#define RED        ST77XX_RED
+#define GREEN      ST77XX_GREEN
+#define BLUE       ST77XX_BLUE
+#define CYAN       ST77XX_CYAN
+#define MAGENTA    ST77XX_MAGENTA
+#define YELLOW     ST77XX_YELLOW
+#define ORANGE     ST77XX_ORANGE
+#define COLOR     0x0410
+
 
 ///  A 16-bit double buffer from the adafruit canvas
 class dispBuffer16 : public Adafruit_GFX {
