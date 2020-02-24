@@ -1,10 +1,12 @@
 #pragma once
 
+#include <Arduino.h>
 #include "interfaceData.hpp"
 #include "interfaceOut.hpp"
-#include <Arduino.h>
+
 
 #define TRIGGERLENGTH 20 // default trigger and clock pulse length in ms
+
 
 // save state for each output lane
 class PreviousOutputs {
@@ -80,4 +82,3 @@ void updateTriggerOut(byte output);
 
 // advanced helper functions
 byte getArpeggiatedNote();
-

@@ -8,7 +8,7 @@
 #include "interfaceIn.hpp"
 #include "interfaceMidi.hpp"
 #include "interfaceMiddleman.hpp"
-#include "interfaceOut.hpp"
+
 
 
 #include <avr/interrupt.h>
@@ -29,11 +29,6 @@ IntervalTimer myTimer;
 // PressedNotesList noteList1;
 
 void ISRSwitch(); // Switch Interrupt
-
-// readSerial4
-void readSerial4() {
-    byte rcv;
-    rcv = Serial4.read();
 
 //readSerial3
 void readSerial3(){
@@ -80,14 +75,14 @@ void setup() {
     delay(10u);
 
     // Start Connection to the uC
-    Serial4.begin(1000000);
+    Serial3.begin(115200);
 
     // SayHello to the uC
     byte send = B01010101;
     long timer = millis();
     byte timeout = 0;
-    while (!Serial4.available() && !timeout) { // send hello until uC response (max 2seconds)
-        Serial4.write(send);
+    while (!Serial3.available() && !timeout) { // send hello until uC response (max 2seconds)
+        Serial3.write(send);
 
         if (millis() - timer > 2000) {
             timeout = 1;           // we timed out
@@ -98,45 +93,39 @@ void setup() {
         }
     }
 
-#ifdef DEBUG
-    if ((B01010101 == Serial4.read()) && !timeout) {
-        Serial.println("Connected");
-    }
-#endif
+    if ((B01010101 == Serial3.read()) && !timeout) {
+      #ifdef DEBUG
 
-    // Interrupt for the SWITCHES .... macht noch probleme mit dem DisplayUpdateInterrupt
+        Serial.println("Connected");
+        #endif
+    }
+    else{
+      settings::setError(1); // set error status
+    }
+
+
     attachInterrupt(digitalPinToInterrupt(SWSYNC), ISRSwitch, CHANGE);
     attachInterrupt(digitalPinToInterrupt(SWSEQ), ISRSwitch, CHANGE);
     attachInterrupt(digitalPinToInterrupt(SWREC), ISRSwitch, CHANGE);
 
     // Set timer interrupt (display refresh)
-    myTimer.begin(updateDisplay, 40000); // display refresh
+  myTimer.begin(updateDisplay, 40000); // display refresh
 }
 
-void loop() {
-    // receive all new MIDI signals
-    updateMidi();
-=======
-  
 void loop() {
   //NEW Midi Signal
- updateMidi();
+  updateMidi();
   //Read uC UART Data
-  //while(Serial4.available()){
-    // encode(Serial4.read());
-  //}
   while(Serial3.available()){
-
   readSerial3();
-}
-
+  }
 
 
     //Temp Clock
-    static long timer = 0;
-    if (millis() - timer > 500) {
-        settings::increaseStep();
-        timer = millis();
+static long timer = 0;
+if (millis() - timer > 250) {
+    settings::increaseStep();
+    timer = millis();
     }
 
     // activate middleman
