@@ -1,5 +1,13 @@
 #include "interfaceMiddleman.hpp"
 
+//OUTPUT Channels and clocks
+channel outputChannel1 = channel(DAC1,0,DAC2,0,TRIGGER1,GATE1);
+channel outputChannel2 = channel(DAC1,1,DAC2,1,TRIGGER2,GATE2);
+
+clock outputClock1 = clock(CLK1);
+clock outputClock2 = clock(CLK2);
+//
+
 PreviousState previousState;
 PreviousOutputs previousOutputs[OUTPUTS];
 
@@ -8,6 +16,7 @@ LiveMidi* liveMidiData;
 Seq* seqData;
 
 void initMiddleman() {
+    initOutput(); //init Outputs
     liveMidiData = getLiveMidi();
     seqData = getSeq();
 }

@@ -1,3 +1,66 @@
 #include "interfaceOut.hpp"
 
-float noteOffset[OUTPUTS][88];
+
+void channel::setTuning(float tuning){
+  noteTuning = tuning;
+}
+
+void channel::setGate(byte state){
+  digitalWrite(gatePin, state);
+}
+
+void channel::setTrigger(byte state){
+  digitalWrite(triggerPin, state);
+}
+
+void channel::setNote(byte note){
+  unsigned int mV = (unsigned int)((float) note * noteTuning + 0.5);
+  setVoltage(noteDac, noteChannel, 2, mV);
+}
+
+void channel::setCV(int value){ //0 - 1024 -> -5V -> 5V
+  unsigned int mV = (unsigned int)((float)value * 4);
+  setVoltage(cvDac, cvChannel, 2, mV);
+}
+
+
+void initOutput(){
+  pinMode(DAC1, OUTPUT);
+  digitalWrite(DAC1, HIGH);
+
+  pinMode(DAC2, OUTPUT);
+  digitalWrite(DAC2, HIGH);
+
+  pinMode(TRIGGER1, OUTPUT);
+  digitalWrite(TRIGGER1, LOW);
+
+  pinMode(TRIGGER2, OUTPUT);
+  digitalWrite(TRIGGER2, LOW);
+
+  pinMode(GATE1, OUTPUT);
+  digitalWrite(GATE1, LOW);
+
+  pinMode(GATE2, OUTPUT);
+  digitalWrite(GATE2, LOW);
+
+  pinMode(CLK1, OUTPUT);
+  digitalWrite(CLK1, LOW);
+
+  pinMode(CLK2, OUTPUT);
+  digitalWrite(CLK2, LOW);
+}
+
+void setVoltage(int dacpin, bool channel, bool gain, unsigned int mV)  //channel 0, 1, Gain = 2 (default)
+{
+  unsigned int command = channel ? 0x9000 : 0x1000;
+
+  command |= gain ? 0x0000 : 0x2000;
+  command |= (mV & 0x0FFF);
+
+  SPI.beginTransaction(SPISettings(20000000, MSBFIRST, SPI_MODE0)); //nochmal SPI speed testen...
+  digitalWrite(dacpin, LOW);
+  SPI.transfer(command >> 8);
+  SPI.transfer(command & 0xFF);
+  digitalWrite(dacpin, HIGH);
+  SPI.endTransaction();
+}
