@@ -2,11 +2,8 @@
 
 // #define DEBUG
 
-
 // data singleton
 // FrankData mainData;
-
-
 
 // class Output Routing
 byte OutputRouting::getOut() { return out; }
@@ -132,10 +129,10 @@ PressedNotesElement *PressedNotesList::getKeyLatest() {
 }
 
 // class LiveMidi
-void LiveMidi::keyPressed(byte note, byte velocity) { 
-    noteList.appendKey(note, velocity); 
+void LiveMidi::keyPressed(byte note, byte velocity) {
+    noteList.appendKey(note, velocity);
     triggered = 1;
-    }
+}
 
 void LiveMidi::keyReleased(byte note) { noteList.deleteKey(note); }
 
@@ -182,8 +179,12 @@ byte LiveMidi::getAftertouch() { return aftertouch; }
 byte LiveMidi::getSustain() { return sustain; }
 
 byte LiveMidi::getTriggered() {
-    if (triggered) {triggered = 0; return 1;}
-    else {return 0;}
+    if (triggered) {
+        triggered = 0;
+        return 1;
+    } else {
+        return 0;
+    }
 }
 
 void LiveMidi::reset() {
@@ -193,7 +194,6 @@ void LiveMidi::reset() {
     aftertouch = 0;
     sustain = 0;
 }
-
 
 // Sequence
 void Seq::init(byte note, byte gate, byte gateLength, byte tuning) { // init sequence to default values
@@ -553,17 +553,17 @@ byte FrankData::getCurrentNumberPages() { // number of pages, takes care if page
     return (getStep() / 8 + 1); // return current stepSeq page until the next page jump
 }
 
-Seq* FrankData::getSeqObject() {
-    return seq;
+Seq *FrankData::getSeqObject() { return seq; }
 
+FrankData *FrankData::mainData = nullptr;
 
-}
-
-FrankData& FrankData::getDataObj() {
-    if (mainData == nullptr) mainData = new FrankData();
+FrankData &FrankData::getDataObj() {
+    if (mainData == nullptr)
+        mainData = new FrankData();
     return *mainData;
 }
 
+// Testclass *Testclass::mainData = nullptr;
 
 // utility
 inline byte testByte(byte value, byte minimum, byte maximum) { // test byte range and return valid byte
@@ -608,7 +608,7 @@ inline byte decreaseByte(byte value, byte minimum) { // decrease byte
 }
 
 inline byte changeByte(byte value, int change, byte minimum, byte maximum) { // change byte value and check boundaries
-    if ((int)value + change >= maximum) {                             // test max
+    if ((int)value + change >= maximum) {                                    // test max
         return maximum;
     } else if ((int)value + change <= minimum) { // test min
         return minimum;
@@ -618,8 +618,8 @@ inline byte changeByte(byte value, int change, byte minimum, byte maximum) { // 
 }
 
 inline byte changeByteNoClampChange(byte value, int change, byte minimum,
-                             byte maximum) { // change byte (keeps original value if change not possible)
-    if ((int)value + change >= maximum) {    // test max
+                                    byte maximum) { // change byte (keeps original value if change not possible)
+    if ((int)value + change >= maximum) {           // test max
         return value;
     } else if ((int)value + change <= minimum) { // test min
         return value;
@@ -637,7 +637,6 @@ inline byte changeByteNoClampChange(byte value, int change, byte minimum,
 // FrankData * getDataObject() {
 //     return &mainData;
 // }
-
 
 // LiveMidi* getLiveMidiObject() {
 //     return liveMidi;
