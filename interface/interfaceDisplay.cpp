@@ -1,6 +1,8 @@
 #include "interfaceDisplay.hpp"
 
-void display::initLCD(byte w, byte h, byte rotation) {
+// GETDATAOBJ
+
+void Display::initLCD(byte w, byte h, byte rotation) {
     pinMode(LCD_BL, OUTPUT);
 
     lcd.initR(INITR_GREENTAB); // Init ST7735S chip, green tab   ST7735_MADCTL_BGR changed to 0x00 !!!!!
@@ -8,40 +10,41 @@ void display::initLCD(byte w, byte h, byte rotation) {
     lcd.fillScreen(BLACK);     // init black
 }
 
-void display::displayBrightness(byte brightness) {
+void Display::displayBrightness(byte brightness) {
     analogWrite(LCD_BL, brightness);
 }
 
-void display::initBuffer() {
-    bufferHead = new dispBuffer16(w, 15);
-    bufferBody = new dispBuffer16(w, 98);
-    bufferFoot = new dispBuffer16(w, 15);
+void Display::initBuffer() {
+    bufferHead = new DispBuffer16(w, 15);
+    bufferHead = new DispBuffer16(w, 15);
+    bufferBody = new DispBuffer16(w, 98);
+    bufferFoot = new DispBuffer16(w, 15);
 }
 
-void display::drawBuffer() {
+void Display::drawBuffer() {
     drawHead();
     drawFoot();
 
     // select active pane
-    switch (settings::getActivePane()) {
+    switch (DATAOBJ.getActivePane()) {
     case 0: drawBodyNote(); break;
     case 1: drawBodyGate(); break;
     }
 }
 
-void display::refresh() {
-    displayBrightness(settings::getDisplayBrightness()); // set display Brightness
+void Display::refresh() {
+    displayBrightness(DATAOBJ.getDisplayBrightness()); // set display Brightness
     drawBuffer();
     updateDisplay();
 }
 
-void display::updateDisplay() {
+void Display::updateDisplay() {
     writeRGBMap(0, 0, bufferHead, w, 15);
     writeRGBMap(0, 15, bufferBody, w, 98);
     writeRGBMap(0, 113, bufferFoot, w, 15);
 }
 
-void display::drawHead() {
+void Display::drawHead() {
     // setup
     bufferHead->fillScreen(BLACK); // all Black
     bufferHead->setTextColor(WHITE, BLACK);
@@ -61,7 +64,7 @@ void display::drawHead() {
     bufferHead->setCursor(61, 3);
     bufferHead->print("BPM:");
     bufferHead->setTextColor(COLOR, BLACK);
-    bufferHead->print(settings::getBPM());
+    bufferHead->print(DATAOBJ.getBPM());
 
     // MIDI Settings
     bufferHead->setCursor(109, 3);
@@ -69,7 +72,7 @@ void display::drawHead() {
     bufferHead->print("MIDI:");
     bufferHead->setTextColor(COLOR, BLACK);
 
-    if (settings::getMidiSource()) {
+    if (DATAOBJ.getMidiSource()) {
         bufferHead->print("USB");
 
     } else {
@@ -77,7 +80,7 @@ void display::drawHead() {
     }
 }
 
-void display::drawFoot() {
+void Display::drawFoot() {
     // setup
     bufferFoot->fillScreen(BLACK); // all Black
     bufferFoot->setTextColor(WHITE, BLACK);
@@ -92,7 +95,7 @@ void display::drawFoot() {
     bufferFoot->setTextColor(WHITE, COLOR);
     bufferFoot->print("SEQ:");
 
-    bufferFoot->print(settings::getActiveSeq());
+    bufferFoot->print(DATAOBJ.getActiveSeq());
 
     // STOP PLAY
     bufferFoot->fillRect(36, 1, 40, 14, COLOR); // spacer
@@ -100,7 +103,7 @@ void display::drawFoot() {
     bufferFoot->setCursor(40, 5);
     bufferFoot->setTextColor(WHITE, COLOR);
 
-    if (settings::getPlayStop()) {
+    if (DATAOBJ.getPlayStop()) {
         bufferFoot->print("PLAY");
     } else {
         bufferFoot->print("STOP");
@@ -110,7 +113,7 @@ void display::drawFoot() {
     bufferFoot->setCursor(67, 5);
     bufferFoot->setTextColor(WHITE, COLOR);
 
-    if (settings::getDirection()) {
+    if (DATAOBJ.getDirection()) {
         bufferFoot->print((char)175);
     } else {
         bufferFoot->print((char)174);
@@ -122,11 +125,14 @@ void display::drawFoot() {
     bufferFoot->setTextColor(WHITE, COLOR);
 
     bufferFoot->print("TUNE:");
-    if (settings::getActiveSeq() == 0) { // SEQ 1 aktiv
-        bufferFoot->print(tuningToChar(seq1->getTuning()));
-    } else if (settings::getActiveSeq() == 1) { // SEQ 2 aktiv
-        bufferFoot->print(tuningToChar(seq2->getTuning()));
-    }
+
+    bufferFoot->print(tuningToChar(DATAOBJ.seq[DATAOBJ.getActiveSeq()].getTuning()));
+
+    // if (DATAOBJ.getActiveSeq() == 0) { // SEQ 1 aktiv
+    //     bufferFoot->print(tuningToChar(seq1->getTuning()));
+    // } else if (DATAOBJ.getActiveSeq() == 1) { // SEQ 2 aktiv
+    //     bufferFoot->print(tuningToChar(seq2->getTuning()));
+    // }
 
     // Version
     bufferFoot->fillRect(128, 1, 36, 14, COLOR); // spacer
@@ -136,7 +142,7 @@ void display::drawFoot() {
     bufferFoot->print("v0.1");
 }
 
-void display::drawBodyGate() {
+void Display::drawBodyGate() {
     Seq *activeSeq;
     activeSeq = getActiveSeqPointer();
 
@@ -145,7 +151,7 @@ void display::drawBodyGate() {
     // NoteBlocks
     for (int x = 0; x < 4; x++) {
         for (int y = 0; y < 2; y++) {
-            byte myStep = x + y * 4 + settings::getActivePage() * 8;
+            byte myStep = x + y * 4 + DATAOBJ.getActivePage() * 8;
 
             bufferBody->setFont();                                    // reset Font
             bufferBody->drawRect(x * 40, y * 35 + 1, 40, 35, 0x2965); //
@@ -174,27 +180,27 @@ void display::drawBodyGate() {
             // bufferBody->print("%");
 
             // CurrentStep
-            if (settings::getStepOnPage() == (x + y * 4)) {
+            if (DATAOBJ.getStepOnPage() == (x + y * 4)) {
                 bufferBody->fillRect(x * 40 + 2, y * 35 + 30, 36, 4, RED); // red bar for active Step
             }
         }
     }
 
     // PageBlocks
-    byte width = 160 / settings::getCurrentNumberPages();                // block width
-    byte offset = (160 - settings::getCurrentNumberPages() * width) / 2; // center blocks
+    byte width = 160 / DATAOBJ.getCurrentNumberPages();           // block width
+    byte offset = (160 - DATAOBJ.getCurrentNumberPages() * width) / 2; // center blocks
 
-    for (int x = 0; x < settings::getCurrentNumberPages(); x++) {
+    for (int x = 0; x < DATAOBJ.getCurrentNumberPages(); x++) {
         bufferBody->drawRect(x * width + offset, 72, width, 25, 0x2965);             // dark Rectangle
         bufferBody->fillRect(x * width + 1 + offset, 72 + 1, width - 2, 23, 0x4208); // grey box
 
-        if (x == settings::getActivePage()) {
+        if (x == DATAOBJ.getActivePage()) {
             bufferBody->fillRect(x * width + 1 + offset, 72 + 1, width - 2, 23, RED); // RedBlock of active
         }
     }
 }
 
-void display::drawBodyNote() {
+void Display::drawBodyNote() {
     Seq *activeSeq;
 
     activeSeq = getActiveSeqPointer(); // get active Sequence
@@ -204,7 +210,7 @@ void display::drawBodyNote() {
     for (int x = 0; x < 4; x++) {
         for (int y = 0; y < 2; y++) {
 
-            byte myStep = x + y * 4 + settings::getActivePage() * 8;
+            byte myStep = x + y * 4 + DATAOBJ.getActivePage() * 8;
 
             bufferBody->setFont(); // reset Font
             bufferBody->setCursor(x * 40 + 5, y * 35 + 20);
@@ -236,27 +242,27 @@ void display::drawBodyNote() {
             bufferBody->print(valueToOctave(noteValue));
 
             // CurrentStep
-            if (settings::getStepOnPage() == (x + y * 4)) {
+            if (DATAOBJ.getStepOnPage() == (x + y * 4)) {
                 bufferBody->fillRect(x * 40 + 2, y * 35 + 30, 36, 4, RED); // red bar for active Step
             }
         }
     }
 
     // PageBlocks
-    byte width = 160 / settings::getCurrentNumberPages();                // block width
-    byte offset = (160 - settings::getCurrentNumberPages() * width) / 2; // center blocks
+    byte width = 160 / DATAOBJ.getCurrentNumberPages();           // block width
+    byte offset = (160 - DATAOBJ.getCurrentNumberPages() * width) / 2; // center blocks
 
-    for (int x = 0; x < settings::getCurrentNumberPages(); x++) {
+    for (int x = 0; x < DATAOBJ.getCurrentNumberPages(); x++) {
         bufferBody->drawRect(x * width + offset, 72, width, 25, 0x2965);             // dark Rectangle
         bufferBody->fillRect(x * width + 1 + offset, 72 + 1, width - 2, 23, 0x4208); // grey box
 
-        if (x == settings::getActivePage()) {
+        if (x == DATAOBJ.getActivePage()) {
             bufferBody->fillRect(x * width + 1 + offset, 72 + 1, width - 2, 23, RED); // RedBlock of active
         }
     }
 }
 
-void display::writeRGBMap(int16_t x, int16_t y, dispBuffer16 *bufferObj, int16_t w, int16_t h) {
+void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t w, int16_t h) {
     const uint16_t *buffer = bufferObj->getBuffer();
     lcd.startWrite();
     for (int16_t j = 0; j < h; j++, y++) {
@@ -271,7 +277,7 @@ void display::writeRGBMap(int16_t x, int16_t y, dispBuffer16 *bufferObj, int16_t
     lcd.endWrite();
 }
 
-char display::valueToNote(byte noteIn) {
+char Display::valueToNote(byte noteIn) {
 
     byte note;
     note = (noteIn + 9) % 12;
@@ -292,7 +298,7 @@ char display::valueToNote(byte noteIn) {
     return '\0';
 }
 
-char display::valueToOctave(byte noteIn) {
+char Display::valueToOctave(byte noteIn) {
 
     byte octave;
     octave = (noteIn + 9) / 12;
@@ -312,7 +318,7 @@ char display::valueToOctave(byte noteIn) {
     return '\0';
 }
 
-char display::valueToSharp(byte noteIn) {
+char Display::valueToSharp(byte noteIn) {
     byte note;
     note = (noteIn + 9) % 12;
 
@@ -323,16 +329,12 @@ char display::valueToSharp(byte noteIn) {
     return '\0';
 }
 
-Seq *display::getActiveSeqPointer() {
-    if (settings::getActiveSeq() == 0) {
-        return seq1;
-    } else if (settings::getActiveSeq() == 1) {
-        return seq2;
-    }
+Seq *Display::getActiveSeqPointer() {
+    return &DATAOBJ.seq[DATAOBJ.getActiveSeq()];
     return NULL; // notValid
 }
 
-const char *display::tuningToChar(byte tuning) {
+const char *Display::tuningToChar(byte tuning) {
 
     switch (tuning) {
     case 0: return "C";
@@ -353,7 +355,7 @@ const char *display::tuningToChar(byte tuning) {
 }
 
 // Display Buffer based on the adafruit canvas, with 2 sepereate buffers for comparison
-dispBuffer16::dispBuffer16(uint16_t w, uint16_t h) : Adafruit_GFX(w, h) {
+DispBuffer16::DispBuffer16(uint16_t w, uint16_t h) : Adafruit_GFX(w, h) {
     uint32_t bytes = w * h * 2;
     if ((buffer = (uint16_t *)malloc(bytes))) {
         memset(buffer, 0, bytes);
@@ -363,21 +365,21 @@ dispBuffer16::dispBuffer16(uint16_t w, uint16_t h) : Adafruit_GFX(w, h) {
     }
 }
 
-dispBuffer16::~dispBuffer16(void) {
+DispBuffer16::~DispBuffer16(void) {
     if (buffer)
         free(buffer);
 }
 
-void dispBuffer16::copyBuffer(uint16_t index) {
+void DispBuffer16::copyBuffer(uint16_t index) {
     buffer2[index] = buffer[index];
 }
 
-int dispBuffer16::compareBuffer(uint16_t index) {
+int DispBuffer16::compareBuffer(uint16_t index) {
     return (buffer2[index] != buffer[index]);
 }
 
 /////////////Stuff from Adafruit_GFX////////////
-void dispBuffer16::drawPixel(int16_t x, int16_t y, uint16_t color) {
+void DispBuffer16::drawPixel(int16_t x, int16_t y, uint16_t color) {
     if (buffer) {
         if ((x < 0) || (y < 0) || (x >= _width) || (y >= _height))
             return;
@@ -404,7 +406,7 @@ void dispBuffer16::drawPixel(int16_t x, int16_t y, uint16_t color) {
     }
 }
 
-void dispBuffer16::fillScreen(uint16_t color) {
+void DispBuffer16::fillScreen(uint16_t color) {
     if (buffer) {
         uint8_t hi = color >> 8, lo = color & 0xFF;
         if (hi == lo) {
@@ -417,7 +419,7 @@ void dispBuffer16::fillScreen(uint16_t color) {
     }
 }
 
-void dispBuffer16::byteSwap(void) {
+void DispBuffer16::byteSwap(void) {
     if (buffer) {
         uint32_t i, pixels = WIDTH * HEIGHT;
         for (i = 0; i < pixels; i++)

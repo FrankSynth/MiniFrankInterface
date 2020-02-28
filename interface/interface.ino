@@ -2,17 +2,15 @@
 #include <MIDI.h>
 #include <SPI.h>
 #include <Wire.h>
+#include <avr/interrupt.h>
+#include <avr/io.h>
 
 #include "interfaceData.hpp"
 #include "interfaceDisplay.hpp"
 #include "interfaceIn.hpp"
-#include "interfaceMidi.hpp"
 #include "interfaceMiddleman.hpp"
+#include "interfaceMidi.hpp"
 
-
-
-#include <avr/interrupt.h>
-#include <avr/io.h>
 
 // #define DEBUG
 
@@ -21,26 +19,28 @@
 
 controls cntrl;
 
-display lcd = display(160,128,3); //create display object, (width, heigh, rotation)
+Display lcd = Display(160, 128, 3); // create display object, (width, heigh, rotation)
 
 IntervalTimer myTimer;
+
+
 
 // PressedNotesList noteList0;
 // PressedNotesList noteList1;
 
 void ISRSwitch(); // Switch Interrupt
 
-//readSerial3
-void readSerial3(){
-  byte rcv;
-  rcv = Serial3.read();
+// readSerial3
+void readSerial3() {
+    byte rcv;
+    rcv = Serial3.read();
 
-  #ifdef DEBUG
-  Serial.print("Message: ");
-  Serial.println(rcv,BIN);
-  #endif
+#ifdef DEBUG
+    Serial.print("Message: ");
+    Serial.println(rcv, BIN);
+#endif
 
-  cntrl.encode(rcv);
+    cntrl.encode(rcv);
 }
 
 void updateDisplay() { // update interrupt
@@ -48,21 +48,20 @@ void updateDisplay() { // update interrupt
 }
 
 void setup() {
+    // GETDATAOBJ
     // pin setup
     pinMode(5, OUTPUT);
     digitalWrite(5, LOW);
 
     // transfer the pointer to our data objects to the display library
-    lcd.init();
+    // lcd.init();
     // and to the control object
     cntrl.init();
 
     // intSeq
-    initData();
 
     initMidi();
     initMiddleman();
-
 
 #ifdef DEBUG
     Serial.begin(115200);
@@ -86,7 +85,7 @@ void setup() {
 
         if (millis() - timer > 2000) {
             timeout = 1;           // we timed out
-            settings::setError(1); // set error status
+            DATAOBJ.setError(1); // set error status
 #ifdef DEBUG
             Serial.println("uC : connection failed (timeout)");
 #endif
@@ -94,38 +93,36 @@ void setup() {
     }
 
     if ((B01010101 == Serial3.read()) && !timeout) {
-      #ifdef DEBUG
+#ifdef DEBUG
 
         Serial.println("Connected");
-        #endif
+#endif
+    } else {
+        DATAOBJ.setError(1); // set error status
     }
-    else{
-      settings::setError(1); // set error status
-    }
-
 
     attachInterrupt(digitalPinToInterrupt(SWSYNC), ISRSwitch, CHANGE);
     attachInterrupt(digitalPinToInterrupt(SWSEQ), ISRSwitch, CHANGE);
     attachInterrupt(digitalPinToInterrupt(SWREC), ISRSwitch, CHANGE);
 
     // Set timer interrupt (display refresh)
-  myTimer.begin(updateDisplay, 40000); // display refresh
+    myTimer.begin(updateDisplay, 40000); // display refresh
 }
 
 void loop() {
-  //NEW Midi Signal
-  updateMidi();
-  //Read uC UART Data
-  while(Serial3.available()){
-  readSerial3();
-  }
+    // GETDATAOBJ
+    // NEW Midi Signal
+    updateMidi();
+    //   Read uC UART Data
+    while (Serial3.available()) {
+        readSerial3();
+    }
 
-
-    //Temp Clock
-static long timer = 0;
-if (millis() - timer > 250) {
-    settings::increaseStep();
-    timer = millis();
+    // Temp Clock
+    static long timer = 0;
+    if (millis() - timer > 250) {
+        DATAOBJ.increaseStep();
+        timer = millis();
     }
 
     // activate middleman

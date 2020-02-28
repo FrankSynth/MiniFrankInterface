@@ -27,12 +27,13 @@
 #define ORANGE     ST77XX_ORANGE
 #define COLOR     0x0410
 
+// FrankData &data = getDataObject();
 
 ///  A 16-bit double buffer from the adafruit canvas
-class dispBuffer16 : public Adafruit_GFX {
+class DispBuffer16 : public Adafruit_GFX {
   public:
-    dispBuffer16(uint16_t w, uint16_t h);
-    ~dispBuffer16(void);
+    DispBuffer16(uint16_t w, uint16_t h);
+    ~DispBuffer16(void);
     void drawPixel(int16_t x, int16_t y, uint16_t color), fillScreen(uint16_t color), byteSwap(void);
 
     uint16_t *getBuffer(void) const {
@@ -49,37 +50,41 @@ class dispBuffer16 : public Adafruit_GFX {
     uint16_t *buffer;
 };
 
-class display {
+class Display {
   public:
-    display(byte w, byte h, byte rotation) // constructor
+    Display(byte w, byte h, byte rotation) // constructor
         : w(w), h(h), rotation(rotation) {
         initLCD(w, h, rotation);
         initBuffer();
+        // this -> data = getDataObject();
+
     }
 
     void refresh();                          // refresh display
     void displayBrightness(byte brigthness); // set display display brightness
 
-    void init() { // set pointer
-        seq1 = &getSeq()[0];
-        seq2 = &getSeq()[1];
-    }
+    // void init() { // set pointer
+    //     data 
+    //     // seq1 = &getSeqObject()[0];
+    //     // seq2 = &getSeqObject()[1];
+    // }
 
   private:
     Adafruit_ST7735 lcd = Adafruit_ST7735(LCD_CS, LCD_DC, LCD_RST); // initialize LCD
 
     // Build display buffers
-    dispBuffer16 *bufferHead;
-    dispBuffer16 *bufferFoot;
-    dispBuffer16 *bufferBody;
+    DispBuffer16 *bufferHead;
+    DispBuffer16 *bufferFoot;
+    DispBuffer16 *bufferBody;
 
     uint8_t w;
     uint8_t h;
     uint8_t rotation;
 
-    Seq *seq1;
-    Seq *seq2;
+    // Seq* seq 
+    // Seq *seq2;
     // status *stat;
+    // FrankData & data;
 
     char valueToNote(byte noteIn);
     char valueToOctave(byte noteIn);
@@ -93,7 +98,7 @@ class display {
     void initBuffer();
     void writeDisplay();
     void updateBuffer();
-    void writeRGBMap(int16_t x, int16_t y, dispBuffer16 *bufferObj, int16_t w, int16_t h);
+    void writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t w, int16_t h);
     void drawBuffer();
     void drawHead();
     void drawFoot();

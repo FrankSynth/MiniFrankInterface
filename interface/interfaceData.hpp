@@ -8,12 +8,16 @@
 #define STEPPERPAGE 8
 #define OUTPUTS 2 // Number of outputs
 
+#define DATAOBJ FrankData::getDataObj()
+// #define GETDATAOBJ FrankData::getDataObj();
+
+
 class OutputRouting {
-    byte out;     // 0 = live, 1 = seq
-    byte channel; // 0 = all, 1 = channel 1, ...
-    byte seq;     // 0 = seq0, 1 = seq1
-    byte arp;     // 0 = off, 1 = on
-    byte cc;      // 0 = vel, 1 = mod, 2 = pitchbend, 3 = aftertouch, 4 = sustain
+    byte out;          // 0 = live, 1 = seq
+    byte channel;      // 0 = all, 1 = channel 1, ...
+    byte seq;          // 0 = seq0, 1 = seq1
+    byte arp;          // 0 = off, 1 = on
+    byte cc;           // 0 = vel, 1 = mod, 2 = pitchbend, 3 = aftertouch, 4 = sustain
     byte liveMidiMode; // 0 = latest, 1 = lowest, 2 = highest
 
   public:
@@ -51,16 +55,15 @@ typedef struct {
     byte tuning; // tuning offset
 } structSequence;
 
-
 // Settings struct for all settings that will get saved permanently
 typedef struct {
-    byte midiSource = 1;          // active MidiDevice (usb -> 1, din -> 0)
-    byte nbPages = 1;             // nb Pages  1 -> 8
-    byte direction = 0;           // 0 -> reverse ; 1 -> forward
-    byte displayBrightness = 150; // 0-255;
+    byte midiSource = 1;            // active MidiDevice (usb -> 1, din -> 0)
+    byte nbPages = 1;               // nb Pages  1 -> 8
+    byte direction = 0;             // 0 -> reverse ; 1 -> forward
+    byte displayBrightness = 150;   // 0-255;
     OutputRouting routing[OUTPUTS]; // hold settings for that many outputs
-    byte clockOut0 = 0; // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
-    byte clockOut1 = 1; // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
+    byte clockOut0 = 0;             // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
+    byte clockOut1 = 1;             // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
 
 } structSettings;
 
@@ -156,8 +159,6 @@ class LiveMidi {
     void reset();
 };
 
-
-
 // Sequence class
 class Seq {
   public:
@@ -205,89 +206,115 @@ class Seq {
     structSequence sequence;
 };
 
-// receive MIDI
-void receivedKeyPressed(byte channel, byte note, byte velocity);
-void receivedKeyReleased(byte channel, byte note);
-void receivedMod(byte channel, byte data);
-void receivedPitchbend(byte channel, byte data);
-void receivedAftertouch(byte channel, byte data);
-void receivedSustain(byte channel, byte data);
-void receivedMidiClock();
-void receivedMidiSongPosition(unsigned int spp);
-void receivedStart();
-void receivedContinue();
-void receivedStop();
-void receivedReset();
+// data class
+class FrankData {
+  public:
+    structStatus stat;
+    structSettings config;
 
-// utility
-byte testByte(byte value, byte minimum, byte maximum);                         // test byte range and return valid byte
-byte increaseByte(byte value, byte maximum);                                   // increase byte
-byte decreaseByte(byte value, byte minimum);                                   // decrease byte
-byte changeByte(byte value, int change, byte minimum = 0, byte maximum = 255); // change byte
-byte changeByteNoClampChange(byte value, int change, byte minimum = 0,
-                             byte maximum = 255); // change byte (keeps original value if change not possible)
+    LiveMidi liveMidi[OUTPUTS];
+    Seq seq[OUTPUTS];
 
-// clock
-void increaseMidiClock();
-void increaseBpm16thCount();
-void setBpm16thCount(unsigned int spp);
-byte getBpm16thCount();
-void resetClock();
+    FrankData() {
+        for (byte output = 0; output < OUTPUTS; output++) {
+            this->seq[output].init();
+        }
+    }
+    
 
-// settings
-namespace settings {
-void setSync(byte bpmSync);
-byte getSync();
+    // receive MIDI
+    void receivedKeyPressed(byte channel, byte note, byte velocity);
+    void receivedKeyReleased(byte channel, byte note);
+    void receivedMod(byte channel, byte data);
+    void receivedPitchbend(byte channel, byte data);
+    void receivedAftertouch(byte channel, byte data);
+    void receivedSustain(byte channel, byte data);
+    void receivedMidiClock();
+    void receivedMidiSongPosition(unsigned int spp);
+    void receivedStart();
+    void receivedContinue();
+    void receivedStop();
+    void receivedReset();
 
-void setRec(byte rec);
-byte getRec();
+    // clock
+    void increaseMidiClock();
+    void increaseBpm16thCount();
+    void setBpm16thCount(unsigned int spp);
+    byte getBpm16thCount();
+    void resetClock();
 
-void setBPM(int bpm);
-void calcBPM();
-int getBPM();
+    // settings
 
-byte getActiveSeq();
-void setActiveSeq(byte activeSeq);
+    void setSync(byte bpmSync);
+    byte getSync();
 
-void setStep(byte stepSeq);
-byte getStep();
-void increaseStep();
-void decreaseStep();
+    void setRec(byte rec);
+    byte getRec();
 
-byte getActivePage();
-byte getStepOnPage();
+    void setBPM(int bpm);
+    void calcBPM();
+    int getBPM();
 
-void setPlayStop(byte mode);
-byte getPlayStop();
+    byte getActiveSeq();
+    void setActiveSeq(byte activeSeq);
 
-void setDirection(byte direction);
-byte getDirection();
+    void setStep(byte stepSeq);
+    byte getStep();
+    void increaseStep();
+    void decreaseStep();
 
-void setError(byte error);
-byte getError();
+    byte getActivePage();
+    byte getStepOnPage();
 
-void setPane(byte pane);
-byte getActivePane();
-byte getActiveMenu(); // nochmal pane und menu auf eins bringen.....
-void increasePane();  // switch menu max 3 menu pages
-void decreasePane();  // switch menu max 3 menu pages;
+    void setPlayStop(byte mode);
+    byte getPlayStop();
 
-void setDisplayBrightness(byte brightness);
-byte getDisplayBrightness();
+    void setDirection(byte direction);
+    byte getDirection();
 
-void setMidiSource(byte midi);
-byte getMidiSource();
+    void setError(byte error);
+    byte getError();
 
-void setNumberPages(byte nbPages);
-byte getNumberPages();
-byte getCurrentNumberPages();
-} // namespace settings
+    void setPane(byte pane);
+    byte getActivePane();
+    byte getActiveMenu(); // nochmal pane und menu auf eins bringen.....
+    void increasePane();  // switch menu max 3 menu pages
+    void decreasePane();  // switch menu max 3 menu pages;
+
+    void setDisplayBrightness(byte brightness);
+    byte getDisplayBrightness();
+
+    void setMidiSource(byte midi);
+    byte getMidiSource();
+
+    void setNumberPages(byte nbPages);
+    byte getNumberPages();
+    byte getCurrentNumberPages();
+    Seq *getSeqObject();
+
+
+
+    static FrankData& getDataObj();
+
+    protected:
+    static FrankData* mainData;
+};
+
 
 // init all data
-void initData();
+// void initData();
 
-// send out data
-LiveMidi *getLiveMidi();
-Seq *getSeq();
-structSettings *getSettings();
-structStatus *getStatus();
+// get data objects
+// FrankData * getDataObject();
+
+// LiveMidi *getLiveMidiObject();
+// structSettings *getSettingsObject();
+// structStatus *getStatusObject();
+
+// utility
+inline byte testByte(byte value, byte minimum, byte maximum); // test byte range and return valid byte
+inline byte increaseByte(byte value, byte maximum);           // increase byte
+inline byte decreaseByte(byte value, byte minimum);           // decrease byte
+inline byte changeByte(byte value, int change, byte minimum = 0, byte maximum = 255); // change byte
+inline byte changeByteNoClampChange(byte value, int change, byte minimum = 0,
+                                    byte maximum = 255); // change byte (keeps original value if change not possible)
