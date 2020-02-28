@@ -2,12 +2,9 @@
 
 // #define DEBUG
 
-// private data
-structStatus stat;
-structSettings config;
 
-LiveMidi liveMidi[OUTPUTS];
-Seq seq[OUTPUTS];
+// data singleton
+// FrankData mainData;
 
 
 
@@ -197,192 +194,6 @@ void LiveMidi::reset() {
     sustain = 0;
 }
 
-// receive Midi
-void receivedKeyPressed(byte channel, byte note, byte velocity) {
-    for (byte x = 0; x < OUTPUTS; x++) {
-        if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
-            liveMidi[x].keyPressed(note, velocity);
-        }
-    }
-}
-
-void receivedKeyReleased(byte channel, byte note) {
-    for (byte x = 0; x < OUTPUTS; x++) {
-        if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
-            liveMidi[x].keyReleased(note);
-        }
-    }
-}
-
-void receivedMod(byte channel, byte data) {
-    for (byte x = 0; x < OUTPUTS; x++) {
-        if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
-            liveMidi[x].setMod(data);
-        }
-    }
-}
-
-void receivedPitchbend(byte channel, byte data) {
-    for (byte x = 0; x < OUTPUTS; x++) {
-        if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
-            liveMidi[x].setPitchbend(data);
-        }
-    }
-}
-
-void receivedAftertouch(byte channel, byte data) {
-    for (byte x = 0; x < OUTPUTS; x++) {
-        if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
-            liveMidi[x].setAftertouch(data);
-        }
-    }
-}
-
-void receivedSustain(byte channel, byte data) {
-    for (byte x = 0; x < OUTPUTS; x++) {
-        if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
-            liveMidi[x].setSustain(data);
-        }
-    }
-}
-
-void receivedMidiClock() { increaseMidiClock(); }
-void receivedMidiSongPosition(unsigned int spp) { setBpm16thCount(spp); }
-void receivedStart() {
-    stat.midiClockCount = 5;
-    stat.bpm16thCount = 31;
-    settings::setPlayStop(1);
-}
-void receivedContinue() { settings::setPlayStop(1); }
-void receivedStop() { settings::setPlayStop(0); }
-
-void receivedReset() {
-    stat.midiClockCount = 5;
-    stat.bpm16thCount = 31;
-    settings::setPlayStop(0);
-
-    for (byte x = 0; x < OUTPUTS; x++) {
-        liveMidi[x].reset();
-    }
-}
-
-void increaseMidiClock() {
-    stat.midiClockCount++;
-    if (stat.midiClockCount == 6) {
-        stat.midiClockCount = 0;
-        increaseBpm16thCount();
-    }
-}
-
-void increaseBpm16thCount() {
-    stat.bpm16thCount++;
-    if (stat.bpm16thCount == 32) {
-        stat.bpm16thCount = 0;
-    }
-}
-
-void setBpm16thCount(unsigned int spp) {
-    stat.midiClockCount = 5;
-    stat.bpm16thCount = spp - 1;
-}
-
-byte getBpm16thCount() {
-    return stat.bpm16thCount;
-}
-
-// stat
-namespace settings {
-
-byte getSync() { return stat.bpmSync; }
-
-void setSync(byte bpmSync) { stat.bpmSync = bpmSync; }
-
-void setRec(byte rec) { stat.rec = rec; }
-
-byte getRec() { return stat.rec; }
-
-void setBPM(int bpm) { stat.bpm = bpm; }
-
-void calcBPM() {
-    static double bpmTimer = 0;
-    setBPM((int)(60000. / (millis() - bpmTimer)));
-
-    bpmTimer = millis();
-}
-
-int getBPM() { return stat.bpm; } // return MidiSource
-
-byte getActiveSeq() { return stat.activeSeq; }
-void setActiveSeq(byte activeSeq) { stat.activeSeq = activeSeq; }
-
-void increaseStep() {
-    if (!((stat.stepSeq + 1) % STEPPERPAGE)) {                        // if we make a pageJump
-        if (getNumberPages() <= ((stat.stepSeq + 1) / STEPPERPAGE)) { // newPage above number of pages
-            stat.stepSeq = 0;                                         // set stepSeq 0
-        } else {                                                      // new page is valid.
-            stat.stepSeq++;                                           // increase Step
-        }
-    } else {
-        stat.stepSeq++; // increase Step
-    }
-
-    calcBPM();
-}
-
-void decreaseStep() {
-    if (stat.stepSeq == 0) {                               // we jump to the last page?
-        stat.stepSeq = getNumberPages() * STEPPERPAGE - 1; // set to max stepSeq
-
-    } else if ((!stat.stepSeq % STEPPERPAGE)) {                // we make a pageJump?
-        if (getNumberPages() > (stat.stepSeq / STEPPERPAGE)) { // newPage above number of pages
-            stat.stepSeq = getNumberPages() * STEPPERPAGE - 1; // set jump to last stepSeq
-        } else {                                               // new page is valid.
-            stat.stepSeq--;                                    // decrease Step
-        }
-    } else {
-        stat.stepSeq--; // decrease Step
-    }
-    calcBPM();
-}
-
-void setStep(byte stepSeq) { stat.stepSeq = testByte(stepSeq, 0, STEPPERPAGE * getNumberPages() - 1); }
-
-byte getActivePage() { return (stat.stepSeq / STEPPERPAGE); }
-byte getStepOnPage() { return (stat.stepSeq - (getActivePage() * STEPPERPAGE)); }
-byte getStep() { return stat.stepSeq; } // return MidiSource
-
-byte getPlayStop() { return stat.play; }
-void setPlayStop(byte mode) { stat.play = mode; }
-
-byte getDirection() { return config.direction; }
-void setDirection(byte direction) { config.direction = direction; }
-
-byte getError() { return stat.error; }
-void setError(byte error) { stat.error = error; }
-
-// menu
-void increasePane() { stat.pane = testByte(stat.pane + 1, 0, 2); } // switch menu max 3 menu pages
-void decreasePane() { stat.pane = testByte(stat.pane - 1, 0, 2); } // switch menu max 3 menu pages;
-void setPane(byte pane) { stat.pane = testByte(pane, 0, 2); }
-byte getActivePane() { return stat.pane; };
-
-byte getActiveMenu() { return getActivePane(); } /// nochmal pane und menu auf eins bringen.....
-
-// config
-byte getDisplayBrightness() { return config.displayBrightness; }
-void setDisplayBrightness(byte brightness) { config.displayBrightness = brightness; }
-
-void setMidiSource(byte midi) { config.midiSource = testByte(midi, 0, 1); }
-byte getMidiSource() { return config.midiSource; }
-
-void setNumberPages(byte nbPages) { config.nbPages = testByte(nbPages, 1, PAGES); }
-byte getNumberPages() { return config.nbPages; }
-byte getCurrentNumberPages() { // number of pages, takes care if page number has changed
-    if (config.nbPages > (getStep() / 8))
-        return config.nbPages;  // is our stepSeq above the current number of pages?
-    return (getStep() / 8 + 1); // return current stepSeq page until the next page jump
-}
-} // namespace settings
 
 // Sequence
 void Seq::init(byte note, byte gate, byte gateLength, byte tuning) { // init sequence to default values
@@ -560,8 +371,202 @@ void Seq::setTuning(byte tuning) { sequence.tuning = tuning; }
 
 byte Seq::getTuning() { return sequence.tuning; }
 
+// data
+void FrankData::receivedKeyPressed(byte channel, byte note, byte velocity) {
+    for (byte x = 0; x < OUTPUTS; x++) {
+        if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
+            liveMidi[x].keyPressed(note, velocity);
+        }
+    }
+}
+
+void FrankData::receivedKeyReleased(byte channel, byte note) {
+    for (byte x = 0; x < OUTPUTS; x++) {
+        if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
+            liveMidi[x].keyReleased(note);
+        }
+    }
+}
+
+void FrankData::receivedMod(byte channel, byte data) {
+    for (byte x = 0; x < OUTPUTS; x++) {
+        if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
+            liveMidi[x].setMod(data);
+        }
+    }
+}
+
+void FrankData::receivedPitchbend(byte channel, byte data) {
+    for (byte x = 0; x < OUTPUTS; x++) {
+        if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
+            liveMidi[x].setPitchbend(data);
+        }
+    }
+}
+
+void FrankData::receivedAftertouch(byte channel, byte data) {
+    for (byte x = 0; x < OUTPUTS; x++) {
+        if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
+            liveMidi[x].setAftertouch(data);
+        }
+    }
+}
+
+void FrankData::receivedSustain(byte channel, byte data) {
+    for (byte x = 0; x < OUTPUTS; x++) {
+        if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
+            liveMidi[x].setSustain(data);
+        }
+    }
+}
+
+void FrankData::receivedMidiClock() { increaseMidiClock(); }
+void FrankData::receivedMidiSongPosition(unsigned int spp) { setBpm16thCount(spp); }
+void FrankData::receivedStart() {
+    stat.midiClockCount = 5;
+    stat.bpm16thCount = 31;
+    setPlayStop(1);
+}
+void FrankData::receivedContinue() { setPlayStop(1); }
+void FrankData::receivedStop() { setPlayStop(0); }
+
+void FrankData::receivedReset() {
+    stat.midiClockCount = 5;
+    stat.bpm16thCount = 31;
+    setPlayStop(0);
+
+    for (byte x = 0; x < OUTPUTS; x++) {
+        liveMidi[x].reset();
+    }
+}
+
+void FrankData::increaseMidiClock() {
+    stat.midiClockCount++;
+    if (stat.midiClockCount == 6) {
+        stat.midiClockCount = 0;
+        increaseBpm16thCount();
+    }
+}
+
+void FrankData::increaseBpm16thCount() {
+    stat.bpm16thCount++;
+    if (stat.bpm16thCount == 32) {
+        stat.bpm16thCount = 0;
+    }
+}
+
+void FrankData::setBpm16thCount(unsigned int spp) {
+    stat.midiClockCount = 5;
+    stat.bpm16thCount = spp - 1;
+}
+
+byte FrankData::getBpm16thCount() { return stat.bpm16thCount; }
+
+// stat
+byte FrankData::getSync() { return stat.bpmSync; }
+
+void FrankData::setSync(byte bpmSync) { stat.bpmSync = bpmSync; }
+
+void FrankData::setRec(byte rec) { stat.rec = rec; }
+
+byte FrankData::getRec() { return stat.rec; }
+
+void FrankData::setBPM(int bpm) { stat.bpm = bpm; }
+
+void FrankData::calcBPM() {
+    static double bpmTimer = 0;
+    setBPM((int)(60000. / (millis() - bpmTimer)));
+
+    bpmTimer = millis();
+}
+
+int FrankData::getBPM() { return stat.bpm; } // return MidiSource
+
+byte FrankData::getActiveSeq() { return stat.activeSeq; }
+void FrankData::setActiveSeq(byte activeSeq) { stat.activeSeq = activeSeq; }
+
+void FrankData::increaseStep() {
+    if (!((stat.stepSeq + 1) % STEPPERPAGE)) {                        // if we make a pageJump
+        if (getNumberPages() <= ((stat.stepSeq + 1) / STEPPERPAGE)) { // newPage above number of pages
+            stat.stepSeq = 0;                                         // set stepSeq 0
+        } else {                                                      // new page is valid.
+            stat.stepSeq++;                                           // increase Step
+        }
+    } else {
+        stat.stepSeq++; // increase Step
+    }
+
+    calcBPM();
+}
+
+void FrankData::decreaseStep() {
+    if (stat.stepSeq == 0) {                               // we jump to the last page?
+        stat.stepSeq = getNumberPages() * STEPPERPAGE - 1; // set to max stepSeq
+
+    } else if ((!stat.stepSeq % STEPPERPAGE)) {                // we make a pageJump?
+        if (getNumberPages() > (stat.stepSeq / STEPPERPAGE)) { // newPage above number of pages
+            stat.stepSeq = getNumberPages() * STEPPERPAGE - 1; // set jump to last stepSeq
+        } else {                                               // new page is valid.
+            stat.stepSeq--;                                    // decrease Step
+        }
+    } else {
+        stat.stepSeq--; // decrease Step
+    }
+    calcBPM();
+}
+
+void FrankData::setStep(byte stepSeq) { stat.stepSeq = testByte(stepSeq, 0, STEPPERPAGE * getNumberPages() - 1); }
+
+byte FrankData::getActivePage() { return (stat.stepSeq / STEPPERPAGE); }
+byte FrankData::getStepOnPage() { return (stat.stepSeq - (getActivePage() * STEPPERPAGE)); }
+byte FrankData::getStep() { return stat.stepSeq; } // return MidiSource
+
+byte FrankData::getPlayStop() { return stat.play; }
+void FrankData::setPlayStop(byte mode) { stat.play = mode; }
+
+byte FrankData::getDirection() { return config.direction; }
+void FrankData::setDirection(byte direction) { config.direction = direction; }
+
+byte FrankData::getError() { return stat.error; }
+void FrankData::setError(byte error) { stat.error = error; }
+
+// menu
+void FrankData::increasePane() { stat.pane = testByte(stat.pane + 1, 0, 2); } // switch menu max 3 menu pages
+void FrankData::decreasePane() { stat.pane = testByte(stat.pane - 1, 0, 2); } // switch menu max 3 menu pages;
+void FrankData::setPane(byte pane) { stat.pane = testByte(pane, 0, 2); }
+byte FrankData::getActivePane() { return stat.pane; };
+
+byte FrankData::getActiveMenu() { return getActivePane(); } /// nochmal pane und menu auf eins bringen.....
+
+// config
+byte FrankData::getDisplayBrightness() { return config.displayBrightness; }
+void FrankData::setDisplayBrightness(byte brightness) { config.displayBrightness = brightness; }
+
+void FrankData::setMidiSource(byte midi) { config.midiSource = testByte(midi, 0, 1); }
+byte FrankData::getMidiSource() { return config.midiSource; }
+
+void FrankData::setNumberPages(byte nbPages) { config.nbPages = testByte(nbPages, 1, PAGES); }
+byte FrankData::getNumberPages() { return config.nbPages; }
+byte FrankData::getCurrentNumberPages() { // number of pages, takes care if page number has changed
+    if (config.nbPages > (getStep() / 8))
+        return config.nbPages;  // is our stepSeq above the current number of pages?
+    return (getStep() / 8 + 1); // return current stepSeq page until the next page jump
+}
+
+Seq* FrankData::getSeqObject() {
+    return seq;
+
+
+}
+
+FrankData& FrankData::getDataObj() {
+    if (mainData == nullptr) mainData = new FrankData();
+    return *mainData;
+}
+
+
 // utility
-byte testByte(byte value, byte minimum, byte maximum) { // test byte range and return valid byte
+inline byte testByte(byte value, byte minimum, byte maximum) { // test byte range and return valid byte
     if (value > maximum) {
 
 #ifdef DEBUG
@@ -586,7 +591,7 @@ byte testByte(byte value, byte minimum, byte maximum) { // test byte range and r
     }
 }
 
-byte increaseByte(byte value, byte maximum) { // increase byte
+inline byte increaseByte(byte value, byte maximum) { // increase byte
     if (value == maximum) {
         return value;
     } else {
@@ -594,7 +599,7 @@ byte increaseByte(byte value, byte maximum) { // increase byte
     }
 }
 
-byte decreaseByte(byte value, byte minimum) { // decrease byte
+inline byte decreaseByte(byte value, byte minimum) { // decrease byte
     if (value == minimum) {
         return value;
     } else {
@@ -602,7 +607,7 @@ byte decreaseByte(byte value, byte minimum) { // decrease byte
     }
 }
 
-byte changeByte(byte value, int change, byte minimum, byte maximum) { // change byte value and check boundaries
+inline byte changeByte(byte value, int change, byte minimum, byte maximum) { // change byte value and check boundaries
     if ((int)value + change >= maximum) {                             // test max
         return maximum;
     } else if ((int)value + change <= minimum) { // test min
@@ -612,7 +617,7 @@ byte changeByte(byte value, int change, byte minimum, byte maximum) { // change 
     }
 }
 
-byte changeByteNoClampChange(byte value, int change, byte minimum,
+inline byte changeByteNoClampChange(byte value, int change, byte minimum,
                              byte maximum) { // change byte (keeps original value if change not possible)
     if ((int)value + change >= maximum) {    // test max
         return value;
@@ -623,21 +628,23 @@ byte changeByteNoClampChange(byte value, int change, byte minimum,
     }
 }
 
-void initData() {
-    for (byte output = 0; output < OUTPUTS; output++) {
-        seq[output].init();
-    }
-}
+// void initData() {
+//     for (byte output = 0; output < OUTPUTS; output++) {
+//         DATAOBJ.seq[output].init();
+//     }
+// }
 
-LiveMidi* getLiveMidi() {
-    return liveMidi;
-}
-Seq* getSeq() {
-    return seq;
-}
-structSettings* getSettings() {
-    return &config;
-}
-structStatus* getStatus() {
-    return &stat;
-}
+// FrankData * getDataObject() {
+//     return &mainData;
+// }
+
+
+// LiveMidi* getLiveMidiObject() {
+//     return liveMidi;
+// }
+// structSettings* getSettingsObject() {
+//     return &config;
+// }
+// structStatus* getStatusObject() {
+//     return &stat;
+// }
