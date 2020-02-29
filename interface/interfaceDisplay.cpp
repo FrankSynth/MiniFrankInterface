@@ -73,9 +73,28 @@ void Display::drawBody() {
   }
 }
 
+void Display::BodyTemplateLive() {  //has 1 dataFields + GateSignal
+        /////Draw the squares/////
+        bufferBody->drawRect(1, 1, 158, 96, BLUE_DARK);
 
+        /////Print Text to Field/////
+        bufferBody->setTextColor(WHITE, BLUE_DARK); //font Color
+        bufferBody->setFont();    //reset to default font
 
+        ////Noch schrift anpassen, rote makierung das der ton gerade gedrückt wird.
+              // Note Value
+                bufferBody->setCursor(50, 50);
+                bufferBody->setFont(&FreeSansBold12pt7b);
+//                bufferBody->print(valueToNote(DATAOBJ.getData(NOTE)));   //zugriff auf den aktuell gespielten ton??
 
+                bufferBody->setCursor(70, 40);
+                bufferBody->setFont(&FreeSansBold9pt7b);
+//                bufferBody->print(valueToSharp(DATAOBJ.getData(NOTE)));
+
+                bufferBody->setFont();
+                bufferBody->setCursor(70, 60);
+//                bufferBody->print(valueToOctave(DATAOBJ.getData(NOTE)));
+  }
 
 
 void Display::BodyTemplateMenu() {  //has 2x4 dataFields + PageBar
@@ -83,57 +102,51 @@ void Display::BodyTemplateMenu() {  //has 2x4 dataFields + PageBar
 
   for (int x = 0; x < 4; x++) {
     for (int y = 0; y < 2; y++) {
-      byte dataField= x + y * 4;                              //current DataField
-      if(mapping(dataField) != NONE){
-      byte fieldWidth = 40;
-      byte fieldHeight = 48 ;
-      byte posX = x * fieldWidth ;
-      byte posY = y * fieldHeight;
-      /////Draw the squares/////
-      bufferBody->fillRect(posX, posY, fieldWidth, 20, 0x230E); //
+      byte dataField= x + y * 4;         //current DataField
+      if(mapping(dataField) != NONE){    //not an empty field?
+        byte fieldWidth = 40;
+        byte fieldHeight = 48 ;
+        byte posX = x * fieldWidth ;
+        byte posY = y * fieldHeight;
+        /////Draw the squares/////
+        bufferBody->fillRect(posX, posY, fieldWidth, 20, 0x230E);
+        bufferBody->drawRect(posX, posY, fieldWidth, fieldHeight, BLUE_DARK);
 
-      bufferBody->drawRect(posX, posY, fieldWidth, fieldHeight, COLOR4); //
+        /////Print Text to Field/////
+        bufferBody->setTextColor(WHITE, 0x230E); //font Color
+        bufferBody->setFont();    //reset to default font
 
-      //  bufferBody->drawRect(x * 40 + 1, y * 48 + 2, 38, 46, COLOR); //rahmen
+        /////Name/////
+        char* string = DATAOBJ.getDataName(mapping(dataField)); //get name
+        byte offset = strlen(string)* 3 ; //get name length
 
+        bufferBody->setCursor(posX + 20 - offset, posY + 7); //set Cursor
+        bufferBody->print(string);    //print value to display
 
-      /////Print Text to Field/////
-      bufferBody->setTextColor(WHITE, 0x230E); //font Color
-      bufferBody->setFont();
+        /////Data/////
 
-      /////Name/////
-      char* string = DATAOBJ.getDataName(mapping(dataField));
-      byte offset = strlen(string)* 3 ;
-      //Serial.println(offset);
+        bufferBody->setTextColor(WHITE, BLUE); //font Color
 
-      bufferBody->setCursor(posX + 20 - offset, posY + 7); //set Curser
-      bufferBody->print(string);    //print value
+        //vll.. kann man alle werte auf string mappen damit wir int, sowie strings hier printen können, müsste aber in der datenklasse passieren, vll getDataString?
+        char* data =DATAOBJ.getDataString(mapping(dataField), index); //string buffer
 
-      /////Data/////
+        byte length = strlen(data);   //string length
 
-      bufferBody->setTextColor(WHITE, COLOR3); //font Color
-
-      //vll.. kann man alle werte auf string mappen damit wir int, sowie strings hier printen können, müsste aber in der datenklasse passieren
-      char data[4]; //string buffer
-      itoa(DATAOBJ.getData(mapping(dataField), index), data, 10); //convert to String
-      byte length = strlen(data);   //string length
-
-      if (length == 3) {                                          //3 Digit
-        bufferBody->setFont(&FreeSansBold9pt7b);
-        bufferBody->setCursor(posX + 20 - 16, posY + 38);
+        if (length == 3) {                                          //3 Digit
+          bufferBody->setFont(&FreeSansBold9pt7b);
+          bufferBody->setCursor(posX + 20 - 16, posY + 38);
+        }
+        else if(length == 2){                                       //2 Digit
+          bufferBody->setFont(&FreeSansBold12pt7b);
+          bufferBody->setCursor(posX + 20 -13, posY + 41);
+        }
+        else{                                                       //1 Digit
+          bufferBody->setFont(&FreeSansBold12pt7b);
+          bufferBody->setCursor(posX+20-6, posY + 41);
+        }
+        bufferBody->print(data);    //print value
       }
-      else if(length == 2){                                       //2 Digit
-        bufferBody->setFont(&FreeSansBold12pt7b);
-        bufferBody->setCursor(posX + 20 -13, posY + 41);
-      }
-      else{                                                       //1 Digit
-        bufferBody->setFont(&FreeSansBold12pt7b);
-        bufferBody->setCursor(posX+20-6, posY + 41);
-      }
-      bufferBody->print(data);    //print value
     }
-  }
-
   }
 }
 
@@ -151,7 +164,7 @@ void Display::BodyTemplateSeq() {  //has 2x4 dataFields + PageBar
       byte index = x + y * 4 + DATAOBJ.getActivePage() * 8;   //current index
 
       /////Draw the squares/////
-      bufferBody->drawRect(x * 40, y * 36, 40, 35, COLOR4); //
+      bufferBody->drawRect(x * 40, y * 36, 40, 35, BLUE_DARK); //
 
       /////Draw red bar for the ActiveDataField (STEP) /////
       if (DATAOBJ.getStepOnPage() == (x + y * 4)) {
@@ -163,10 +176,10 @@ void Display::BodyTemplateSeq() {  //has 2x4 dataFields + PageBar
 
       //Font Color depends on Gate status
       if (activeSeq->getGate(index)) {
-        bufferBody->drawRect(x * 40 + 1, y * 35 + 2, 38, 33, COLOR); // Blue Gate on Rectangle
-        bufferBody->setTextColor(WHITE, COLOR3);                     // Note  Color GateOn
+        bufferBody->drawRect(x * 40 + 1, y * 35 + 2, 38, 33, BLACKBLUE); // Blue Gate on Rectangle
+        bufferBody->setTextColor(WHITE, BLUE);                     // Note  Color GateOn
       } else {
-        bufferBody->setTextColor(COLOR2, COLOR3); // Note Color GateOff
+        bufferBody->setTextColor(BLUE_LIGHT, BLUE); // Note Color GateOff
       }
 
       //Data is NOTE type
@@ -205,8 +218,8 @@ void Display::BodyTemplateSeq() {  //has 2x4 dataFields + PageBar
   byte offset = (160 - DATAOBJ.getCurrentNumberPages() * width) / 2; // center blocks
 
   for (int x = 0; x < DATAOBJ.getCurrentNumberPages(); x++) {
-    bufferBody->drawRect(x * width + offset, 72, width, 25, COLOR4);             // dark Rectangle
-    bufferBody->fillRect(x * width + 1 + offset, 72 + 1, width - 2, 23, COLOR5); // grey box
+    bufferBody->drawRect(x * width + offset, 72, width, 25, BLUE_DARK);             // dark Rectangle
+    bufferBody->fillRect(x * width + 1 + offset, 72 + 1, width - 2, 23, GREEN); // grey box
 
     if (x == DATAOBJ.getActivePage()) {
       bufferBody->fillRect(x * width + 1 + offset, 72 + 1, width - 2, 23, RED); // Red Block (active)
@@ -233,14 +246,14 @@ void Display::drawHead() {
   bufferHead->setTextColor(WHITE, BLACK);
   bufferHead->setCursor(61, 3);
   bufferHead->print("BPM:");
-  bufferHead->setTextColor(COLOR, BLACK);
+  bufferHead->setTextColor(BLACKBLUE, BLACK);
   bufferHead->print(DATAOBJ.getBPM());
 
   // MIDI Settings
   bufferHead->setCursor(109, 3);
   bufferHead->setTextColor(WHITE, BLACK);
   bufferHead->print("MIDI:");
-  bufferHead->setTextColor(COLOR, BLACK);
+  bufferHead->setTextColor(BLACKBLUE, BLACK);
 
   if (DATAOBJ.getMidiSource()) {
     bufferHead->print("USB");
@@ -258,20 +271,20 @@ void Display::drawFoot() {
 
   // line
   bufferFoot->drawRect(0, 0, w, 1, WHITE);   // box
-  bufferFoot->fillRect(0, 1, 34, 14, COLOR); // spacer
+  bufferFoot->fillRect(0, 1, 34, 14, BLACKBLUE); // spacer
 
   // Sequence
   bufferFoot->setCursor(2, 5);
-  bufferFoot->setTextColor(WHITE, COLOR);
+  bufferFoot->setTextColor(WHITE, BLACKBLUE);
   bufferFoot->print("CH:");
 
   bufferFoot->print(DATAOBJ.getScreenChannel());
 
   // STOP PLAY
-  bufferFoot->fillRect(36, 1, 40, 14, COLOR); // spacer
+  bufferFoot->fillRect(36, 1, 40, 14, BLACKBLUE); // spacer
 
   bufferFoot->setCursor(40, 5);
-  bufferFoot->setTextColor(WHITE, COLOR);
+  bufferFoot->setTextColor(WHITE, BLACKBLUE);
 
   if (DATAOBJ.getPlayStop()) {
     bufferFoot->print("PLAY");
@@ -281,7 +294,7 @@ void Display::drawFoot() {
 
   // PlayDirection
   bufferFoot->setCursor(67, 5);
-  bufferFoot->setTextColor(WHITE, COLOR);
+  bufferFoot->setTextColor(WHITE, BLACKBLUE);
 
   if (DATAOBJ.getDirection()) {
     bufferFoot->print((char)175);
@@ -290,9 +303,9 @@ void Display::drawFoot() {
   }
 
   // Tuning
-  bufferFoot->fillRect(78, 1, 48, 14, COLOR); // spacer
+  bufferFoot->fillRect(78, 1, 48, 14, BLACKBLUE); // spacer
   bufferFoot->setCursor(82, 5);
-  bufferFoot->setTextColor(WHITE, COLOR);
+  bufferFoot->setTextColor(WHITE, BLACKBLUE);
 
   bufferFoot->print("TUNE:");
 
@@ -305,9 +318,9 @@ void Display::drawFoot() {
   // }
 
   // Version
-  bufferFoot->fillRect(128, 1, 36, 14, COLOR); // spacer
+  bufferFoot->fillRect(128, 1, 36, 14, BLACKBLUE); // spacer
   bufferFoot->setCursor(132, 5);
-  bufferFoot->setTextColor(WHITE, COLOR);
+  bufferFoot->setTextColor(WHITE, BLACKBLUE);
 
   bufferFoot->print("v0.1");
 }

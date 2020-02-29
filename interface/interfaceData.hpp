@@ -231,11 +231,6 @@ class Seq {
 
 // data class
 class FrankData {
-  public:
-    static FrankData &getDataObj();
-
-  protected:
-    static FrankData *mainData;
 
   public:
     structStatus stat;
@@ -350,8 +345,9 @@ class FrankData {
     void changeData(byte id, byte index = 0 , byte direction = 0);
 
     int getData(byte id, byte index = 0);
-    char* getDataName(byte id);
+    char* getDataString(byte data, byte index = 0);
 
+    char* getDataName(byte id);
 
 
     static FrankData& getDataObj();
@@ -359,7 +355,7 @@ class FrankData {
     protected:
     static FrankData* mainData;
 
-  
+
 };
 
 // utility
