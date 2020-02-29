@@ -10,9 +10,11 @@
 #include "interfaceIn.hpp"
 #include "interfaceMiddleman.hpp"
 #include "interfaceMidi.hpp"
+#include "interfaceMapping.hpp"
 
 
-// #define DEBUG
+
+ #define DEBUG
 
 // status settings;   //init status object;
 // mfMidi midi0; //create midi object
@@ -53,12 +55,7 @@ void setup() {
     pinMode(5, OUTPUT);
     digitalWrite(5, LOW);
 
-    // transfer the pointer to our data objects to the display library
     // lcd.init();
-    // and to the control object
-    cntrl.init();
-
-    // intSeq
 
     initMidi();
     initMiddleman();
@@ -132,6 +129,6 @@ void loop() {
 void ISRSwitch() {
     cntrl.readSwitches();
 #ifdef DEBUG
-    Serial.println("INPUT: SWChange");
+  //  Serial.println("INPUT: SWChange");
 #endif
 }

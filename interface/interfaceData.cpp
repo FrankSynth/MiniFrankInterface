@@ -132,8 +132,8 @@ PressedNotesElement *PressedNotesList::getKeyLatest() {
 }
 
 // class LiveMidi
-void LiveMidi::keyPressed(byte note, byte velocity) { 
-    noteList.appendKey(note, velocity); 
+void LiveMidi::keyPressed(byte note, byte velocity) {
+    noteList.appendKey(note, velocity);
     triggered = 1;
     }
 
@@ -482,9 +482,6 @@ void FrankData::calcBPM() {
 
 int FrankData::getBPM() { return stat.bpm; } // return MidiSource
 
-byte FrankData::getActiveSeq() { return stat.activeSeq; }
-void FrankData::setActiveSeq(byte activeSeq) { stat.activeSeq = activeSeq; }
-
 void FrankData::increaseStep() {
     if (!((stat.stepSeq + 1) % STEPPERPAGE)) {                        // if we make a pageJump
         if (getNumberPages() <= ((stat.stepSeq + 1) / STEPPERPAGE)) { // newPage above number of pages
@@ -530,14 +527,6 @@ void FrankData::setDirection(byte direction) { config.direction = direction; }
 byte FrankData::getError() { return stat.error; }
 void FrankData::setError(byte error) { stat.error = error; }
 
-// menu
-void FrankData::increasePane() { stat.pane = testByte(stat.pane + 1, 0, 2); } // switch menu max 3 menu pages
-void FrankData::decreasePane() { stat.pane = testByte(stat.pane - 1, 0, 2); } // switch menu max 3 menu pages;
-void FrankData::setPane(byte pane) { stat.pane = testByte(pane, 0, 2); }
-byte FrankData::getActivePane() { return stat.pane; };
-
-byte FrankData::getActiveMenu() { return getActivePane(); } /// nochmal pane und menu auf eins bringen.....
-
 // config
 byte FrankData::getDisplayBrightness() { return config.displayBrightness; }
 void FrankData::setDisplayBrightness(byte brightness) { config.displayBrightness = brightness; }
@@ -559,10 +548,64 @@ Seq* FrankData::getSeqObject() {
 
 }
 
+FrankData *FrankData::mainData = nullptr;
+
+
 FrankData& FrankData::getDataObj() {
     if (mainData == nullptr) mainData = new FrankData();
     return *mainData;
 }
+
+
+
+
+
+
+//Screen config
+void FrankData::setSubScreen(byte subScreen , byte max){stat.screen.subscreen = testByte(subScreen, 0, max) ;}
+byte FrankData::getSubScreen(){return stat.screen.subscreen;}
+void FrankData::resetSubScreen(){stat.screen.subscreen = 0;}
+
+void FrankData::increaseSubScreen(byte max) { stat.screen.subscreen = testByte(stat.screen.subscreen + 1, 0, max); }
+void FrankData::decreaseSubScreen() { stat.screen.subscreen = testByte(stat.screen.subscreen - 1, 0); }
+
+byte FrankData::getScreenConfig(byte screen){return stat.screen.config;}
+void FrankData::toggleScreenConfig(){stat.screen.config = !stat.screen.config; }
+
+byte FrankData::getScreenChannel(){return stat.screen.channel;}
+void FrankData::setScreenChannel(byte channel){ stat.screen.channel = testByte(channel, 0, OUTPUTS - 1); }
+
+byte FrankData::getMainMenuEnabled(){return stat.screen.mainMenu;}
+void FrankData::toogleMainMenu(){stat.screen.mainMenu = !stat.screen.mainMenu; }
+
+
+void FrankData::setData(byte data, byte index){}
+int FrankData::getData(byte data, byte index){return 100;}
+void FrankData::increaseData(byte id, byte index){}
+void FrankData::decreaseData(byte id, byte index){}
+
+
+
+char* FrankData::getDataName(byte id){return "CONFIG";}
+
+
+
+
+byte FrankData::getOutputMode(byte channel){// Live oder Seq?
+  return config.routing[channel].getOut();
+};
+
+byte FrankData::getArpModeEnable(byte channel){// Live oder Seq?
+  return config.routing[channel].getArp();
+};
+
+
+
+
+
+
+
+
 
 
 // utility
