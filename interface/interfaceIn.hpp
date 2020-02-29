@@ -1,8 +1,8 @@
 #pragma once
 
 #include "interfaceData.hpp"
+#include "interfaceMapping.hpp"
 #include <Arduino.h>
-
 
 #define SWSYNC 6
 #define SWSEQ 7
@@ -24,17 +24,11 @@ class controls {
     void rotate(byte id, byte dir); // is a rotate message
     void push(byte id, byte push);  // is a switch message
 
-    void readSwitches();
+    void readSwitches();  //readSwitches
 
-    void readSync();
-    void readSeq();
-    void readRec();
+    void readSync();  //read Sync Switch
+    void readSeq();   //read Seq Swicch
+    void readRec();   //read Rec Switch
 
     void init();
-
-  private:
-    Seq *getActiveSeqPointer();
-
-    // Seq *seq1;
-    // Seq *seq2;
 };

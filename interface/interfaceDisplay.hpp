@@ -1,6 +1,9 @@
 #pragma once
 
 #include "interfaceData.hpp"
+
+#include "interfaceMapping.hpp"
+
 #include <Adafruit_GFX.h>    // Core graphics library
 #include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
 #include <SPI.h>
@@ -25,7 +28,13 @@
 #define MAGENTA    ST77XX_MAGENTA
 #define YELLOW     ST77XX_YELLOW
 #define ORANGE     ST77XX_ORANGE
-#define COLOR     0x0410
+
+
+#define COLOR  0x0410  //Blue??
+#define COLOR2 0x94B2
+#define COLOR3 0x39E7
+#define COLOR4 0x2965  //dark grey
+#define COLOR5 0x4208  //grey
 
 // FrankData &data = getDataObject();
 
@@ -64,7 +73,7 @@ class Display {
     void displayBrightness(byte brigthness); // set display display brightness
 
     // void init() { // set pointer
-    //     data 
+    //     data
     //     // seq1 = &getSeqObject()[0];
     //     // seq2 = &getSeqObject()[1];
     // }
@@ -81,7 +90,7 @@ class Display {
     uint8_t h;
     uint8_t rotation;
 
-    // Seq* seq 
+    // Seq* seq
     // Seq *seq2;
     // status *stat;
     // FrankData & data;
@@ -102,10 +111,16 @@ class Display {
     void drawBuffer();
     void drawHead();
     void drawFoot();
+    void drawBody();
 
-    // different Panes
-    void drawBodyNote();
-    void drawBodyGate();
+
+    // Templates
+    void BodyTemplateSeq();
+    void BodyTemplateMenu();
+    void BodyTemplateArp();
+    void BodyTemplateLive();
+
+
 
     void updateDisplay();
 };

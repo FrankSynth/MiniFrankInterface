@@ -2,6 +2,22 @@
 
 #include <Arduino.h>
 
+//zum Testen vom mapping
+#define NONE 0
+#define BPM 1
+#define NOTE 1
+#define GATE 1
+#define TGATE 1
+#define CGATE 1
+#define STEP 1
+#define CV 1
+#define CONF 1
+
+//Cxxx -> Global Channel data
+//Txxx -> Toggle Data
+
+
+
 #define LENGTH 64
 #define PAGES 8
 #define NOTERANGE 88
@@ -58,19 +74,26 @@ typedef struct {
 // Settings struct for all settings that will get saved permanently
 typedef struct {
     byte midiSource = 1;            // active MidiDevice (usb -> 1, din -> 0)
-    byte nbPages = 1;               // nb Pages  1 -> 8
-    byte direction = 0;             // 0 -> reverse ; 1 -> forward
-    byte displayBrightness = 150;   // 0-255;
+    byte nbPages = 4;               // nb Pages  1 -> 8
+    byte direction = 1;             // 0 -> reverse ; 1 -> forward
+    byte displayBrightness = 100;   // 0-255;
     OutputRouting routing[OUTPUTS]; // hold settings for that many outputs
     byte clockOut0 = 0;             // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
     byte clockOut1 = 1;             // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
 
 } structSettings;
 
+// Sequence struct holding all values for a sequence
+typedef struct {
+  byte channel = 0;    //active channel, 0-> Channel 1, 1-> Channel 2
+  byte config = 0;     //display config, 0-> off, 1-> on
+  byte mainMenu = 1;     //display Main Menu, 0-> off, 1-> on
+  byte subscreen = 0;  //subscreen -> current displayed screen .. note, gate, cv (seq) ; live, appregiator (live)
+} structScreen;
+
 // all Settings that don't need to be saved permanently
 typedef struct {
-    byte activeSeq = 0; // 0 -> seq 1,  1 -> seq2
-    byte pane = 0;      // active menu 0-> Note; 1->Gate; 2->Replay; 2->Settings
+    structScreen screen; //screen status
 
     byte stepSeq = 0; // current Step
     byte stepArp = 0;
@@ -260,8 +283,6 @@ class FrankData {
     void calcBPM();
     int getBPM();
 
-    byte getActiveSeq();
-    void setActiveSeq(byte activeSeq);
 
     void setStep(byte stepSeq);
     byte getStep();
@@ -274,17 +295,14 @@ class FrankData {
     void setPlayStop(byte mode);
     byte getPlayStop();
 
+    void togglePlayStop();
+
+
     void setDirection(byte direction);
     byte getDirection();
 
     void setError(byte error);
     byte getError();
-
-    void setPane(byte pane);
-    byte getActivePane();
-    byte getActiveMenu(); // nochmal pane und menu auf eins bringen.....
-    void increasePane();  // switch menu max 3 menu pages
-    void decreasePane();  // switch menu max 3 menu pages;
 
     void setDisplayBrightness(byte brightness);
     byte getDisplayBrightness();
@@ -296,10 +314,56 @@ class FrankData {
     byte getNumberPages();
     byte getCurrentNumberPages();
     Seq *getSeqObject();
+
+
+
+    //Screen config
+    void setSubScreen(byte subScreen , byte max);
+    byte getSubScreen();
+    void resetSubScreen(); // switch menu max 3 menu pages
+
+    void increaseSubScreen(byte max); // switch menu max 3 menu pages
+    void decreaseSubScreen(); // switch menu max 3 menu pages;
+
+    byte getScreenConfig(byte screen);
+    void toggleScreenConfig();
+
+    void setScreenChannel(byte channel);
+    byte getScreenChannel();
+
+    byte getMainMenuEnabled();
+    void toogleMainMenu();
+
+    byte getOutputMode(byte channel);   // Live oder Seq?
+    byte getArpModeEnable(byte channel);   // Arp on or off
+
+
+
+
+
+    //zum testen//
+
+    void setData(byte id, byte index = 0);
+
+    void toggleData(byte id, byte index = 0);
+
+    void changeData(byte id, byte index = 0 , byte direction = 0);
+
+    int getData(byte id, byte index = 0);
+    char* getDataName(byte id);
+
+
+
+    static FrankData& getDataObj();
+
+    protected:
+    static FrankData* mainData;
+
+  
 };
 
 // utility
-inline byte testByte(byte value, byte minimum, byte maximum); // test byte range and return valid byte
+inline byte testByte(byte value, byte minimum, byte maximum = 255); // test byte range and return valid byte
 inline byte increaseByte(byte value, byte maximum);           // increase byte
 inline byte decreaseByte(byte value, byte minimum);           // decrease byte
 inline byte changeByte(byte value, int change, byte minimum = 0, byte maximum = 255); // change byte
