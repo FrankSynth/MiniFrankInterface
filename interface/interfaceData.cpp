@@ -578,31 +578,78 @@ byte FrankData::getMainMenuEnabled(){return stat.screen.mainMenu;}
 void FrankData::toogleMainMenu(){stat.screen.mainMenu = !stat.screen.mainMenu; }
 
 
-void FrankData::setData(byte data, byte index){}
-int FrankData::getData(byte data, byte index){return 125;}
+
+/*get, change und toggleData...
+ wäre cool wenn wir die daten über ne funktion auch zum nem string convertieren könnten, dann muss ich das nicht im display immer machen.
+ bin mir gerade aber grunsätzlich etwas unschlüssig wie man das mit den listen baut. haben ja nicht nur daten die 1mal vorliegen sondern
+ auch teilweise mehrfach in den jeweiligen channels... mal mit index mal ohne ...
+ müsste die funktion dann jeweils entscheiden welcher der aktuelle channel ist und dann aus wlcher liste sie die daten holt?
+
+Index kann ich ja übergeben.. und bei index 0 ließt er ja bei ner normalen variable einfach die Variable aus also das könnte eventuell von alleine funktionieren.
+
+Für die einzelnen funktionen müssen wie warscheinlich einzelne Listen anlegen:
+
+Also für toggle, get und change.
+
+Toggle können wir ja mit TXXX angeben
+Change mit CXXX und get einfach XXX.
+
+haben ja variablen wie GATE die nur getoggelt werden mit den push auf den Encoder.
+
+ Wenn wir die Daten zu string konvertieren haben wir auch noch das Problem das dann ein char pointer übergeben wird der auf
+ die lokale variable der Funktion zeit, muss dann statisch angelegt werden.. und deshalb jedesamal resettet werden, auch nicht so richtig geil.
+
+
+Alle funktionen hier drunter sind erstmal nur als dummy geschrieben, damit ich den display kram testen konnte:
+*/
+
+void FrankData::setData(byte data, byte index){}  //brauchen wir warscheinlich nicht?
+
+char* FrankData::getDataString(byte data, byte index){
+  int value = 100;
+  int channel = getScreenChannel();
+
+//  data = (int)*list[channel][data][index];
+
+  static char string[4];
+  itoa(value, string, 10);
+
+  return string;
+}
+
+int FrankData::getData(byte data, byte index){
+  int value = 100;
+  int channel = getScreenChannel();
+
+//  data = (int)*list[channel][data][index];
+
+  return data;
+}
+
+
+char* FrankData::getDataName(byte data){
+  static char string[] = "test";
+
+  return string;
+}
+
+
+
 void FrankData::toggleData(byte id, byte index){}
+
+
 void FrankData::changeData(byte id, byte index, byte direction){}
 
-
-
-char* FrankData::getDataName(byte id){return "DATA";}
-
-
+///////////////
 
 
 byte FrankData::getOutputMode(byte channel){// Live oder Seq?
   return config.routing[channel].getOut();
-};
+}
 
 byte FrankData::getArpModeEnable(byte channel){// Live oder Seq?
   return config.routing[channel].getArp();
-};
-
-
-
-
-
-
+}
 
 
 

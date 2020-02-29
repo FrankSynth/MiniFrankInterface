@@ -1,14 +1,13 @@
 #pragma once
 
 #include "interfaceData.hpp"
-
 #include "interfaceMapping.hpp"
 
 #include <Adafruit_GFX.h>    // Core graphics library
 #include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
 #include <SPI.h>
 
-
+//Include extra Fonts
 #include <Fonts/FreeSansBold12pt7b.h>
 #include <Fonts/FreeSansBold18pt7b.h>
 #include <Fonts/FreeSansBold24pt7b.h>
@@ -22,21 +21,19 @@
 #define BLACK      ST77XX_BLACK
 #define WHITE      ST77XX_WHITE
 #define RED        ST77XX_RED
-#define GREEN      ST77XX_GREEN
-#define BLUE       ST77XX_BLUE
+//#define GREEN      ST77XX_GREEN
+//#define BLUE       ST77XX_BLUE
 #define CYAN       ST77XX_CYAN
 #define MAGENTA    ST77XX_MAGENTA
 #define YELLOW     ST77XX_YELLOW
 #define ORANGE     ST77XX_ORANGE
 
 
-#define COLOR  0x0410  //Blue??
-#define COLOR2 0x94B2
-#define COLOR3 0x39E7
-#define COLOR4 0x2965  //dark grey
-#define COLOR5 0x4208  //grey
-
-// FrankData &data = getDataObject();
+#define BLACKBLUE  0x0410  // Schwarz Blau
+#define BLUE_LIGHT 0x94B2  // Hell Blau
+#define BLUE 0x39E7  // Blau
+#define BLUE_DARK 0x2965  // Dunkel Blau
+#define GREEN 0x4208  // Grün
 
 ///  A 16-bit double buffer from the adafruit canvas
 class DispBuffer16 : public Adafruit_GFX {
@@ -65,18 +62,10 @@ class Display {
         : w(w), h(h), rotation(rotation) {
         initLCD(w, h, rotation);
         initBuffer();
-        // this -> data = getDataObject();
-
     }
 
     void refresh();                          // refresh display
     void displayBrightness(byte brigthness); // set display display brightness
-
-    // void init() { // set pointer
-    //     data
-    //     // seq1 = &getSeqObject()[0];
-    //     // seq2 = &getSeqObject()[1];
-    // }
 
   private:
     Adafruit_ST7735 lcd = Adafruit_ST7735(LCD_CS, LCD_DC, LCD_RST); // initialize LCD
@@ -90,37 +79,30 @@ class Display {
     uint8_t h;
     uint8_t rotation;
 
-    // Seq* seq
-    // Seq *seq2;
-    // status *stat;
-    // FrankData & data;
-
     char valueToNote(byte noteIn);
     char valueToOctave(byte noteIn);
     char valueToSharp(byte noteIn);
-
-    Seq *getActiveSeqPointer();
 
     const char *tuningToChar(byte tuning);
 
     void initLCD(byte w, byte h, byte rotation);
     void initBuffer();
+
     void writeDisplay();
     void updateBuffer();
+
     void writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t w, int16_t h);
+
     void drawBuffer();
     void drawHead();
     void drawFoot();
     void drawBody();
 
-
     // Templates
     void BodyTemplateSeq();
     void BodyTemplateMenu();
-    void BodyTemplateArp();
     void BodyTemplateLive();
-
-
+    void BodyTemplateArp();
 
     void updateDisplay();
 };
