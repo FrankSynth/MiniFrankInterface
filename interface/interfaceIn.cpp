@@ -16,9 +16,27 @@ void controls::encode(byte message) {
 
 // rotate message
 void controls::rotate(byte id, byte dir) {
+  if(id == 8){        //Control Encoder
+    DATAOBJ.changeData(CGATE, id , dir);
+  }
+  else if(id == 9){   //Step Encoder
+    DATAOBJ.changeData(STEP, id , dir);
+  }
+  else{               //Note Encoder
+    DATAOBJ.changeData(mappingPush(id), id , dir);
+  }
 }
 
 void controls::push(byte id, byte push) { // switch message
+  if(id == 8){        //Control Encoder
+    DATAOBJ.toggleScreenConfig();
+  }
+  else if(id == 9){   //Step Encoder
+    DATAOBJ.togglePlayStop();
+  }
+  else{               //Note Encoder
+    DATAOBJ.toggleData(mappingPush(id), id);
+  }
 }
 
 void controls::readSwitches() {

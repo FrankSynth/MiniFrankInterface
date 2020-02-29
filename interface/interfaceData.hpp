@@ -5,10 +5,16 @@
 //zum Testen vom mapping
 #define NONE 0
 #define BPM 1
-#define NOTE 2
-#define GATE 3
-#define CV 4
-#define CONF 10
+#define NOTE 1
+#define GATE 1
+#define TGATE 1
+#define CGATE 1
+#define STEP 1
+#define CV 1
+#define CONF 1
+
+//Cxxx -> Global Channel data
+//Txxx -> Toggle Data
 
 
 
@@ -70,7 +76,7 @@ typedef struct {
     byte midiSource = 1;            // active MidiDevice (usb -> 1, din -> 0)
     byte nbPages = 4;               // nb Pages  1 -> 8
     byte direction = 1;             // 0 -> reverse ; 1 -> forward
-    byte displayBrightness = 150;   // 0-255;
+    byte displayBrightness = 100;   // 0-255;
     OutputRouting routing[OUTPUTS]; // hold settings for that many outputs
     byte clockOut0 = 0;             // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
     byte clockOut1 = 1;             // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
@@ -82,7 +88,7 @@ typedef struct {
   byte channel = 0;    //active channel, 0-> Channel 1, 1-> Channel 2
   byte config = 0;     //display config, 0-> off, 1-> on
   byte mainMenu = 1;     //display Main Menu, 0-> off, 1-> on
-  byte subscreen = 1;  //subscreen -> current displayed screen .. note, gate, cv (seq) ; live, appregiator (live)
+  byte subscreen = 0;  //subscreen -> current displayed screen .. note, gate, cv (seq) ; live, appregiator (live)
 } structScreen;
 
 // all Settings that don't need to be saved permanently
@@ -284,6 +290,9 @@ class FrankData {
     void setPlayStop(byte mode);
     byte getPlayStop();
 
+    void togglePlayStop();
+
+
     void setDirection(byte direction);
     byte getDirection();
 
@@ -332,8 +341,9 @@ class FrankData {
 
     void setData(byte id, byte index = 0);
 
-    void increaseData(byte id, byte index = 0);
-    void decreaseData(byte id, byte index = 0);
+    void toggleData(byte id, byte index = 0);
+
+    void changeData(byte id, byte index = 0 , byte direction = 0);
 
     int getData(byte id, byte index = 0);
     char* getDataName(byte id);

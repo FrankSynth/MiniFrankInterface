@@ -1,4 +1,5 @@
 #include "interfaceDisplay.hpp"
+#include <string.h>
 
 // GETDATAOBJ
 
@@ -83,31 +84,56 @@ void Display::BodyTemplateMenu() {  //has 2x4 dataFields + PageBar
   for (int x = 0; x < 4; x++) {
     for (int y = 0; y < 2; y++) {
       byte dataField= x + y * 4;                              //current DataField
+      if(mapping(dataField) != NONE){
       byte fieldWidth = 40;
       byte fieldHeight = 48 ;
       byte posX = x * fieldWidth ;
       byte posY = y * fieldHeight;
       /////Draw the squares/////
-      bufferBody->drawRect(posX, posY, fieldWidth, fieldHeight, COLOR); //
-      bufferBody->drawRect(posX, posY, fieldWidth, fieldHeight, COLOR); //
+      bufferBody->fillRect(posX, posY, fieldWidth, 20, 0x230E); //
 
-    //  bufferBody->drawRect(x * 40 + 1, y * 48 + 2, 38, 46, COLOR); //rahmen
+      bufferBody->drawRect(posX, posY, fieldWidth, fieldHeight, COLOR4); //
+
+      //  bufferBody->drawRect(x * 40 + 1, y * 48 + 2, 38, 46, COLOR); //rahmen
 
 
       /////Print Text to Field/////
-      bufferBody->setTextColor(WHITE, COLOR3); //font Color
+      bufferBody->setTextColor(WHITE, 0x230E); //font Color
+      bufferBody->setFont();
 
-      bufferHead->setTextSize(1);
+      /////Name/////
+      char* string = DATAOBJ.getDataName(mapping(dataField));
+      byte offset = strlen(string)* 3 ;
+      //Serial.println(offset);
 
-
-      char* string = "TEST";
-      byte offset = sizeof(string)* 3 ;
-
-      bufferBody->setCursor(posX + 20 - offset, posY + 10); //set Curser
+      bufferBody->setCursor(posX + 20 - offset, posY + 7); //set Curser
       bufferBody->print(string);    //print value
 
-      //bufferBody->print(DATAOBJ.getDataName(mapping(dataField)));    //print value
+      /////Data/////
+
+      bufferBody->setTextColor(WHITE, COLOR3); //font Color
+
+      //vll.. kann man alle werte auf string mappen damit wir int, sowie strings hier printen können, müsste aber in der datenklasse passieren
+      char data[4]; //string buffer
+      itoa(DATAOBJ.getData(mapping(dataField), index), data, 10); //convert to String
+      byte length = strlen(data);   //string length
+
+      if (length == 3) {                                          //3 Digit
+        bufferBody->setFont(&FreeSansBold9pt7b);
+        bufferBody->setCursor(posX + 20 - 16, posY + 38);
+      }
+      else if(length == 2){                                       //2 Digit
+        bufferBody->setFont(&FreeSansBold12pt7b);
+        bufferBody->setCursor(posX + 20 -13, posY + 41);
+      }
+      else{                                                       //1 Digit
+        bufferBody->setFont(&FreeSansBold12pt7b);
+        bufferBody->setCursor(posX+20-6, posY + 41);
+      }
+      bufferBody->print(data);    //print value
     }
+  }
+
   }
 }
 
@@ -237,7 +263,7 @@ void Display::drawFoot() {
   // Sequence
   bufferFoot->setCursor(2, 5);
   bufferFoot->setTextColor(WHITE, COLOR);
-  bufferFoot->print("SEQ:");
+  bufferFoot->print("CH:");
 
   bufferFoot->print(DATAOBJ.getScreenChannel());
 

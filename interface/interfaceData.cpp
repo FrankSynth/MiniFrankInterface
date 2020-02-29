@@ -521,6 +521,8 @@ byte FrankData::getStep() { return stat.stepSeq; } // return MidiSource
 byte FrankData::getPlayStop() { return stat.play; }
 void FrankData::setPlayStop(byte mode) { stat.play = mode; }
 
+void FrankData::togglePlayStop() { stat.play = !stat.play; }
+
 byte FrankData::getDirection() { return config.direction; }
 void FrankData::setDirection(byte direction) { config.direction = direction; }
 
@@ -580,13 +582,13 @@ void FrankData::toogleMainMenu(){stat.screen.mainMenu = !stat.screen.mainMenu; }
 
 
 void FrankData::setData(byte data, byte index){}
-int FrankData::getData(byte data, byte index){return 100;}
-void FrankData::increaseData(byte id, byte index){}
-void FrankData::decreaseData(byte id, byte index){}
+int FrankData::getData(byte data, byte index){return 125;}
+void FrankData::toggleData(byte id, byte index){}
+void FrankData::changeData(byte id, byte index, byte direction){}
 
 
 
-char* FrankData::getDataName(byte id){return "CONFIG";}
+char* FrankData::getDataName(byte id){return "DATA";}
 
 
 

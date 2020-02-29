@@ -15,9 +15,9 @@
 
 LIVE:
 8-> Push => Toggle Play Stop
-    Rotate => ??
+    Rotate => Step Forward / Backward
 9-> Push => Toggle Menu
-    Rotate => ??
+    Rotate =>
 
 SEQ:
 8-> Push => Toggle Play Stop
@@ -29,12 +29,15 @@ SEQ:
 
 
 static byte mappingSeqNote[] = {NOTE, NOTE, NOTE, NOTE, NOTE, NOTE, NOTE, NOTE} ;           //NOTE Mapping
+static byte mappingSeqNotePush[] = {TGATE, TGATE, TGATE, TGATE, TGATE, TGATE, TGATE, TGATE} ;           //NOTE Mapping
 static byte mappingSeqNoteConfig[] = {CONF, CONF, CONF, CONF, CONF, CONF, CONF, CONF} ;     //NOTE Config Mapping
 
 static byte mappingSeqGate[] = {GATE, GATE, GATE, GATE, GATE, GATE, GATE, GATE} ;          //GATE Mapping
+static byte mappingSeqGatePush[] = {TGATE, TGATE, TGATE, TGATE, TGATE, TGATE, TGATE, TGATE} ;           //NOTE Mapping
 static byte mappingSeqGateConfig[] = {CONF, CONF, CONF, CONF, CONF, CONF, CONF, CONF} ;    //GATE Config Mapping
 
 static byte mappingSeqCV[] = {CV, CV, CV, CV, CV, CV, CV, CV} ;                            //CV Mapping
+static byte mappingSeqCVPush[] = {TGATE, TGATE, TGATE, TGATE, TGATE, TGATE, TGATE, TGATE} ;           //NOTE Mapping
 static byte mappingSeqCVConfig[] = {CONF, CONF, CONF, CONF, CONF, CONF, CONF, CONF} ;    //CV Config Mapping
 
 static byte mappingLive[] = {NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE} ;             //Live Mapping
@@ -44,3 +47,4 @@ static byte mappingMenu[] = {CONF, CONF, CONF, CONF, CONF, CONF, CONF, CONF} ;  
 
 
 byte mapping(byte input); //return target ID
+byte mappingPush(byte input); //return target ID

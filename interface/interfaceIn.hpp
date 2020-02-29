@@ -1,6 +1,7 @@
 #pragma once
 
 #include "interfaceData.hpp"
+#include "interfaceMapping.hpp"
 #include <Arduino.h>
 
 #define SWSYNC 6
