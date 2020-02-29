@@ -11,7 +11,7 @@ clock outputClock2 = clock(CLK2);
 PreviousState previousState;
 PreviousOutputs previousOutputs[OUTPUTS];
 
-// GETDATAOBJ
+// GETDATAOBJs
 
 // Connection to data
 // LiveMidi* liveMidiData;

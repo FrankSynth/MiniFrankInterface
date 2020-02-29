@@ -104,6 +104,7 @@ void setup() {
 
     // Set timer interrupt (display refresh)
     myTimer.begin(updateDisplay, 40000); // display refresh
+ 
 }
 
 void loop() {

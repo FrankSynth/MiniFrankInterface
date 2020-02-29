@@ -25,8 +25,8 @@
 #define OUTPUTS 2 // Number of outputs
 
 #define DATAOBJ FrankData::getDataObj()
+#define TESTOBJ Testclass::getDataObj()
 // #define GETDATAOBJ FrankData::getDataObj();
-
 
 class OutputRouting {
     byte out;          // 0 = live, 1 = seq
@@ -232,6 +232,12 @@ class Seq {
 // data class
 class FrankData {
   public:
+    static FrankData &getDataObj();
+
+  protected:
+    static FrankData *mainData;
+
+  public:
     structStatus stat;
     structSettings config;
 
@@ -243,7 +249,6 @@ class FrankData {
             this->seq[output].init();
         }
     }
-
 
     // receive MIDI
     void receivedKeyPressed(byte channel, byte note, byte velocity);
@@ -312,7 +317,6 @@ class FrankData {
 
 
 
-
     //Screen config
     void setSubScreen(byte subScreen , byte max);
     byte getSubScreen();
@@ -354,18 +358,9 @@ class FrankData {
 
     protected:
     static FrankData* mainData;
+
+  
 };
-
-
-// init all data
-// void initData();
-
-// get data objects
-// FrankData * getDataObject();
-
-// LiveMidi *getLiveMidiObject();
-// structSettings *getSettingsObject();
-// structStatus *getStatusObject();
 
 // utility
 inline byte testByte(byte value, byte minimum, byte maximum = 255); // test byte range and return valid byte
