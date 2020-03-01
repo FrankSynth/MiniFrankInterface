@@ -2,38 +2,36 @@
 
 #include "interfaceData.hpp"
 #include "interfaceMapping.hpp"
-
 #include <Adafruit_GFX.h>    // Core graphics library
 #include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
 #include <SPI.h>
 
-//Include extra Fonts
+// Include extra Fonts
 #include <Fonts/FreeSansBold12pt7b.h>
 #include <Fonts/FreeSansBold18pt7b.h>
 #include <Fonts/FreeSansBold24pt7b.h>
 #include <Fonts/FreeSansBold9pt7b.h>
 
-#define LCD_CS        10
-#define LCD_RST       20
-#define LCD_DC        18
-#define LCD_BL        19
+#define LCD_CS 10
+#define LCD_RST 20
+#define LCD_DC 18
+#define LCD_BL 19
 
-#define BLACK      ST77XX_BLACK
-#define WHITE      ST77XX_WHITE
-#define RED        ST77XX_RED
+#define BLACK ST77XX_BLACK
+#define WHITE ST77XX_WHITE
+#define RED ST77XX_RED
 //#define GREEN      ST77XX_GREEN
 //#define BLUE       ST77XX_BLUE
-#define CYAN       ST77XX_CYAN
-#define MAGENTA    ST77XX_MAGENTA
-#define YELLOW     ST77XX_YELLOW
-#define ORANGE     ST77XX_ORANGE
+#define CYAN ST77XX_CYAN
+#define MAGENTA ST77XX_MAGENTA
+#define YELLOW ST77XX_YELLOW
+#define ORANGE ST77XX_ORANGE
 
-
-#define BLACKBLUE  0x0410  // Schwarz Blau
-#define BLUE_LIGHT 0x94B2  // Hell Blau
-#define BLUE 0x39E7  // Blau
+#define BLACKBLUE 0x0410  // Schwarz Blau
+#define BLUE_LIGHT 0x94B2 // Hell Blau
+#define BLUE 0x39E7       // Blau
 #define BLUE_DARK 0x2965  // Dunkel Blau
-#define GREEN 0x4208  // Grün
+#define GREEN 0x4208      // Grün
 
 ///  A 16-bit double buffer from the adafruit canvas
 class DispBuffer16 : public Adafruit_GFX {
@@ -42,12 +40,8 @@ class DispBuffer16 : public Adafruit_GFX {
     ~DispBuffer16(void);
     void drawPixel(int16_t x, int16_t y, uint16_t color), fillScreen(uint16_t color), byteSwap(void);
 
-    uint16_t *getBuffer(void) const {
-        return buffer;
-    } // return buffer 1 pointer
-    uint16_t *getBuffer2(void) const {
-        return buffer2;
-    } // return buffer 2 pointer
+    uint16_t *getBuffer(void) const { return buffer; }   // return buffer 1 pointer
+    uint16_t *getBuffer2(void) const { return buffer2; } // return buffer 2 pointer
 
     void copyBuffer(uint16_t index);   // copy value from buffer 1 to 2
     int compareBuffer(uint16_t index); // compare value from both buffers

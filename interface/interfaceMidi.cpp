@@ -1,10 +1,21 @@
 #include "interfaceMidi.hpp"
 
+// Debug logging
+#define DEBUG 0
 
-// GETDATAOBJ
+#if DEBUG == 1
+#define PRINTLN(x) Serial.println(x)
+#define PRINTLN2(x, y) Serial.println(x, y)
+#define PRINT(x) Serial.print(x)
+#define PRINT2(x, y) Serial.print(x, y)
+#else
+#define PRINTLN(x)
+#define PRINTLN2(x, y)
+#define PRINT(x)
+#define PRINT2(x, y)
+#endif
 
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI); // Which serial???
-// #define DEBUG
 
 // callback handles
 void midiNoteOn(byte channel, byte note, byte velocity);
@@ -125,11 +136,9 @@ void dinMidiSystemReset() {
 // run once at startup
 void initMidi() {
 
-        // data = getDataObject();
+    // data = getDataObject();
 
-#ifdef DEBUG
-    Serial.println("Init Midi");
-#endif
+    PRINTLN("Init Midi");
 
     // set USB handles
     usbMIDI.setHandleNoteOn(usbMidiNoteOn);
@@ -168,16 +177,12 @@ void updateMidi() {
 // Midi actions
 
 void midiNoteOn(byte channel, byte note, byte velocity) {
-#ifdef DEBUG
-    Serial.println("Key pressed");
-#endif
+    PRINTLN("Key pressed");
     DATAOBJ.receivedKeyPressed(channel, note, velocity);
 };
 
 void midiNoteOff(byte channel, byte note, byte velocity) {
-#ifdef DEBUG
-    Serial.println("Key released");
-#endif
+    PRINTLN("Key released");
     DATAOBJ.receivedKeyReleased(channel, note);
 };
 

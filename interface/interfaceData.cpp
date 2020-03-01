@@ -1,9 +1,19 @@
 #include "interfaceData.hpp"
 
-// #define DEBUG
+// Debug logging
+#define DEBUG 0
 
-// data singleton
-// FrankData mainData;
+#if DEBUG == 1
+#define PRINTLN(x) Serial.println(x)
+#define PRINTLN2(x, y) Serial.println(x, y)
+#define PRINT(x) Serial.print(x)
+#define PRINT2(x, y) Serial.print(x, y)
+#else
+#define PRINTLN(x)
+#define PRINTLN2(x, y)
+#define PRINT(x)
+#define PRINT2(x, y)
+#endif
 
 // class Output Routing
 byte OutputRouting::getOut() { return out; }
@@ -556,36 +566,32 @@ FrankData &FrankData::getDataObj() {
 
 // Testclass *Testclass::mainData = nullptr;
 
-
-
-
-
-//Screen config
-void FrankData::setSubScreen(byte subScreen , byte max){stat.screen.subscreen = testByte(subScreen, 0, max) ;}
-byte FrankData::getSubScreen(){return stat.screen.subscreen;}
-void FrankData::resetSubScreen(){stat.screen.subscreen = 0;}
+// Screen config
+void FrankData::setSubScreen(byte subScreen, byte max) { stat.screen.subscreen = testByte(subScreen, 0, max); }
+byte FrankData::getSubScreen() { return stat.screen.subscreen; }
+void FrankData::resetSubScreen() { stat.screen.subscreen = 0; }
 
 void FrankData::increaseSubScreen(byte max) { stat.screen.subscreen = testByte(stat.screen.subscreen + 1, 0, max); }
 void FrankData::decreaseSubScreen() { stat.screen.subscreen = testByte(stat.screen.subscreen - 1, 0); }
 
-byte FrankData::getScreenConfig(byte screen){return stat.screen.config;}
-void FrankData::toggleScreenConfig(){stat.screen.config = !stat.screen.config; }
+byte FrankData::getScreenConfig(byte screen) { return stat.screen.config; }
+void FrankData::toggleScreenConfig() { stat.screen.config = !stat.screen.config; }
 
-byte FrankData::getScreenChannel(){return stat.screen.channel;}
-void FrankData::setScreenChannel(byte channel){ stat.screen.channel = testByte(channel, 0, OUTPUTS - 1); }
+byte FrankData::getScreenChannel() { return stat.screen.channel; }
+void FrankData::setScreenChannel(byte channel) { stat.screen.channel = testByte(channel, 0, OUTPUTS - 1); }
 
-byte FrankData::getMainMenuEnabled(){return stat.screen.mainMenu;}
-void FrankData::toogleMainMenu(){stat.screen.mainMenu = !stat.screen.mainMenu; }
-
-
+byte FrankData::getMainMenuEnabled() { return stat.screen.mainMenu; }
+void FrankData::toogleMainMenu() { stat.screen.mainMenu = !stat.screen.mainMenu; }
 
 /*get, change und toggleData...
- wäre cool wenn wir die daten über ne funktion auch zum nem string convertieren könnten, dann muss ich das nicht im display immer machen.
- bin mir gerade aber grunsätzlich etwas unschlüssig wie man das mit den listen baut. haben ja nicht nur daten die 1mal vorliegen sondern
- auch teilweise mehrfach in den jeweiligen channels... mal mit index mal ohne ...
- müsste die funktion dann jeweils entscheiden welcher der aktuelle channel ist und dann aus wlcher liste sie die daten holt?
+ wäre cool wenn wir die daten über ne funktion auch zum nem string convertieren könnten, dann muss ich das nicht im
+display immer machen. bin mir gerade aber grunsätzlich etwas unschlüssig wie man das mit den listen baut. haben ja nicht
+nur daten die 1mal vorliegen sondern auch teilweise mehrfach in den jeweiligen channels... mal mit index mal ohne ...
+ müsste die funktion dann jeweils entscheiden welcher der aktuelle channel ist und dann aus wlcher liste sie die daten
+holt?
 
-Index kann ich ja übergeben.. und bei index 0 ließt er ja bei ner normalen variable einfach die Variable aus also das könnte eventuell von alleine funktionieren.
+Index kann ich ja übergeben.. und bei index 0 ließt er ja bei ner normalen variable einfach die Variable aus also das
+könnte eventuell von alleine funktionieren.
 
 Für die einzelnen funktionen müssen wie warscheinlich einzelne Listen anlegen:
 
@@ -596,82 +602,72 @@ Change mit CXXX und get einfach XXX.
 
 haben ja variablen wie GATE die nur getoggelt werden mit den push auf den Encoder.
 
- Wenn wir die Daten zu string konvertieren haben wir auch noch das Problem das dann ein char pointer übergeben wird der auf
- die lokale variable der Funktion zeit, muss dann statisch angelegt werden.. und deshalb jedesamal resettet werden, auch nicht so richtig geil.
+ Wenn wir die Daten zu string konvertieren haben wir auch noch das Problem das dann ein char pointer übergeben wird der
+auf die lokale variable der Funktion zeit, muss dann statisch angelegt werden.. und deshalb jedesamal resettet werden,
+auch nicht so richtig geil.
 
 
 Alle funktionen hier drunter sind erstmal nur als dummy geschrieben, damit ich den display kram testen konnte:
 */
 
-void FrankData::setData(byte data, byte index){}  //brauchen wir warscheinlich nicht?
+void FrankData::setData(byte data, byte index) {} // brauchen wir warscheinlich nicht?
 
-char* FrankData::getDataString(byte data, byte index){
-  int value = 100;
-  int channel = getScreenChannel();
+char *FrankData::getDataString(byte data, byte index) {
+    int value = 100;
+    int channel = getScreenChannel();
 
-//  data = (int)*list[channel][data][index];
+    //  data = (int)*list[channel][data][index];
 
-  static char string[4];
-  itoa(value, string, 10);
+    static char string[4];
+    itoa(value, string, 10);
 
-  return string;
+    return string;
 }
 
-int FrankData::getData(byte data, byte index){
-  int value = 100;
-  int channel = getScreenChannel();
+int FrankData::getData(byte data, byte index) {
+    int value = 100;
+    int channel = getScreenChannel();
 
-//  data = (int)*list[channel][data][index];
+    //  data = (int)*list[channel][data][index];
 
-  return data;
+    return data;
 }
 
+char *FrankData::getDataName(byte data) {
+    static char string[] = "test";
 
-char* FrankData::getDataName(byte data){
-  static char string[] = "test";
-
-  return string;
+    return string;
 }
 
+void FrankData::toggleData(byte id, byte index) {}
 
-
-void FrankData::toggleData(byte id, byte index){}
-
-
-void FrankData::changeData(byte id, byte index, byte direction){}
+void FrankData::changeData(byte id, byte index, byte direction) {}
 
 ///////////////
 
-
-byte FrankData::getOutputMode(byte channel){// Live oder Seq?
-  return config.routing[channel].getOut();
+byte FrankData::getOutputMode(byte channel) { // Live oder Seq?
+    return config.routing[channel].getOut();
 }
 
-byte FrankData::getArpModeEnable(byte channel){// Live oder Seq?
-  return config.routing[channel].getArp();
+byte FrankData::getArpModeEnable(byte channel) { // Live oder Seq?
+    return config.routing[channel].getArp();
 }
-
-
-
 
 // utility
 inline byte testByte(byte value, byte minimum, byte maximum) { // test byte range and return valid byte
     if (value > maximum) {
 
-#ifdef DEBUG
-        Serial.println("testByte: value was to big");
-        Serial.println("INPUT: ");
-        Serial.println(value);
-#endif
+        PRINTLN("testByte: value was to big");
+        PRINTLN("INPUT: ");
+        PRINTLN(value);
+
         return maximum;
 
     } else if (value < minimum) {
 
-#ifdef DEBUG
-        Serial.println("testByte: value was to small");
-        Serial.println("INPUT: ");
-        Serial.println(value);
-#endif
+        PRINTLN("testByte: value was to small");
+        PRINTLN("INPUT: ");
+        PRINTLN(value);
 
         return minimum;
 
@@ -716,23 +712,3 @@ inline byte changeByteNoClampChange(byte value, int change, byte minimum,
         return (byte)((int)value + change); // return new value
     }
 }
-
-// void initData() {
-//     for (byte output = 0; output < OUTPUTS; output++) {
-//         DATAOBJ.seq[output].init();
-//     }
-// }
-
-// FrankData * getDataObject() {
-//     return &mainData;
-// }
-
-// LiveMidi* getLiveMidiObject() {
-//     return liveMidi;
-// }
-// structSettings* getSettingsObject() {
-//     return &config;
-// }
-// structStatus* getStatusObject() {
-//     return &stat;
-// }

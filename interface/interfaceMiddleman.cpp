@@ -1,8 +1,23 @@
 #include "interfaceMiddleman.hpp"
 
-//OUTPUT Channels and clocks
-channel outputChannel1 = channel(DAC1,0,DAC2,0,TRIGGER1,GATE1);
-channel outputChannel2 = channel(DAC1,1,DAC2,1,TRIGGER2,GATE2);
+// Debug logging
+#define DEBUG 0
+
+#if DEBUG == 1
+#define PRINTLN(x) Serial.println(x)
+#define PRINTLN2(x, y) Serial.println(x, y)
+#define PRINT(x) Serial.print(x)
+#define PRINT2(x, y) Serial.print(x, y)
+#else
+#define PRINTLN(x)
+#define PRINTLN2(x, y)
+#define PRINT(x)
+#define PRINT2(x, y)
+#endif
+
+// OUTPUT Channels and clocks
+channel outputChannel1 = channel(DAC1, 0, DAC2, 0, TRIGGER1, GATE1);
+channel outputChannel2 = channel(DAC1, 1, DAC2, 1, TRIGGER2, GATE2);
 
 clock outputClock1 = clock(CLK1);
 clock outputClock2 = clock(CLK2);
@@ -18,7 +33,7 @@ PreviousOutputs previousOutputs[OUTPUTS];
 // Seq* seqData;
 
 void initMiddleman() {
-    initOutput(); //init Outputs
+    initOutput(); // init Outputs
     // data= getDataObject();
     // liveMidiData = getLiveMidiObject();
     // seqData = getSeqObject();
@@ -37,9 +52,7 @@ void updateAllOutputs() {
 void updateNoteOut(byte output) {}
 void updateCustomCVOut(byte output) {}
 void updateGateOut(byte output) {}
-void updateClockOut(byte output) {
-    byte currentClock = DATAOBJ.getBpm16thCount();
-}
+void updateClockOut(byte output) { byte currentClock = DATAOBJ.getBpm16thCount(); }
 void updateTriggerOut(byte output) {}
 
 void PreviousOutputs::setNote(byte midiData) { note = midiData; }
