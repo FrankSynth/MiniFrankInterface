@@ -31,6 +31,7 @@ class OutputRouting {
     byte arp;          // 0 = off, 1 = on
     byte cc;           // 0 = vel, 1 = mod, 2 = pitchbend, 3 = aftertouch, 4 = sustain
     byte liveMidiMode; // 0 = latest, 1 = lowest, 2 = highest
+    byte clock;        // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
 
   public:
     OutputRouting() {
@@ -40,6 +41,7 @@ class OutputRouting {
         this->arp = 0;
         this->cc = 0;
         this->liveMidiMode = 0;
+        this->clock = 2;
     }
 
     byte getOut();
@@ -57,29 +59,31 @@ class OutputRouting {
     void setLiveMidiMode(byte data);
 };
 
-// Sequence struct holding all values for a sequence
+// Sequence struct holding all values for a sequence, to save it
 typedef struct {
     byte note[LENGTH];
-    byte cv[LENGTH];
+    byte cc[LENGTH];
     byte gate[LENGTH];
     byte gateLength[LENGTH];
     byte velocity[LENGTH];
     byte tuning; // tuning offset
 } structSequence;
 
-// Settings struct for all settings that will get saved permanently
+// Settings struct for all settings that need to be saved permanently
+
 typedef struct {
     byte midiSource = 1;            // active MidiDevice (usb -> 1, din -> 0)
     byte nbPages = 4;               // nb Pages  1 -> 8
     byte direction = 1;             // 0 -> reverse ; 1 -> forward
     byte displayBrightness = 100;   // 0-255;
     OutputRouting routing[OUTPUTS]; // hold settings for that many outputs
-    byte clockOut0 = 0;             // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
-    byte clockOut1 = 1;             // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
+    // byte clockOut0 = 2; 
+    // byte clockOut1 = 2; // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
 
 } structSettings;
 
-// Sequence struct holding all values for a sequence
+// Sequence struct holding all values for the screen
+
 typedef struct {
     byte channel = 0;   // active channel, 0-> Channel 1, 1-> Channel 2
     byte config = 0;    // display config, 0-> off, 1-> on
@@ -105,7 +109,7 @@ typedef struct {
     uint16_t bpmPoti = 0; // sync= 0 ? 0-1023 bpm log : divider /4, /2, 1, *2, *4 ; Range is 0-1023
 } structStatus;
 
-// Key press data
+// Midi Key data
 typedef struct {
     byte note = 0;
     byte velocity = 0;
@@ -228,6 +232,67 @@ class Seq {
 // data class
 class FrankData {
 
+  public:
+    // storage enumerator
+    enum frankData : byte {
+        // Seq, needs OUTPUTS
+        seqNote,
+        seqGate,
+        seqGateLength,
+        seqCc,
+        seqVelocity,
+        seqTuning,
+
+        // general Settings, needs 1
+        midiSource,
+        nbPages,
+        direction,
+        displayBrightness,
+
+        // Output Routing Settings, needs OUTPUTS
+        outputSource,
+        outputChannel,
+        outputSeq,
+        outputArp,
+        outputCc,
+        outputLive,
+
+        // Screen Settings, needs 1
+        screenChannel,
+        screenConfig,
+        screenMainMenu,
+        screenSubScreen,
+
+        // structStatus, needs 1
+        stepSeq,
+        stepArp,
+        bpm,
+        play,
+        rec,
+        error,
+        bpmSync,
+        midiClockCount,
+        bpm16thCount,
+        bpmPoti,
+
+        // liveMidi, needs OUTPUTS
+        liveLatestKey,
+        liveHighestKey,
+        liveLowestKey,
+        liveMod,
+        livePitchbend,
+        liveAftertouch,
+        liveSustain,
+        liveTriggered,
+        liveKeysPressed
+    };
+
+    // idea for further enumerators
+    enum subscreenStates : byte { screenNote, screenGate, screenCv, screenLive, screenArp };
+    enum midiSourceStates : byte { din, usb };
+    enum directionStates : byte { reverse, forward };
+    enum beatStates : byte { sixteenth, eighth, quarter, half, bar, doublebar };
+
   private:
     FrankData() {
         for (byte output = 0; output < OUTPUTS; output++) {
@@ -324,6 +389,20 @@ class FrankData {
 
     byte getOutputMode(byte channel);    // Live oder Seq?
     byte getArpModeEnable(byte channel); // Arp on or off
+
+    // get single type value
+    byte get(frankData frankDataType);
+    // get value that is part of an array, e.g. output, seq current step, ...
+    byte get(frankData frankDataType, byte array);
+    // get value for certain step
+    byte get(frankData frankDataType, byte array, byte step);
+
+    // set single type value
+    void set(frankData frankDataType, byte data);
+    // set value prat of an array
+    void set(frankData frankDataType, byte data, byte array);
+    // set value for certain step
+    void set(frankData frankDataType, byte data, byte array, byte step);
 
     // zum testen//
 

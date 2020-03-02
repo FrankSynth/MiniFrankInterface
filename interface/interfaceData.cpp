@@ -138,14 +138,18 @@ PressedNotesElement *PressedNotesList::getKeyLatest() {
     return NULL;
 }
 
-// class LiveMidi
+// class LiveMidi for all real time midi data for a single midi input
 void LiveMidi::keyPressed(byte note, byte velocity) {
     noteList.appendKey(note, velocity);
     triggered = 1;
 }
 
-void LiveMidi::keyReleased(byte note) { noteList.deleteKey(note); }
+void LiveMidi::keyReleased(byte note) {
+    noteList.deleteKey(note);
+    triggered = 1;
+}
 
+// bool, are any keys pressed
 bool LiveMidi::keysPressed() { return noteList.containsElements() ? 1 : 0; }
 
 void LiveMidi::setMod(byte data) { mod = data; }
@@ -156,6 +160,7 @@ void LiveMidi::setAftertouch(byte data) { aftertouch = data; }
 
 void LiveMidi::setSustain(byte data) { sustain = data; }
 
+// return highest key pressed
 structKey LiveMidi::getKeyHighest() {
     structKey key;
     PressedNotesElement *listElement = noteList.getKeyHighest();
@@ -164,6 +169,7 @@ structKey LiveMidi::getKeyHighest() {
     return key;
 }
 
+// return lowest key pressed
 structKey LiveMidi::getKeyLowest() {
     structKey key;
     PressedNotesElement *listElement = noteList.getKeyLowest();
@@ -172,6 +178,7 @@ structKey LiveMidi::getKeyLowest() {
     return key;
 }
 
+// return latest key pressed
 structKey LiveMidi::getKeyLatest() {
     structKey key;
     PressedNotesElement *listElement = noteList.getKeyLatest();
@@ -188,6 +195,7 @@ byte LiveMidi::getAftertouch() { return aftertouch; }
 
 byte LiveMidi::getSustain() { return sustain; }
 
+// new LiveMidi data trigger flag
 byte LiveMidi::getTriggered() {
     if (triggered) {
         triggered = 0;
@@ -197,15 +205,18 @@ byte LiveMidi::getTriggered() {
     }
 }
 
+// reset performance
 void LiveMidi::reset() {
     noteList.deleteAllKeys();
     mod = 0;
     pitchbend = 64;
     aftertouch = 0;
     sustain = 0;
+
+    triggered = 1;
 }
 
-// Sequence
+// Sequence data for each sequence
 void Seq::init(byte note, byte gate, byte gateLength, byte tuning) { // init sequence to default values
     for (int i = 0; i < LENGTH; i++) {
         sequence.note[i] = note;  // test
@@ -381,7 +392,7 @@ void Seq::setTuning(byte tuning) { sequence.tuning = tuning; }
 
 byte Seq::getTuning() { return sequence.tuning; }
 
-// data
+// Data Singleton that handles all data, including all sequences, live midi and settings
 void FrankData::receivedKeyPressed(byte channel, byte note, byte velocity) {
     for (byte x = 0; x < OUTPUTS; x++) {
         if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
@@ -569,7 +580,7 @@ FrankData &FrankData::getDataObj() {
 // Screen config
 void FrankData::setSubScreen(byte subScreen, byte max) { stat.screen.subscreen = testByte(subScreen, 0, max); }
 byte FrankData::getSubScreen() { return stat.screen.subscreen; }
-void FrankData::resetSubScreen() { stat.screen.subscreen = 0; }
+void FrankData::resetSubScreen() { stat.screen.subscreen = FrankData::screenNote; }
 
 void FrankData::increaseSubScreen(byte max) { stat.screen.subscreen = testByte(stat.screen.subscreen + 1, 0, max); }
 void FrankData::decreaseSubScreen() { stat.screen.subscreen = testByte(stat.screen.subscreen - 1, 0); }
@@ -610,8 +621,34 @@ auch nicht so richtig geil.
 Alle funktionen hier drunter sind erstmal nur als dummy geschrieben, damit ich den display kram testen konnte:
 */
 
+// new set and get functions
+byte FrankData::get(frankData frankDataType) {
+    switch (frankDataType){
+    case bpm: return stat.bpm; break;
+    
+    default:
+        return 0;
+    }
+}
+byte FrankData::get(frankData frankDataType, byte array) {
+    switch (frankDataType) {
+    case liveMod: return liveMidi[array].getMod(); break;
+
+    default: return 0;
+    }
+}
+byte FrankData::get(frankData frankDataType, byte array, byte step) {}
+
+void FrankData::set(frankData frankDataType, byte data) {}
+void FrankData::set(frankData frankDataType, byte data, byte array) {}
+void FrankData::set(frankData frankDataType, byte data, byte array, byte step){
+
+}
+
 void FrankData::setData(byte data, byte index) {} // brauchen wir warscheinlich nicht?
 
+
+// Jacobs test
 char *FrankData::getDataString(byte data, byte index) {
     int value = 100;
     int channel = getScreenChannel();

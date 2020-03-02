@@ -8,6 +8,13 @@
 
 // save state for each output lane
 class PreviousOutputs {
+    public:
+    enum previousData {
+        dataNote, dataGate
+    };
+
+
+private:
     byte note;
     byte customCV;
     byte gate;
@@ -18,7 +25,7 @@ class PreviousOutputs {
     byte trigger;
     long triggerTimeSet;
 
-  public:
+public:
     PreviousOutputs() {
         this->note = 0;
         this->customCV = 0;
@@ -36,11 +43,15 @@ class PreviousOutputs {
     void setCustomCV(byte data);
     void setGate(byte data);
     void setGateLength(byte data);
-    void setGateTimeSet();
     void setClock(byte data);
-    void setClockTimeSet();
     void setTrigger(byte data);
-    void setTriggerTimeSet();
+    void setNewGateTimeSet();
+    void setNewClockTimeSet();
+    void setNewTriggerTimeSet();
+
+    // test
+    template <typename T> void set(T data, previousData destination);
+    template <typename T> T get(previousData destination);
 
     // get previous state values
     byte getNote();
