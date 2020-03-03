@@ -40,11 +40,11 @@ void controls::rotate(byte id, byte dir) {
 
 void controls::push(byte id, byte push) { // switch message
     if (id == 8) {                        // Control Encoder
-        DATAOBJ.toggleScreenConfig();     // old!!!!!
+        DATAOBJ.toggle(FrankData::screenConfig);
     } else if (id == 9) { // Step Encoder
-        DATAOBJ.toggle(FrankData::play); // old!!!!!
+        DATAOBJ.toggle(FrankData::play);
     } else { // Note Encoder
-        DATAOBJ.toggleData(mappingPush(id), id); // old!!!!!
+        DATAOBJ.toggleData(mappingPush(id), id); // old!!!!! what does it do?
     }
 }
 

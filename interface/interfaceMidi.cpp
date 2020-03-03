@@ -21,6 +21,7 @@ MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI); // Which serial???
 void midiNoteOn(byte channel, byte note, byte velocity);
 void midiNoteOff(byte channel, byte note, byte velocity);
 void midiCC(byte channel, byte control, byte value);
+void midiPitchBend(byte channel, int value);
 void midiAfterTouch(byte channel, byte pressure);
 void midiClock();
 void midiSongPosition(unsigned int spp);
@@ -43,6 +44,11 @@ void usbMidiNoteOff(byte channel, byte note, byte velocity) {
 void usbMidiCC(byte channel, byte control, byte value) {
     if (DATAOBJ.get(FrankData::midiSource) == 1) {
         midiCC(channel, control, value);
+    }
+}
+void usbMidiPitchBend(byte channel, int value) {
+    if (DATAOBJ.get(FrankData::midiSource) == 1) {
+        midiPitchBend(channel, value);
     }
 }
 void usbMidiAfterTouch(byte channel, byte pressure) {
@@ -102,6 +108,11 @@ void dinMidiAfterTouch(byte channel, byte pressure) {
         midiAfterTouch(channel, pressure);
     }
 }
+void dinMidiPitchBend(byte channel, int value) {
+    if (DATAOBJ.get(FrankData::midiSource) == 0) {
+        midiPitchBend(channel, value);
+    }
+}
 void dinMidiClock() {
     if (DATAOBJ.get(FrankData::midiSource) == 0) {
         midiClock();
@@ -144,6 +155,7 @@ void initMidi() {
     usbMIDI.setHandleNoteOn(usbMidiNoteOn);
     usbMIDI.setHandleNoteOff(usbMidiNoteOff);
     usbMIDI.setHandleControlChange(usbMidiCC);
+    usbMIDI.setHandlePitchChange(usbMidiPitchBend);
     usbMIDI.setHandleAfterTouch(usbMidiAfterTouch);
     usbMIDI.setHandleSongPosition(usbMidiSongPosition);
     usbMIDI.setHandleClock(usbMidiClock);
@@ -156,6 +168,7 @@ void initMidi() {
     MIDI.setHandleNoteOn(dinMidiNoteOn);
     MIDI.setHandleNoteOff(dinMidiNoteOff);
     MIDI.setHandleControlChange(dinMidiCC);
+    MIDI.setHandlePitchBend(dinMidiPitchBend);
     MIDI.setHandleAfterTouchChannel(dinMidiAfterTouch);
     MIDI.setHandleSongPosition(dinMidiSongPosition);
     MIDI.setHandleClock(dinMidiClock);
@@ -179,32 +192,55 @@ void updateMidi() {
 void midiNoteOn(byte channel, byte note, byte velocity) {
     PRINTLN("Key pressed");
     DATAOBJ.receivedKeyPressed(channel, note, velocity);
-};
+}
 
 void midiNoteOff(byte channel, byte note, byte velocity) {
     PRINTLN("Key released");
     DATAOBJ.receivedKeyReleased(channel, note);
-};
+}
 
 void midiCC(byte channel, byte cc, byte midiData) {
     if (cc == 1) {
-        DATAOBJ.receivedMod(channel, midiData);
+        for (byte x = 0; x < OUTPUTS; x++) {
+            if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                DATAOBJ.set(FrankData::liveMod, midiData, x);
+            }
+        }
     }
     if (cc == 64) {
-        DATAOBJ.receivedSustain(channel, midiData);
+        for (byte x = 0; x < OUTPUTS; x++) {
+            if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                DATAOBJ.set(FrankData::liveSustain, midiData, x);
+            }
+        }
     }
-};
+}
 
-void midiAfterTouch(byte channel, byte midiData) { DATAOBJ.receivedAftertouch(channel, midiData); };
+void midiAfterTouch(byte channel, byte midiData) {
+    for (byte x = 0; x < OUTPUTS; x++) {
+        if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+            DATAOBJ.set(FrankData::liveAftertouch, midiData, x);
+        }
+    }
+ }
 
-void midiClock() { DATAOBJ.receivedMidiClock(); };
+// check byte to int convertion
+ void midiPitchBend(byte channel, int value) {
+     for (byte x = 0; x < OUTPUTS; x++) {
+         if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+             DATAOBJ.set(FrankData::livePitchbend, (byte)value, x);
+         }
+     }
+ }
 
-void midiSongPosition(unsigned int spp) { DATAOBJ.receivedMidiSongPosition(spp); };
+void midiClock() { DATAOBJ.receivedMidiClock(); }
 
-void midiStart() { DATAOBJ.receivedStart(); };
+void midiSongPosition(unsigned int spp) { DATAOBJ.receivedMidiSongPosition(spp); }
 
-void midiContinue() { DATAOBJ.receivedContinue(); };
+void midiStart() { DATAOBJ.receivedStart(); }
 
-void midiStop() { DATAOBJ.receivedStop(); };
+void midiContinue() { DATAOBJ.receivedContinue(); }
 
-void midiSystemReset() { DATAOBJ.receivedReset(); };
+void midiStop() { DATAOBJ.receivedStop(); }
+
+void midiSystemReset() { DATAOBJ.receivedReset(); }

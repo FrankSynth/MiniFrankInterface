@@ -412,7 +412,7 @@ void FrankData::receivedKeyReleased(byte channel, byte note) {
 void FrankData::receivedMod(byte channel, byte data) {
     for (byte x = 0; x < OUTPUTS; x++) {
         if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
-            liveMidi[x].setMod(data);
+            liveMidi[x].mod = data;
         }
     }
 }
@@ -420,7 +420,7 @@ void FrankData::receivedMod(byte channel, byte data) {
 void FrankData::receivedPitchbend(byte channel, byte data) {
     for (byte x = 0; x < OUTPUTS; x++) {
         if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
-            liveMidi[x].setPitchbend(data);
+            liveMidi[x].pitchbend = data;
         }
     }
 }
@@ -647,6 +647,7 @@ byte FrankData::get(frankData frankDataType) {
     default: PRINTLN("FrankData get(frankData frankDataType), no case found"); return 0;
     }
 }
+
 byte FrankData::get(frankData frankDataType, byte array) {
     switch (frankDataType) {
     case outputSource: return config.routing[array].outSource;
@@ -668,6 +669,7 @@ byte FrankData::get(frankData frankDataType, byte array) {
     default: PRINTLN("FrankData get(frankData frankDataType, byte array), no case found"); return 0;
     }
 }
+
 byte FrankData::get(frankData frankDataType, byte array, byte step) {
     switch (frankDataType) {
     case seqNote: return seq[array].sequence.note[step];
@@ -705,8 +707,41 @@ void FrankData::set(frankData frankDataType, byte data, bool clampChange) {
     }
 }
 
-void FrankData::set(frankData frankDataType, byte data, byte array, bool clampChange) {}
-void FrankData::set(frankData frankDataType, byte data, byte array, byte step, bool clampChange) {}
+void FrankData::set(frankData frankDataType, byte data, byte array, bool clampChange) {
+    switch (frankDataType) {
+    case outputSource: config.routing[array].outSource = testByte(data, 0, 1, clampChange);
+    case outputChannel: config.routing[array].channel = testByte(data, 0, 16, clampChange);
+    case outputSeq: config.routing[array].seq = testByte(data, 0, OUTPUT, clampChange);
+    case outputArp: config.routing[array].arp = testByte(data, 0, 1, clampChange);
+    case outputCc: config.routing[array].cc = testByte(data, 0, 4, clampChange);
+    case outputLiveMode: config.routing[array].liveMidiMode = testByte(data, 0, 2, clampChange);
+    case outputClock: config.routing[array].clock = testByte(data, 0,5, clampChange);
+
+    case liveMod: liveMidi[array].mod = testByte(data, 0, 127, clampChange);
+    case livePitchbend: liveMidi[array].pitchbend = testByte(data, 0, 255, clampChange);
+    case liveAftertouch: liveMidi[array].aftertouch = testByte(data, 0, 127, clampChange);
+    case liveSustain: liveMidi[array].sustain = testByte(data, 0, 127, clampChange);
+    case liveTriggered: liveMidi[array].triggered = testByte(data, 0, 1, clampChange);
+
+    case seqTuning: seq[array].sequence.tuning = testByte(data, 0, 255, clampChange);
+
+    default:
+        PRINTLN("FrankData set(frankData frankDataType, byte data, byte array, bool clampChange), no case found");
+    }
+}
+void FrankData::set(frankData frankDataType, byte data, byte array, byte step, bool clampChange) {
+    switch (frankDataType) {
+    case seqNote: seq[array].sequence.note[step] = testByte(data, 0, 127, clampChange);
+    case seqGate: seq[array].sequence.gate[step] = testByte(data, 0, 1, clampChange);
+    case seqGateLength: seq[array].sequence.gateLength[step] = testByte(data, 0, 100, clampChange);
+    case seqCc: seq[array].sequence.cc[step] = testByte(data, 0, 127, clampChange);
+    case seqVelocity: seq[array].sequence.velocity[step] = testByte(data, 0, 127, clampChange);
+
+    default:
+        PRINTLN("FrankData set(frankData frankDataType, byte data, byte array, byte step, bool clampChange), no case "
+                "found");
+    }
+}
 
 inline void FrankData::change(frankData frankDataType, byte amount, bool clampChange) {
     set(frankDataType, get(frankDataType) + amount, clampChange);
