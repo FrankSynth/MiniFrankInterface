@@ -16,14 +16,14 @@
 #endif
 
 // class Output Routing
-byte OutputRouting::getOut() { return out; }
+byte OutputRouting::getOut() { return outSource; }
 byte OutputRouting::getChannel() { return channel; }
 byte OutputRouting::getSeq() { return seq; }
 byte OutputRouting::getArp() { return arp; }
 byte OutputRouting::getCc() { return cc; }
 byte OutputRouting::getliveMidiMode() { return liveMidiMode; }
 
-void OutputRouting::setOut(byte data) { out = data; }
+void OutputRouting::setOut(byte data) { outSource = data; }
 void OutputRouting::setChannel(byte data) { channel = data; }
 void OutputRouting::setSeq(byte data) { seq = data; }
 void OutputRouting::setArp(byte data) { arp = data; }
@@ -306,26 +306,26 @@ byte Seq::decreaseNote(byte index) {    // decrease  note value and return new n
 
 byte Seq::changeNote(byte index, int change) { // change note
     index = testByte(index, 0, LENGTH);        // test index
-    sequence.note[index] = changeByte(sequence.note[index], change, 0, NOTERANGE);
+    sequence.note[index] = changeByte(sequence.note[index], change, 0, NOTERANGE, 1);
 
     return sequence.note[index];
 }
 
 void Seq::changeNotes(int change) { // change note
     for (int i = 0; i < LENGTH; i++) {
-        sequence.note[i] = changeByte(sequence.note[i], change, 0, NOTERANGE);
+        sequence.note[i] = changeByte(sequence.note[i], change, 0, NOTERANGE, 1);
     }
 }
 
 void Seq::octaveUp() { // change note
     for (int i = 0; i < LENGTH; i++) {
-        sequence.note[i] = changeByteNoClampChange(sequence.note[i], 12, 0, NOTERANGE);
+        sequence.note[i] = changeByte(sequence.note[i], 12, 0, NOTERANGE, 0);
     }
 }
 
 void Seq::octaveDown() { // change note
     for (int i = 0; i < LENGTH; i++) {
-        sequence.note[i] = changeByteNoClampChange(sequence.note[i], -12, 0, NOTERANGE);
+        sequence.note[i] = changeByte(sequence.note[i], -12, 0, NOTERANGE, 0);
     }
 }
 
@@ -356,7 +356,7 @@ byte Seq::getGateLength(byte index) { // return gate length
 
 byte Seq::changeGateLength(byte index, int change) { // change gate length
     index = testByte(index, 0, LENGTH);              // test index
-    sequence.gateLength[index] = changeByte(sequence.gateLength[index], change, 0, 100);
+    sequence.gateLength[index] = changeByte(sequence.gateLength[index], change, 0, 100, 1);
 
     return sequence.gateLength[index];
 }
@@ -371,7 +371,7 @@ void Seq::setGateLengths(byte gateLength) {    // set all gates at once
 
 void Seq::changeGateLengths(int change) { // change gate length
     for (int i = 0; i < LENGTH; i++) {
-        sequence.gateLength[i] = changeByte(sequence.gateLength[i], change, 0, 100);
+        sequence.gateLength[i] = changeByte(sequence.gateLength[i], change, 0, 100, 1);
     }
 }
 
@@ -446,17 +446,17 @@ void FrankData::receivedMidiSongPosition(unsigned int spp) { setBpm16thCount(spp
 void FrankData::receivedStart() {
     stat.midiClockCount = 5;
     stat.bpm16thCount = 31;
-    setPlayStop(1);
+    set(play, 1);
 }
-void FrankData::receivedContinue() { setPlayStop(1); }
-void FrankData::receivedStop() { setPlayStop(0); }
+void FrankData::receivedContinue() { set(play, 1); }
+void FrankData::receivedStop() { set(play, 0); }
 
 void FrankData::receivedReset() {
     stat.midiClockCount = 5;
     stat.bpm16thCount = 31;
-    setPlayStop(0);
+    set(play, 0);
 
-    for (byte x = 0; x < OUTPUTS; x++) {
+        for (byte x = 0; x < OUTPUTS; x++) {
         liveMidi[x].reset();
     }
 }
@@ -504,11 +504,11 @@ void FrankData::calcBPM() {
 int FrankData::getBPM() { return stat.bpm; } // return MidiSource
 
 void FrankData::increaseStep() {
-    if (!((stat.stepSeq + 1) % STEPPERPAGE)) {                        // if we make a pageJump
-        if (getNumberPages() <= ((stat.stepSeq + 1) / STEPPERPAGE)) { // newPage above number of pages
-            stat.stepSeq = 0;                                         // set stepSeq 0
-        } else {                                                      // new page is valid.
-            stat.stepSeq++;                                           // increase Step
+    if (!((stat.stepSeq + 1) % STEPPERPAGE)) {                      // if we make a pageJump
+        if (config.nbPages <= ((stat.stepSeq + 1) / STEPPERPAGE)) { // newPage above number of pages
+            stat.stepSeq = 0;                                       // set stepSeq 0
+        } else {                                                    // new page is valid.
+            stat.stepSeq++;                                         // increase Step
         }
     } else {
         stat.stepSeq++; // increase Step
@@ -518,14 +518,14 @@ void FrankData::increaseStep() {
 }
 
 void FrankData::decreaseStep() {
-    if (stat.stepSeq == 0) {                               // we jump to the last page?
-        stat.stepSeq = getNumberPages() * STEPPERPAGE - 1; // set to max stepSeq
+    if (stat.stepSeq == 0) {                             // we jump to the last page?
+        stat.stepSeq = config.nbPages * STEPPERPAGE - 1; // set to max stepSeq
 
-    } else if ((!stat.stepSeq % STEPPERPAGE)) {                // we make a pageJump?
-        if (getNumberPages() > (stat.stepSeq / STEPPERPAGE)) { // newPage above number of pages
-            stat.stepSeq = getNumberPages() * STEPPERPAGE - 1; // set jump to last stepSeq
-        } else {                                               // new page is valid.
-            stat.stepSeq--;                                    // decrease Step
+    } else if ((!stat.stepSeq % STEPPERPAGE)) {              // we make a pageJump?
+        if (config.nbPages > (stat.stepSeq / STEPPERPAGE)) { // newPage above number of pages
+            stat.stepSeq = config.nbPages * STEPPERPAGE - 1; // set jump to last stepSeq
+        } else {                                             // new page is valid.
+            stat.stepSeq--;                                  // decrease Step
         }
     } else {
         stat.stepSeq--; // decrease Step
@@ -533,32 +533,33 @@ void FrankData::decreaseStep() {
     calcBPM();
 }
 
-void FrankData::setStep(byte stepSeq) { stat.stepSeq = testByte(stepSeq, 0, STEPPERPAGE * getNumberPages() - 1); }
+void FrankData::setStep(byte stepSeq) { stat.stepSeq = testByte(stepSeq, 0, STEPPERPAGE * config.nbPages - 1); }
 
 byte FrankData::getActivePage() { return (stat.stepSeq / STEPPERPAGE); }
 byte FrankData::getStepOnPage() { return (stat.stepSeq - (getActivePage() * STEPPERPAGE)); }
 byte FrankData::getStep() { return stat.stepSeq; } // return MidiSource
 
-byte FrankData::getPlayStop() { return stat.play; }
-void FrankData::setPlayStop(byte mode) { stat.play = mode; }
+// byte FrankData::getPlayStop() { return stat.play; }
+// void FrankData::setPlayStop(byte mode) { stat.play = mode; }
 
-void FrankData::togglePlayStop() { stat.play = !stat.play; }
+// void FrankData::togglePlayStop() { stat.play = !stat.play; }
 
-byte FrankData::getDirection() { return config.direction; }
-void FrankData::setDirection(byte direction) { config.direction = direction; }
+// byte FrankData::getDirection() { return config.direction; }
+// void FrankData::setDirection(byte direction) { config.direction = direction; }
 
-byte FrankData::getError() { return stat.error; }
-void FrankData::setError(byte error) { stat.error = error; }
+// byte FrankData::getError() { return stat.error; }
+// void FrankData::setError(byte error) { stat.error = error; }
 
 // config
-byte FrankData::getDisplayBrightness() { return config.displayBrightness; }
-void FrankData::setDisplayBrightness(byte brightness) { config.displayBrightness = brightness; }
+// byte FrankData::getDisplayBrightness() { return config.displayBrightness; }
+// void FrankData::setDisplayBrightness(byte brightness) { config.displayBrightness = brightness; }
 
-void FrankData::setMidiSource(byte midi) { config.midiSource = testByte(midi, 0, 1); }
-byte FrankData::getMidiSource() { return config.midiSource; }
+// void FrankData::setMidiSource(byte midi) { config.midiSource = testByte(midi, 0, 1); }
+// byte FrankData::getMidiSource() { return config.midiSource; }
 
-void FrankData::setNumberPages(byte nbPages) { config.nbPages = testByte(nbPages, 1, PAGES); }
-byte FrankData::getNumberPages() { return config.nbPages; }
+// void FrankData::setNumberPages(byte nbPages) { config.nbPages = testByte(nbPages, 1, PAGES); }
+// byte FrankData::getNumberPages() { return config.nbPages; }
+
 byte FrankData::getCurrentNumberPages() { // number of pages, takes care if page number has changed
     if (config.nbPages > (getStep() / 8))
         return config.nbPages;  // is our stepSeq above the current number of pages?
@@ -623,32 +624,131 @@ Alle funktionen hier drunter sind erstmal nur als dummy geschrieben, damit ich d
 
 // new set and get functions
 byte FrankData::get(frankData frankDataType) {
-    switch (frankDataType){
-    case bpm: return stat.bpm; break;
-    
-    default:
-        return 0;
+    switch (frankDataType) {
+    case midiSource: return config.midiSource;
+    case nbPages: return config.nbPages;
+    case direction: return config.direction;
+    case displayBrightness: return config.displayBrightness;
+
+    case screenChannel: return stat.screen.channel;
+    case screenConfig: return stat.screen.config;
+    case screenMainMenu: return stat.screen.mainMenu;
+    case screenSubScreen: return stat.screen.subscreen;
+
+    case stepArp: return stat.stepArp;
+    case stepSeq: return stat.stepSeq;
+    case bpm: return stat.bpm;
+    case play: return stat.play;
+    case rec: return stat.rec;
+    case error: return stat.error;
+    case bpmSync: return stat.bpmSync;
+    case bpmPoti: return stat.bpmPoti;
+
+    default: PRINTLN("FrankData get(frankData frankDataType), no case found"); return 0;
     }
 }
 byte FrankData::get(frankData frankDataType, byte array) {
     switch (frankDataType) {
-    case liveMod: return liveMidi[array].getMod(); break;
+    case outputSource: return config.routing[array].outSource;
+    case outputChannel: return config.routing[array].channel;
+    case outputSeq: return config.routing[array].seq;
+    case outputArp: return config.routing[array].arp;
+    case outputCc: return config.routing[array].cc;
+    case outputLiveMode: return config.routing[array].liveMidiMode;
+    case outputClock: return config.routing[array].clock;
 
-    default: return 0;
+    case liveMod: return liveMidi[array].mod;
+    case livePitchbend: return liveMidi[array].pitchbend;
+    case liveAftertouch: return liveMidi[array].aftertouch;
+    case liveSustain: return liveMidi[array].sustain;
+    case liveTriggered: return liveMidi[array].triggered;
+
+    case seqTuning: return seq[array].sequence.tuning;
+
+    default: PRINTLN("FrankData get(frankData frankDataType, byte array), no case found"); return 0;
     }
 }
-byte FrankData::get(frankData frankDataType, byte array, byte step) {}
+byte FrankData::get(frankData frankDataType, byte array, byte step) {
+    switch (frankDataType) {
+    case seqNote: return seq[array].sequence.note[step];
+    case seqGate: return seq[array].sequence.gate[step];
+    case seqGateLength: return seq[array].sequence.gateLength[step];
+    case seqCc: return seq[array].sequence.cc[step];
+    case seqVelocity: return seq[array].sequence.velocity[step];
 
-void FrankData::set(frankData frankDataType, byte data) {}
-void FrankData::set(frankData frankDataType, byte data, byte array) {}
-void FrankData::set(frankData frankDataType, byte data, byte array, byte step){
-
+    default: PRINTLN("FrankData get(frankData frankDataType, byte array, byte step), no case found"); return 0;
+    }
 }
 
-void FrankData::setData(byte data, byte index) {} // brauchen wir warscheinlich nicht?
+void FrankData::set(frankData frankDataType, byte data, bool clampChange) {
+    switch (frankDataType) {
+    case midiSource: config.midiSource = testByte(data, 0, 1, clampChange);
+    case nbPages: config.nbPages = testByte(data, 1, PAGES, clampChange);
+    case direction: config.direction = testByte(data, 0, 1, clampChange);
+    case displayBrightness: config.displayBrightness = testByte(data, 0, 100, clampChange); // how high?
 
+    case screenChannel: stat.screen.channel = testByte(data, 0, 1, clampChange);
+    case screenConfig: stat.screen.config = testByte(data, 0, 1, clampChange);
+    case screenMainMenu: stat.screen.mainMenu = testByte(data, 0, 1, clampChange);
+    case screenSubScreen: stat.screen.subscreen = testByte(data, 0, 4, clampChange);
+
+    case stepArp: stat.stepArp = testByte(data, 0, NOTERANGE, clampChange);
+    case stepSeq: stat.stepSeq = testByte(data, 0, LENGTH, clampChange);
+    case bpm: stat.bpm = testByte(data, 0, 255, clampChange);
+    case play: stat.play = testByte(data, 0, 1, clampChange);
+    case rec: stat.rec = testByte(data, 0, 1, clampChange);
+    case error: stat.error = testByte(data, 0, 1, clampChange);
+    case bpmSync: stat.bpmSync = testByte(data, 0, 1, clampChange);
+    case bpmPoti: stat.bpmPoti = testByte(data, 0, 255, clampChange);
+
+    default: PRINTLN("FrankData set(frankData frankDataType, byte data, bool clampChange = 0), no case found");
+    }
+}
+
+void FrankData::set(frankData frankDataType, byte data, byte array, bool clampChange) {}
+void FrankData::set(frankData frankDataType, byte data, byte array, byte step, bool clampChange) {}
+
+inline void FrankData::change(frankData frankDataType, byte amount, bool clampChange) {
+    set(frankDataType, get(frankDataType) + amount, clampChange);
+}
+inline void FrankData::change(frankData frankDataType, byte amount, byte array, bool clampChange) {
+    set(frankDataType, get(frankDataType, array) + amount, array, clampChange);
+}
+inline void FrankData::change(frankData frankDataType, byte amount, byte array, byte step, bool clampChange) {
+    set(frankDataType, get(frankDataType, array, step) + amount, array, step, clampChange);
+}
+
+inline void FrankData::increase(frankData frankDataType, bool clampChange) { change(frankDataType, 1, clampChange); }
+inline void FrankData::increase(frankData frankDataType, byte array, bool clampChange) {
+    change(frankDataType, 1, array, clampChange);
+}
+inline void FrankData::increase(frankData frankDataType, byte array, byte step, bool clampChange) {
+    change(frankDataType, 1, array, step, clampChange);
+}
+
+inline void FrankData::decrease(frankData frankDataType, bool clampChange) { change(frankDataType, -1, clampChange); }
+inline void FrankData::decrease(frankData frankDataType, byte array, bool clampChange) {
+    change(frankDataType, -1, array, clampChange);
+}
+inline void FrankData::decrease(frankData frankDataType, byte array, byte step, bool clampChange) {
+    change(frankDataType, -1, array, step, clampChange);
+}
+
+void FrankData::toggle(frankData frankDataType) {
+    switch (frankDataType) {
+    case direction: config.direction = toggleByte(config.direction); break;
+    case play: stat.play = toggleByte(stat.play); break;
+    case rec: stat.rec = toggleByte(stat.rec); break;
+    case bpmSync: stat.bpmSync = toggleByte(stat.bpmSync); break;
+    case screenMainMenu: stat.screen.mainMenu = toggleByte(stat.screen.mainMenu); break;
+    case screenConfig: stat.screen.config = toggleByte(stat.screen.config); break;
+
+    default: PRINTLN("FrankData toggle(frankData frankDataType), no case found");
+    }
+}
 
 // Jacobs test
+void FrankData::setData(byte data, byte index) {} // brauchen wir warscheinlich nicht?
 char *FrankData::getDataString(byte data, byte index) {
     int value = 100;
     int channel = getScreenChannel();
@@ -691,7 +791,9 @@ byte FrankData::getArpModeEnable(byte channel) { // Live oder Seq?
 }
 
 // utility
-inline byte testByte(byte value, byte minimum, byte maximum) { // test byte range and return valid byte
+
+// test byte range and return valid byte
+inline byte testByte(byte value, byte minimum, byte maximum, bool clampChange) {
     if (value > maximum) {
 
         PRINTLN("testByte: value was to big");
@@ -713,7 +815,8 @@ inline byte testByte(byte value, byte minimum, byte maximum) { // test byte rang
     }
 }
 
-inline byte increaseByte(byte value, byte maximum) { // increase byte
+// increase byte
+inline byte increaseByte(byte value, byte maximum) { 
     if (value == maximum) {
         return value;
     } else {
@@ -721,7 +824,8 @@ inline byte increaseByte(byte value, byte maximum) { // increase byte
     }
 }
 
-inline byte decreaseByte(byte value, byte minimum) { // decrease byte
+// decrease byte
+inline byte decreaseByte(byte value, byte minimum) { 
     if (value == minimum) {
         return value;
     } else {
@@ -729,23 +833,19 @@ inline byte decreaseByte(byte value, byte minimum) { // decrease byte
     }
 }
 
-inline byte changeByte(byte value, int change, byte minimum, byte maximum) { // change byte value and check boundaries
-    if ((int)value + change >= maximum) {                                    // test max
-        return maximum;
+// change byte value and check boundaries
+inline byte changeByte(byte value, int change, byte minimum, byte maximum,
+                       bool clampChange) { 
+
+    if ((int)value + change >= maximum) { // test max
+
+        return clampChange ? maximum : value;
     } else if ((int)value + change <= minimum) { // test min
-        return minimum;
+        return clampChange ? minimum : value;
     } else {
         return (byte)((int)value + change); // return new value
     }
 }
 
-inline byte changeByteNoClampChange(byte value, int change, byte minimum,
-                                    byte maximum) { // change byte (keeps original value if change not possible)
-    if ((int)value + change >= maximum) {           // test max
-        return value;
-    } else if ((int)value + change <= minimum) { // test min
-        return value;
-    } else {
-        return (byte)((int)value + change); // return new value
-    }
-}
+// toggle byte
+template <typename T> inline T toggleByte(T data) { return !data; }

@@ -25,7 +25,8 @@
 #define DATAOBJ FrankData::getDataObj()
 
 class OutputRouting {
-    byte out;          // 0 = live, 1 = seq
+  public:
+    byte outSource;          // 0 = live, 1 = seq
     byte channel;      // 0 = all, 1 = channel 1, ...
     byte seq;          // 0 = seq0, 1 = seq1
     byte arp;          // 0 = off, 1 = on
@@ -33,9 +34,8 @@ class OutputRouting {
     byte liveMidiMode; // 0 = latest, 1 = lowest, 2 = highest
     byte clock;        // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
 
-  public:
     OutputRouting() {
-        this->out = 0;
+        this->outSource = 0;
         this->channel = 0;
         this->seq = 0;
         this->arp = 0;
@@ -77,7 +77,7 @@ typedef struct {
     byte direction = 1;             // 0 -> reverse ; 1 -> forward
     byte displayBrightness = 100;   // 0-255;
     OutputRouting routing[OUTPUTS]; // hold settings for that many outputs
-    // byte clockOut0 = 2; 
+    // byte clockOut0 = 2;
     // byte clockOut1 = 2; // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
 
 } structSettings;
@@ -142,6 +142,7 @@ class PressedNotesList {
 
 // save live midi data
 class LiveMidi {
+  public:
     PressedNotesList noteList;
     byte mod;
     byte pitchbend;
@@ -149,7 +150,6 @@ class LiveMidi {
     byte sustain;
     byte triggered;
 
-  public:
     LiveMidi() {
         this->mod = 0;
         this->pitchbend = 64;
@@ -224,7 +224,6 @@ class Seq {
 
     int getSequenceSize(); // return the struct size
 
-  private:
     // Sequence
     structSequence sequence;
 };
@@ -235,35 +234,37 @@ class FrankData {
   public:
     // storage enumerator
     enum frankData : byte {
-        // Seq, needs OUTPUTS
+        // Seq, needs value, array, step
         seqNote,
         seqGate,
         seqGateLength,
         seqCc,
         seqVelocity,
         seqTuning,
+        seqSize,
 
-        // general Settings, needs 1
+        // general Settings, needs value
         midiSource,
         nbPages,
         direction,
         displayBrightness,
 
-        // Output Routing Settings, needs OUTPUTS
+        // Output Routing Settings, needs value, array
         outputSource,
         outputChannel,
         outputSeq,
         outputArp,
         outputCc,
-        outputLive,
+        outputLiveMode,
+        outputClock,
 
-        // Screen Settings, needs 1
+        // Screen Settings, needs value
         screenChannel,
         screenConfig,
         screenMainMenu,
         screenSubScreen,
 
-        // structStatus, needs 1
+        // structStatus, needs value
         stepSeq,
         stepArp,
         bpm,
@@ -271,20 +272,20 @@ class FrankData {
         rec,
         error,
         bpmSync,
-        midiClockCount,
-        bpm16thCount,
+        // midiClockCount,
+        // bpm16thCount,
         bpmPoti,
 
-        // liveMidi, needs OUTPUTS
-        liveLatestKey,
-        liveHighestKey,
-        liveLowestKey,
+        // liveMidi, needs value, array
         liveMod,
         livePitchbend,
         liveAftertouch,
         liveSustain,
         liveTriggered,
-        liveKeysPressed
+        // liveLatestKey,
+        // liveHighestKey,
+        // liveLowestKey,
+        // liveKeysPressed,
     };
 
     // idea for further enumerators
@@ -299,14 +300,14 @@ class FrankData {
             this->seq[output].init();
         }
     }
-
-  public:
+    public:
     structStatus stat;
     structSettings config;
 
     LiveMidi liveMidi[OUTPUTS];
     Seq seq[OUTPUTS];
 
+  public:
     // receive MIDI
     void receivedKeyPressed(byte channel, byte note, byte velocity);
     void receivedKeyReleased(byte channel, byte note);
@@ -328,6 +329,10 @@ class FrankData {
     byte getBpm16thCount();
     void resetClock();
 
+    structKey getKeyHighest(byte array);
+    structKey getKeyLowest(byte array);
+    structKey getKeyLatest(byte array);
+
     // settings
 
     void setSync(byte bpmSync);
@@ -348,25 +353,25 @@ class FrankData {
     byte getActivePage();
     byte getStepOnPage();
 
-    void setPlayStop(byte mode);
-    byte getPlayStop();
+    // void setPlayStop(byte mode);
+    // byte getPlayStop();
 
-    void togglePlayStop();
+    // void togglePlayStop();
 
-    void setDirection(byte direction);
-    byte getDirection();
+    // void setDirection(byte direction);
+    // byte getDirection();
 
-    void setError(byte error);
-    byte getError();
+    // void setError(byte error);
+    // byte getError();
 
-    void setDisplayBrightness(byte brightness);
-    byte getDisplayBrightness();
+    // void setDisplayBrightness(byte brightness);
+    // byte getDisplayBrightness();
 
-    void setMidiSource(byte midi);
-    byte getMidiSource();
+    // void setMidiSource(byte midi);
+    // byte getMidiSource();
 
-    void setNumberPages(byte nbPages);
-    byte getNumberPages();
+    // void setNumberPages(byte nbPages);
+    // byte getNumberPages();
     byte getCurrentNumberPages();
     Seq *getSeqObject();
 
@@ -398,14 +403,29 @@ class FrankData {
     byte get(frankData frankDataType, byte array, byte step);
 
     // set single type value
-    void set(frankData frankDataType, byte data);
+    void set(frankData frankDataType, byte data, bool clampChange = 0);
     // set value prat of an array
-    void set(frankData frankDataType, byte data, byte array);
+    void set(frankData frankDataType, byte data, byte array, bool clampChange = 0);
     // set value for certain step
-    void set(frankData frankDataType, byte data, byte array, byte step);
+    void set(frankData frankDataType, byte data, byte array, byte step, bool clampChange = 0);
+    // toggle what can be toggled
+    void toggle(frankData frankdataType);
+
+    inline void change(frankData frankDataType, byte amount, bool clampChange = 0);
+    inline void change(frankData frankDataType, byte amount, byte array, bool clampChange = 0);
+    inline void change(frankData frankDataType, byte amount, byte array, byte step, bool clampChange = 0);
+    
+    inline void increase(frankData frankDataType, bool clampChange = 0);
+    inline void increase(frankData frankDataType, byte array, bool clampChange = 0);
+    inline void increase(frankData frankDataType, byte array, byte step, bool clampChange = 0);
+    
+    inline void decrease(frankData frankDataType, bool clampChange = 0);
+    inline void decrease(frankData frankDataType, byte array, bool clampChange = 0);
+    inline void decrease(frankData frankDataType, byte array, byte step, bool clampChange = 0);
+
+
 
     // zum testen//
-
     void setData(byte id, byte index = 0);
 
     void toggleData(byte id, byte index = 0);
@@ -417,6 +437,7 @@ class FrankData {
 
     char *getDataName(byte id);
 
+    // singleton
     static FrankData &getDataObj();
 
   protected:
@@ -424,9 +445,8 @@ class FrankData {
 };
 
 // utility
-inline byte testByte(byte value, byte minimum, byte maximum = 255); // test byte range and return valid byte
+inline byte testByte(byte value, byte minimum, byte maximum = 255, bool clampChange = 0); // test byte range and return valid byte
 inline byte increaseByte(byte value, byte maximum);                 // increase byte
 inline byte decreaseByte(byte value, byte minimum);                 // decrease byte
-inline byte changeByte(byte value, int change, byte minimum = 0, byte maximum = 255); // change byte
-inline byte changeByteNoClampChange(byte value, int change, byte minimum = 0,
-                                    byte maximum = 255); // change byte (keeps original value if change not possible)
+inline byte changeByte(byte value, int change, byte minimum = 0, byte maximum = 255, bool clampChange = 0); // change byte
+template <typename T>inline T toggleByte(T data);

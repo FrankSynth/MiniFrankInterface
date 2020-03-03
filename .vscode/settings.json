@@ -6,6 +6,9 @@
         "limits": "cpp",
         "ostream": "cpp",
         "streambuf": "cpp",
-        "type_traits": "cpp"
+        "type_traits": "cpp",
+        "fstream": "cpp",
+        "typeinfo": "cpp",
+        "utility": "cpp"
     }
 }

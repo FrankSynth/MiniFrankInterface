@@ -48,7 +48,7 @@ void Display::drawBuffer() {
 }
 
 void Display::refresh() {
-    displayBrightness(DATAOBJ.getDisplayBrightness()); // set display Brightness
+    displayBrightness(DATAOBJ.get(FrankData::displayBrightness)); // set display Brightness
     drawBuffer();
     updateDisplay();
 }
@@ -159,7 +159,7 @@ void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
 }
 
 void Display::BodyTemplateSeq() { // has 2x4 dataFields + PageBar
-    Seq *activeSeq = &DATAOBJ.seq[DATAOBJ.getScreenChannel()];
+    // Seq activeSeq = &DATAOBJ.seq[DATAOBJ.getScreenChannel()];
 
     // DataFields
     for (int x = 0; x < 4; x++) {
@@ -178,7 +178,8 @@ void Display::BodyTemplateSeq() { // has 2x4 dataFields + PageBar
             /////Print Text to Field/////
 
             // Font Color depends on Gate status
-            if (activeSeq->getGate(index)) {
+
+            if (DATAOBJ.get(FrankData::seqGate, FrankData::screenChannel, index)) {
                 bufferBody->drawRect(x * 40 + 1, y * 35 + 2, 38, 33, BLACKBLUE); // Blue Gate on Rectangle
                 bufferBody->setTextColor(WHITE, BLUE);                           // Note  Color GateOn
             } else {
@@ -258,7 +259,7 @@ void Display::drawHead() {
     bufferHead->print("MIDI:");
     bufferHead->setTextColor(BLACKBLUE, BLACK);
 
-    if (DATAOBJ.getMidiSource()) {
+    if (DATAOBJ.get(FrankData::midiSource)) {
         bufferHead->print("USB");
 
     } else {
@@ -289,7 +290,7 @@ void Display::drawFoot() {
     bufferFoot->setCursor(40, 5);
     bufferFoot->setTextColor(WHITE, BLACKBLUE);
 
-    if (DATAOBJ.getPlayStop()) {
+    if (DATAOBJ.get(FrankData::play)) {
         bufferFoot->print("PLAY");
     } else {
         bufferFoot->print("STOP");
@@ -299,7 +300,7 @@ void Display::drawFoot() {
     bufferFoot->setCursor(67, 5);
     bufferFoot->setTextColor(WHITE, BLACKBLUE);
 
-    if (DATAOBJ.getDirection()) {
+    if (DATAOBJ.get(FrankData::direction)) {
         bufferFoot->print((char)175);
     } else {
         bufferFoot->print((char)174);
@@ -312,7 +313,7 @@ void Display::drawFoot() {
 
     bufferFoot->print("TUNE:");
 
-    bufferFoot->print(tuningToChar(DATAOBJ.seq[DATAOBJ.getScreenChannel()].getTuning()));
+    bufferFoot->print(tuningToChar(DATAOBJ.get(FrankData::seqTuning, DATAOBJ.get(FrankData::screenChannel))));
 
     // if (DATAOBJ.getActiveSeq() == 0) { // SEQ 1 aktiv
     //     bufferFoot->print(tuningToChar(seq1->getTuning()));

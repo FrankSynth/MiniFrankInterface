@@ -30,21 +30,21 @@ void controls::encode(byte message) {
 // rotate message
 void controls::rotate(byte id, byte dir) {
     if (id == 8) { // Control Encoder
-        DATAOBJ.changeData(CGATE, id, dir);
+        DATAOBJ.changeData(CGATE, id, dir); //old!!!!!
     } else if (id == 9) { // Step Encoder
-        DATAOBJ.changeData(STEP, id, dir);
+        DATAOBJ.changeData(STEP, id, dir); // old!!!!!
     } else { // Note Encoder
-        DATAOBJ.changeData(mappingPush(id), id, dir);
+        DATAOBJ.changeData(mappingPush(id), id, dir); // old!!!!!
     }
 }
 
 void controls::push(byte id, byte push) { // switch message
     if (id == 8) {                        // Control Encoder
-        DATAOBJ.toggleScreenConfig();
+        DATAOBJ.toggleScreenConfig();     // old!!!!!
     } else if (id == 9) { // Step Encoder
-        DATAOBJ.togglePlayStop();
+        DATAOBJ.toggle(FrankData::play); // old!!!!!
     } else { // Note Encoder
-        DATAOBJ.toggleData(mappingPush(id), id);
+        DATAOBJ.toggleData(mappingPush(id), id); // old!!!!!
     }
 }
 

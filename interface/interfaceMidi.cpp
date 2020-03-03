@@ -31,104 +31,104 @@ void midiSystemReset();
 
 // USB
 void usbMidiNoteOn(byte channel, byte note, byte velocity) {
-    if (DATAOBJ.getMidiSource() == 1) {
+    if (DATAOBJ.get(FrankData::midiSource) == 1) {
         midiNoteOn(channel, note, velocity);
     }
 }
 void usbMidiNoteOff(byte channel, byte note, byte velocity) {
-    if (DATAOBJ.getMidiSource() == 1) {
+    if (DATAOBJ.get(FrankData::midiSource) == 1) {
         midiNoteOff(channel, note, velocity);
     }
 }
 void usbMidiCC(byte channel, byte control, byte value) {
-    if (DATAOBJ.getMidiSource() == 1) {
+    if (DATAOBJ.get(FrankData::midiSource) == 1) {
         midiCC(channel, control, value);
     }
 }
 void usbMidiAfterTouch(byte channel, byte pressure) {
-    if (DATAOBJ.getMidiSource() == 1) {
+    if (DATAOBJ.get(FrankData::midiSource) == 1) {
         midiAfterTouch(channel, pressure);
     }
 }
 void usbMidiClock() {
-    if (DATAOBJ.getMidiSource() == 1) {
+    if (DATAOBJ.get(FrankData::midiSource) == 1) {
         midiClock();
     }
 }
 void usbMidiSongPosition(uint16_t spp) {
-    if (DATAOBJ.getMidiSource() == 1) {
+    if (DATAOBJ.get(FrankData::midiSource) == 1) {
         midiSongPosition(spp);
     }
 }
 void usbMidiStart() {
-    if (DATAOBJ.getMidiSource() == 1) {
+    if (DATAOBJ.get(FrankData::midiSource) == 1) {
         midiStart();
     }
 }
 void usbMidiContinue() {
-    if (DATAOBJ.getMidiSource() == 1) {
+    if (DATAOBJ.get(FrankData::midiSource) == 1) {
         midiContinue();
     }
 }
 void usbMidiStop() {
-    if (DATAOBJ.getMidiSource() == 1) {
+    if (DATAOBJ.get(FrankData::midiSource) == 1) {
         midiStop();
     }
 }
 void usbMidiSystemReset() {
-    if (DATAOBJ.getMidiSource() == 1) {
+    if (DATAOBJ.get(FrankData::midiSource) == 1) {
         midiSystemReset();
     }
 }
 
 // DIN
 void dinMidiNoteOn(byte channel, byte note, byte velocity) {
-    if (DATAOBJ.getMidiSource() == 0) {
+    if (DATAOBJ.get(FrankData::midiSource) == 0) {
         midiNoteOn(channel, note, velocity);
     }
 }
 void dinMidiNoteOff(byte channel, byte note, byte velocity) {
-    if (DATAOBJ.getMidiSource() == 0) {
+    if (DATAOBJ.get(FrankData::midiSource) == 0) {
         midiNoteOff(channel, note, velocity);
     }
 }
 void dinMidiCC(byte channel, byte control, byte value) {
-    if (DATAOBJ.getMidiSource() == 0) {
+    if (DATAOBJ.get(FrankData::midiSource) == 0) {
         midiCC(channel, control, value);
     }
 }
 void dinMidiAfterTouch(byte channel, byte pressure) {
-    if (DATAOBJ.getMidiSource() == 0) {
+    if (DATAOBJ.get(FrankData::midiSource) == 0) {
         midiAfterTouch(channel, pressure);
     }
 }
 void dinMidiClock() {
-    if (DATAOBJ.getMidiSource() == 0) {
+    if (DATAOBJ.get(FrankData::midiSource) == 0) {
         midiClock();
     }
 }
 void dinMidiSongPosition(unsigned int spp) {
-    if (DATAOBJ.getMidiSource() == 0) {
+    if (DATAOBJ.get(FrankData::midiSource) == 0) {
         midiSongPosition(spp);
     }
 }
 void dinMidiStart() {
-    if (DATAOBJ.getMidiSource() == 0) {
+    if (DATAOBJ.get(FrankData::midiSource) == 0) {
         midiStart();
     }
 }
 void dinMidiContinue() {
-    if (DATAOBJ.getMidiSource() == 0) {
+    if (DATAOBJ.get(FrankData::midiSource) == 0) {
         midiContinue();
     }
 }
 void dinMidiStop() {
-    if (DATAOBJ.getMidiSource() == 0) {
+    if (DATAOBJ.get(FrankData::midiSource) == 0) {
         midiStop();
     }
 }
 void dinMidiSystemReset() {
-    if (DATAOBJ.getMidiSource() == 0) {
+    if (DATAOBJ.get(FrankData::midiSource) == 0) {
         midiSystemReset();
     }
 }

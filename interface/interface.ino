@@ -89,7 +89,7 @@ void setup() {
 
         if (millis() - timer > 2000) {
             timeout = 1;         // we timed out
-            DATAOBJ.setError(1); // set error status
+            DATAOBJ.set(FrankData::error, 1); // set error status
             PRINTLN("uC : connection failed (timeout)");
         }
     }
@@ -99,7 +99,7 @@ void setup() {
         PRINTLN("Connected");
 
     } else {
-        DATAOBJ.setError(1); // set error status
+        DATAOBJ.set(FrankData::error, 1); // set error status
     }
 
     attachInterrupt(digitalPinToInterrupt(SWSYNC), ISRSwitch, CHANGE);
