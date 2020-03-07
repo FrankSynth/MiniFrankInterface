@@ -53,22 +53,25 @@ void Display::refresh() {
     updateDisplay();
 }
 
-void Display::updateDisplay() {
+inline void Display::updateDisplay() {
     writeRGBMap(0, 0, bufferHead, w, 15);
     writeRGBMap(0, 15, bufferBody, w, 98);
     writeRGBMap(0, 113, bufferFoot, w, 15);
 }
 
-void Display::drawBody() {
+inline void Display::drawBody() {
     bufferBody->fillScreen(0x39E7); // resetBuffer
 
-    if (DATAOBJ.getMainMenuEnabled() == 1 ||
-        DATAOBJ.getScreenConfig(DATAOBJ.getScreenChannel())) { // Load Config Template
+    // !!!!! old statement said DATAOBJ.getScreenConfig(DATAOBJ.getScreenChannel())) - ist aber kein array??
+    if (DATAOBJ.get(FrankData::screenMainMenu) == 1 ||
+        DATAOBJ.get(FrankData::screenConfig)) { // Load Config Template
+
+
         // BodyTemplateSeq();  //Load Seq Template
 
         BodyTemplateMenu();
-    } else if (DATAOBJ.getOutputMode(DATAOBJ.getScreenChannel())) {
-        if (DATAOBJ.getArpModeEnable(DATAOBJ.getScreenChannel())) {
+    } else if (DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel))) {
+        if (DATAOBJ.get(FrankData::outputArp, DATAOBJ.get(FrankData::screenOutputChannel))) {
             BodyTemplateSeq(); // Load Seq Template
 
             // BodyTemplateArp(); //Load Arp Template
@@ -82,7 +85,7 @@ void Display::drawBody() {
     }
 }
 
-void Display::BodyTemplateLive() { // has 1 dataFields + GateSignal
+inline void Display::BodyTemplateLive() { // has 1 dataFields + GateSignal
     /////Draw the squares/////
     bufferBody->drawRect(1, 1, 158, 96, BLUE_DARK);
 
@@ -106,7 +109,7 @@ void Display::BodyTemplateLive() { // has 1 dataFields + GateSignal
     //                bufferBody->print(valueToOctave(DATAOBJ.getData(NOTE)));
 }
 
-void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
+inline void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
     // DataFields
 
     for (int x = 0; x < 4; x++) {
@@ -126,7 +129,7 @@ void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
                 bufferBody->setFont();                   // reset to default font
 
                 /////Name/////
-                char *string = DATAOBJ.getDataName(mapping(dataField)); // get name
+                char *string = toStr(mapping(dataField)); // get name
                 byte offset = strlen(string) * 3;                       // get name length
 
                 bufferBody->setCursor(posX + 20 - offset, posY + 7); // set Cursor
@@ -138,7 +141,16 @@ void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
 
                 // vll.. kann man alle werte auf string mappen damit wir int, sowie strings hier printen können, müsste
                 // aber in der datenklasse passieren, vll getDataString?
-                char *data = DATAOBJ.getDataString(mapping(dataField), index); // string buffer
+
+
+/*
+                ===== what does the next line mean/should do?
+                 "index" is a external function, thus a bad variable name,
+                 because if not defined differently, it is known as a function pointer.
+          
+          */
+                // char *data = toStr(mapping(dataField), index); // string buffer
+                char *data = toStr(mapping(dataField)); // temporary removed index
 
                 byte length = strlen(data); // string length
 
@@ -158,20 +170,21 @@ void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
     }
 }
 
-void Display::BodyTemplateSeq() { // has 2x4 dataFields + PageBar
+inline void Display::BodyTemplateSeq() { // has 2x4 dataFields + PageBar
     // Seq activeSeq = &DATAOBJ.seq[DATAOBJ.getScreenChannel()];
 
     // DataFields
     for (int x = 0; x < 4; x++) {
         for (int y = 0; y < 2; y++) {
             byte dataField = x + y * 4;                           // current DataField
-            byte index = x + y * 4 + DATAOBJ.getActivePage() * 8; // current index
+
+            byte dataFieldIndex = x + y * 4 + DATAOBJ.get(FrankData::activePage) * 8; // current index
 
             /////Draw the squares/////
             bufferBody->drawRect(x * 40, y * 36, 40, 35, BLUE_DARK); //
 
             /////Draw red bar for the ActiveDataField (STEP) /////
-            if (DATAOBJ.getStepOnPage() == (x + y * 4)) {
+            if (DATAOBJ.get(FrankData::stepOnPage) == (x + y * 4)) {
                 bufferBody->fillRect(x * 40 + 2, y * 35 + 30, 36, 4, RED); // red bar for active Step
             }
 
@@ -179,7 +192,7 @@ void Display::BodyTemplateSeq() { // has 2x4 dataFields + PageBar
 
             // Font Color depends on Gate status
 
-            if (DATAOBJ.get(FrankData::seqGate, FrankData::screenChannel, index)) {
+            if (DATAOBJ.get(FrankData::seqGate, DATAOBJ.get(FrankData::screenOutputChannel), dataFieldIndex)) {
                 bufferBody->drawRect(x * 40 + 1, y * 35 + 2, 38, 33, BLACKBLUE); // Blue Gate on Rectangle
                 bufferBody->setTextColor(WHITE, BLUE);                           // Note  Color GateOn
             } else {
@@ -189,22 +202,23 @@ void Display::BodyTemplateSeq() { // has 2x4 dataFields + PageBar
             // Data is NOTE type
             if (mapping(dataField) == NOTE) {
                 // Note Value
+                byte note = DATAOBJ.get(FrankData::seqNote, DATAOBJ.get(FrankData::screenOutputChannel), dataFieldIndex);
                 bufferBody->setCursor(x * 40 + 5, y * 35 + 20);
                 bufferBody->setFont(&FreeSansBold12pt7b);
-                bufferBody->print(valueToNote(DATAOBJ.getData(NOTE)));
+                bufferBody->print(valueToNote(note));
 
                 bufferBody->setCursor(x * 40 + 26, y * 35 + 27);
                 bufferBody->setFont(&FreeSansBold9pt7b);
-                bufferBody->print(valueToSharp(DATAOBJ.getData(NOTE)));
+                bufferBody->print(valueToSharp(note));
 
                 bufferBody->setFont();
                 bufferBody->setCursor(x * 40 + 30, y * 35 + 5);
-                bufferBody->print(valueToOctave(DATAOBJ.getData(NOTE)));
+                bufferBody->print(valueToOctave(note));
             }
 
             // Data is default type (123456789, max 3 digits)
             else {
-                if (DATAOBJ.getData(mapping(dataField), index) < 100) { // value less 100
+                if (DATAOBJ.getData(mapping(dataField), dataFieldIndex) < 100) { // value less 100
                     bufferBody->setFont(&FreeSansBold12pt7b);
                     bufferBody->setCursor(x * 40 + 7, y * 35 + 25);
 
@@ -212,26 +226,26 @@ void Display::BodyTemplateSeq() { // has 2x4 dataFields + PageBar
                     bufferBody->setFont(&FreeSansBold9pt7b);
                     bufferBody->setCursor(x * 40 + 4, y * 35 + 24);
                 }
-                bufferBody->print(DATAOBJ.getData(mapping(dataField), index)); // print value
+                bufferBody->print(DATAOBJ.getData(mapping(dataField), dataFieldIndex)); // print value
             }
         }
     }
 
     ///// PageBlocks /////
-    byte width = 160 / DATAOBJ.getCurrentNumberPages();                // block width
-    byte offset = (160 - DATAOBJ.getCurrentNumberPages() * width) / 2; // center blocks
+    byte width = 160 / DATAOBJ.get(FrankData::currentPageNumber);                // block width
+    byte offset = (160 - DATAOBJ.get(FrankData::currentPageNumber) * width) / 2; // center blocks
 
-    for (int x = 0; x < DATAOBJ.getCurrentNumberPages(); x++) {
+    for (int x = 0; x < DATAOBJ.get(FrankData::currentPageNumber); x++) {
         bufferBody->drawRect(x * width + offset, 72, width, 25, BLUE_DARK);         // dark Rectangle
         bufferBody->fillRect(x * width + 1 + offset, 72 + 1, width - 2, 23, GREEN); // grey box
 
-        if (x == DATAOBJ.getActivePage()) {
+        if (x == DATAOBJ.get(FrankData::activePage)) {
             bufferBody->fillRect(x * width + 1 + offset, 72 + 1, width - 2, 23, RED); // Red Block (active)
         }
     }
 }
 
-void Display::drawHead() {
+inline void Display::drawHead() {
     // setup
     bufferHead->fillScreen(BLACK); // all Black
     bufferHead->setTextColor(WHITE, BLACK);
@@ -251,7 +265,7 @@ void Display::drawHead() {
     bufferHead->setCursor(61, 3);
     bufferHead->print("BPM:");
     bufferHead->setTextColor(BLACKBLUE, BLACK);
-    bufferHead->print(DATAOBJ.getBPM());
+    bufferHead->print(DATAOBJ.get(FrankData::bpm));
 
     // MIDI Settings
     bufferHead->setCursor(109, 3);
@@ -261,13 +275,13 @@ void Display::drawHead() {
 
     if (DATAOBJ.get(FrankData::midiSource)) {
         bufferHead->print("USB");
-
+6
     } else {
         bufferHead->print("DIN");
     }
 }
 
-void Display::drawFoot() {
+inline void Display::drawFoot() {
     // setup
     bufferFoot->fillScreen(BLACK); // all Black
     bufferFoot->setTextColor(WHITE, BLACK);
@@ -282,7 +296,7 @@ void Display::drawFoot() {
     bufferFoot->setTextColor(WHITE, BLACKBLUE);
     bufferFoot->print("CH:");
 
-    bufferFoot->print(DATAOBJ.getScreenChannel());
+    bufferFoot->print(DATAOBJ.get(FrankData::screenOutputChannel));
 
     // STOP PLAY
     bufferFoot->fillRect(36, 1, 40, 14, BLACKBLUE); // spacer
@@ -313,7 +327,7 @@ void Display::drawFoot() {
 
     bufferFoot->print("TUNE:");
 
-    bufferFoot->print(tuningToChar(DATAOBJ.get(FrankData::seqTuning, DATAOBJ.get(FrankData::screenChannel))));
+    bufferFoot->print(tuningToChar(DATAOBJ.get(FrankData::seqTuning, DATAOBJ.get(FrankData::screenOutputChannel))));
 
     // if (DATAOBJ.getActiveSeq() == 0) { // SEQ 1 aktiv
     //     bufferFoot->print(tuningToChar(seq1->getTuning()));
@@ -329,7 +343,7 @@ void Display::drawFoot() {
     bufferFoot->print("v0.1");
 }
 
-void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t w, int16_t h) {
+inline void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t w, int16_t h) {
     const uint16_t *buffer = bufferObj->getBuffer();
     lcd.startWrite();
     for (int16_t j = 0; j < h; j++, y++) {
@@ -432,12 +446,12 @@ DispBuffer16::~DispBuffer16(void) {
         free(buffer);
 }
 
-void DispBuffer16::copyBuffer(uint16_t index) { buffer2[index] = buffer[index]; }
+inline void DispBuffer16::copyBuffer(uint16_t bufferIndex) { buffer2[bufferIndex] = buffer[bufferIndex]; }
 
-int DispBuffer16::compareBuffer(uint16_t index) { return (buffer2[index] != buffer[index]); }
+inline int DispBuffer16::compareBuffer(uint16_t bufferIndex) { return (buffer2[bufferIndex] != buffer[bufferIndex]); }
 
 /////////////Stuff from Adafruit_GFX////////////
-void DispBuffer16::drawPixel(int16_t x, int16_t y, uint16_t color) {
+inline void DispBuffer16::drawPixel(int16_t x, int16_t y, uint16_t color) {
     if (buffer) {
         if ((x < 0) || (y < 0) || (x >= _width) || (y >= _height))
             return;
@@ -464,7 +478,7 @@ void DispBuffer16::drawPixel(int16_t x, int16_t y, uint16_t color) {
     }
 }
 
-void DispBuffer16::fillScreen(uint16_t color) {
+inline void DispBuffer16::fillScreen(uint16_t color) {
     if (buffer) {
         uint8_t hi = color >> 8, lo = color & 0xFF;
         if (hi == lo) {
@@ -477,7 +491,7 @@ void DispBuffer16::fillScreen(uint16_t color) {
     }
 }
 
-void DispBuffer16::byteSwap(void) {
+inline void DispBuffer16::byteSwap(void) {
     if (buffer) {
         uint32_t i, pixels = WIDTH * HEIGHT;
         for (i = 0; i < pixels; i++)

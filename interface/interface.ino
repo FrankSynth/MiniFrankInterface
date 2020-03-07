@@ -122,7 +122,7 @@ void loop() {
     // Temp Clock
     static long timer = 0;
     if (millis() - timer > 250) {
-        DATAOBJ.increaseStep();
+        DATAOBJ.increase(FrankData::stepSeq);
         timer = millis();
     }
 

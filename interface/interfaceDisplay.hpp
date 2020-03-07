@@ -38,13 +38,13 @@ class DispBuffer16 : public Adafruit_GFX {
   public:
     DispBuffer16(uint16_t w, uint16_t h);
     ~DispBuffer16(void);
-    void drawPixel(int16_t x, int16_t y, uint16_t color), fillScreen(uint16_t color), byteSwap(void);
+    inline void drawPixel(int16_t x, int16_t y, uint16_t color), fillScreen(uint16_t color), byteSwap(void);
 
-    uint16_t *getBuffer(void) const { return buffer; }   // return buffer 1 pointer
-    uint16_t *getBuffer2(void) const { return buffer2; } // return buffer 2 pointer
+    inline uint16_t *getBuffer(void) const { return buffer; }   // return buffer 1 pointer
+    inline uint16_t *getBuffer2(void) const { return buffer2; } // return buffer 2 pointer
 
-    void copyBuffer(uint16_t index);   // copy value from buffer 1 to 2
-    int compareBuffer(uint16_t index); // compare value from both buffers
+    inline void copyBuffer(uint16_t index);   // copy value from buffer 1 to 2
+    inline int compareBuffer(uint16_t index); // compare value from both buffers
 
     uint16_t *buffer2;
     uint16_t *buffer;
@@ -58,7 +58,7 @@ class Display {
         initBuffer();
     }
 
-    void refresh();                          // refresh display
+    void refresh();                   // refresh display
     void displayBrightness(byte brigthness); // set display display brightness
 
   private:
@@ -73,30 +73,30 @@ class Display {
     uint8_t h;
     uint8_t rotation;
 
-    char valueToNote(byte noteIn);
-    char valueToOctave(byte noteIn);
-    char valueToSharp(byte noteIn);
+    inline char valueToNote(byte noteIn);
+    inline char valueToOctave(byte noteIn);
+    inline char valueToSharp(byte noteIn);
 
-    const char *tuningToChar(byte tuning);
+    inline const char *tuningToChar(byte tuning);
 
-    void initLCD(byte w, byte h, byte rotation);
-    void initBuffer();
+    inline void initLCD(byte w, byte h, byte rotation);
+    inline void initBuffer();
 
-    void writeDisplay();
-    void updateBuffer();
+    inline void writeDisplay();
+    inline void updateBuffer();
 
-    void writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t w, int16_t h);
+    inline void writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t w, int16_t h);
 
-    void drawBuffer();
-    void drawHead();
-    void drawFoot();
-    void drawBody();
+    inline void drawBuffer();
+    inline void drawHead();
+    inline void drawFoot();
+    inline void drawBody();
 
     // Templates
-    void BodyTemplateSeq();
-    void BodyTemplateMenu();
-    void BodyTemplateLive();
-    void BodyTemplateArp();
+    inline void BodyTemplateSeq();
+    inline void BodyTemplateMenu();
+    inline void BodyTemplateLive();
+    inline void BodyTemplateArp();
 
-    void updateDisplay();
+    inline void updateDisplay();
 };

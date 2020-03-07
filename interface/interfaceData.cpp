@@ -16,19 +16,19 @@
 #endif
 
 // class Output Routing
-byte OutputRouting::getOut() { return outSource; }
-byte OutputRouting::getChannel() { return channel; }
-byte OutputRouting::getSeq() { return seq; }
-byte OutputRouting::getArp() { return arp; }
-byte OutputRouting::getCc() { return cc; }
-byte OutputRouting::getliveMidiMode() { return liveMidiMode; }
+// byte OutputRouting::getOut() { return outSource; }
+// byte OutputRouting::getChannel() { return channel; }
+// byte OutputRouting::getSeq() { return seq; }
+// byte OutputRouting::getArp() { return arp; }
+// byte OutputRouting::getCc() { return cc; }
+// byte OutputRouting::getliveMidiMode() { return liveMidiMode; }
 
-void OutputRouting::setOut(byte data) { outSource = data; }
-void OutputRouting::setChannel(byte data) { channel = data; }
-void OutputRouting::setSeq(byte data) { seq = data; }
-void OutputRouting::setArp(byte data) { arp = data; }
-void OutputRouting::setCc(byte data) { cc = data; }
-void OutputRouting::setLiveMidiMode(byte data) { liveMidiMode = data; }
+// void OutputRouting::setOut(byte data) { outSource = data; }
+// void OutputRouting::setChannel(byte data) { channel = data; }
+// void OutputRouting::setSeq(byte data) { seq = data; }
+// void OutputRouting::setArp(byte data) { arp = data; }
+// void OutputRouting::setCc(byte data) { cc = data; }
+// void OutputRouting::setLiveMidiMode(byte data) { liveMidiMode = data; }
 
 // class PressedNotesList
 void PressedNotesList::appendKey(byte note, byte velocity) {
@@ -395,7 +395,7 @@ byte Seq::getTuning() { return sequence.tuning; }
 // Data Singleton that handles all data, including all sequences, live midi and settings
 void FrankData::receivedKeyPressed(byte channel, byte note, byte velocity) {
     for (byte x = 0; x < OUTPUTS; x++) {
-        if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
+        if (config.routing[x].channel == 0 || config.routing[x].channel == channel) {
             liveMidi[x].keyPressed(note, velocity);
         }
     }
@@ -403,40 +403,8 @@ void FrankData::receivedKeyPressed(byte channel, byte note, byte velocity) {
 
 void FrankData::receivedKeyReleased(byte channel, byte note) {
     for (byte x = 0; x < OUTPUTS; x++) {
-        if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
+        if (config.routing[x].channel == 0 || config.routing[x].channel == channel) {
             liveMidi[x].keyReleased(note);
-        }
-    }
-}
-
-void FrankData::receivedMod(byte channel, byte data) {
-    for (byte x = 0; x < OUTPUTS; x++) {
-        if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
-            liveMidi[x].mod = data;
-        }
-    }
-}
-
-void FrankData::receivedPitchbend(byte channel, byte data) {
-    for (byte x = 0; x < OUTPUTS; x++) {
-        if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
-            liveMidi[x].pitchbend = data;
-        }
-    }
-}
-
-void FrankData::receivedAftertouch(byte channel, byte data) {
-    for (byte x = 0; x < OUTPUTS; x++) {
-        if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
-            liveMidi[x].setAftertouch(data);
-        }
-    }
-}
-
-void FrankData::receivedSustain(byte channel, byte data) {
-    for (byte x = 0; x < OUTPUTS; x++) {
-        if (config.routing[x].getChannel() == 0 || config.routing[x].getChannel() == channel) {
-            liveMidi[x].setSustain(data);
         }
     }
 }
@@ -456,7 +424,7 @@ void FrankData::receivedReset() {
     stat.bpm16thCount = 31;
     set(play, 0);
 
-        for (byte x = 0; x < OUTPUTS; x++) {
+    for (byte x = 0; x < OUTPUTS; x++) {
         liveMidi[x].reset();
     }
 }
@@ -481,29 +449,18 @@ void FrankData::setBpm16thCount(unsigned int spp) {
     stat.bpm16thCount = spp - 1;
 }
 
-byte FrankData::getBpm16thCount() { return stat.bpm16thCount; }
+inline void FrankData::calcBPM() {
+    if (bpmSync) {
+        static double bpmTimer = 0;
+        set(bpm, (int)(60000. / (millis() - bpmTimer)));
 
-// stat
-byte FrankData::getSync() { return stat.bpmSync; }
-
-void FrankData::setSync(byte bpmSync) { stat.bpmSync = bpmSync; }
-
-void FrankData::setRec(byte rec) { stat.rec = rec; }
-
-byte FrankData::getRec() { return stat.rec; }
-
-void FrankData::setBPM(int bpm) { stat.bpm = bpm; }
-
-void FrankData::calcBPM() {
-    static double bpmTimer = 0;
-    setBPM((int)(60000. / (millis() - bpmTimer)));
-
-    bpmTimer = millis();
+        bpmTimer = millis();
+    }
 }
 
-int FrankData::getBPM() { return stat.bpm; } // return MidiSource
+// int FrankData::getBPM() { return stat.bpm; } // return MidiSource
 
-void FrankData::increaseStep() {
+inline void FrankData::increaseStep() {
     if (!((stat.stepSeq + 1) % STEPPERPAGE)) {                      // if we make a pageJump
         if (config.nbPages <= ((stat.stepSeq + 1) / STEPPERPAGE)) { // newPage above number of pages
             stat.stepSeq = 0;                                       // set stepSeq 0
@@ -517,7 +474,7 @@ void FrankData::increaseStep() {
     calcBPM();
 }
 
-void FrankData::decreaseStep() {
+inline void FrankData::decreaseStep() {
     if (stat.stepSeq == 0) {                             // we jump to the last page?
         stat.stepSeq = config.nbPages * STEPPERPAGE - 1; // set to max stepSeq
 
@@ -530,97 +487,105 @@ void FrankData::decreaseStep() {
     } else {
         stat.stepSeq--; // decrease Step
     }
+
     calcBPM();
 }
 
-void FrankData::setStep(byte stepSeq) { stat.stepSeq = testByte(stepSeq, 0, STEPPERPAGE * config.nbPages - 1); }
-
-byte FrankData::getActivePage() { return (stat.stepSeq / STEPPERPAGE); }
-byte FrankData::getStepOnPage() { return (stat.stepSeq - (getActivePage() * STEPPERPAGE)); }
-byte FrankData::getStep() { return stat.stepSeq; } // return MidiSource
-
-// byte FrankData::getPlayStop() { return stat.play; }
-// void FrankData::setPlayStop(byte mode) { stat.play = mode; }
-
-// void FrankData::togglePlayStop() { stat.play = !stat.play; }
-
-// byte FrankData::getDirection() { return config.direction; }
-// void FrankData::setDirection(byte direction) { config.direction = direction; }
-
-// byte FrankData::getError() { return stat.error; }
-// void FrankData::setError(byte error) { stat.error = error; }
-
-// config
-// byte FrankData::getDisplayBrightness() { return config.displayBrightness; }
-// void FrankData::setDisplayBrightness(byte brightness) { config.displayBrightness = brightness; }
-
-// void FrankData::setMidiSource(byte midi) { config.midiSource = testByte(midi, 0, 1); }
-// byte FrankData::getMidiSource() { return config.midiSource; }
-
-// void FrankData::setNumberPages(byte nbPages) { config.nbPages = testByte(nbPages, 1, PAGES); }
-// byte FrankData::getNumberPages() { return config.nbPages; }
-
-byte FrankData::getCurrentNumberPages() { // number of pages, takes care if page number has changed
-    if (config.nbPages > (getStep() / 8))
-        return config.nbPages;  // is our stepSeq above the current number of pages?
-    return (getStep() / 8 + 1); // return current stepSeq page until the next page jump
+inline byte FrankData::getCurrentPageNumber() { // number of pages, takes care if page number has changed
+    if (config.nbPages > (stat.stepSeq / 8))
+        return config.nbPages;     // is our stepSeq above the current number of pages?
+    return (stat.stepSeq / 8 + 1); // return current stepSeq page until the next page jump
 }
 
-Seq *FrankData::getSeqObject() { return seq; }
+// Seq *FrankData::getSeqObject() { return seq; }
 
+// Singleton
 FrankData *FrankData::mainData = nullptr;
-
 FrankData &FrankData::getDataObj() {
     if (mainData == nullptr)
         mainData = new FrankData();
     return *mainData;
 }
 
-// Testclass *Testclass::mainData = nullptr;
+inline structKey FrankData::getLiveKeyEvaluated(byte array) {
+    switch (config.routing[array].liveMidiMode) {
+        case 0: return liveMidi[array].getKeyLatest();
+        case 1: return liveMidi[array].getKeyLowest();
+        case 2: return liveMidi[array].getKeyHighest();
+        default: 
+        PRINTLN("FrankData getLiveKeyEvaluated, no case found");
+        structKey emptyKey;
+        emptyKey.note = 0;
+        emptyKey.velocity = 0;
+        return emptyKey;
+    }
+}
+
+inline byte FrankData::getLiveCcEvaluated(byte array) {
+    switch(config.routing[array].cc) {
+        case 0: return getLiveKeyEvaluated(array).velocity; 
+        case 1: return liveMidi[array].mod;
+        case 2: return liveMidi[array].pitchbend;
+        case 3: return liveMidi[array].aftertouch;
+        case 4: return liveMidi[array].sustain;
+    }
+}
+
+inline char *FrankData::getLiveCcEvaluatedStr() {
+    switch (config.routing[stat.screen.channel].cc) {
+    case 0: static char str[] = "Vel"; return str;
+    case 1: static char str[] = "Mod"; return str;
+    case 2: static char str[] = "Pitchbend"; return str;
+    case 3: static char str[] = "Aftertouch"; return str;
+    case 4: static char str[] = "Sustain"; return str;
+    default: static char str[] = "NONE"; return str;
+    }
+}
+
+inline byte FrankData::getOutputLiveModeEvaluated(byte array) {
+    switch(config.routing[array].liveMidiMode) {
+        case 0: return getLiveKeyEvaluated(array).velocity; 
+        case 1: return liveMidi[array].mod;
+        case 2: return liveMidi[array].pitchbend;
+        case 3: return liveMidi[array].aftertouch;
+        case 4: return liveMidi[array].sustain;
+    }
+}
+
+inline char *FrankData::getOutputLiveModeEvaluatedStr() {
+    switch (config.routing[stat.screen.channel].cc) {
+    case 0: static char str[] = "latest"; return str;
+    case 1: static char str[] = "lowest"; return str;
+    case 2: static char str[] = "highest"; return str;
+    default: static char str[] = "NONE"; return str;
+    }
+}
+
+// TO DO
+inline byte FrankData::getOutputClockEvaluated(byte array) {
+        return config.routing[array].clock+1;
+}
+
+inline char *FrankData::getOutputClockEvaluatedStr() {
+    switch (config.routing[stat.screen.channel].cc) {
+    case 0: static char str[] = "16th"; return str;
+    case 1: static char str[] = "8th"; return str;
+    case 2: static char str[] = "quarter"; return str;
+    case 3: static char str[] = "half"; return str;
+    case 4: static char str[] = "1 bar"; return str;
+    case 5: static char str[] = "2 bar"; return str;
+    default: static char str[] = "NONE"; return str;
+    }
+}
+
 
 // Screen config
-void FrankData::setSubScreen(byte subScreen, byte max) { stat.screen.subscreen = testByte(subScreen, 0, max); }
-byte FrankData::getSubScreen() { return stat.screen.subscreen; }
+// void FrankData::setSubScreen(byte subScreen, byte max) { stat.screen.subscreen = testByte(subScreen, 0, max); }
 void FrankData::resetSubScreen() { stat.screen.subscreen = FrankData::screenNote; }
 
-void FrankData::increaseSubScreen(byte max) { stat.screen.subscreen = testByte(stat.screen.subscreen + 1, 0, max); }
-void FrankData::decreaseSubScreen() { stat.screen.subscreen = testByte(stat.screen.subscreen - 1, 0); }
-
-byte FrankData::getScreenConfig(byte screen) { return stat.screen.config; }
-void FrankData::toggleScreenConfig() { stat.screen.config = !stat.screen.config; }
-
-byte FrankData::getScreenChannel() { return stat.screen.channel; }
-void FrankData::setScreenChannel(byte channel) { stat.screen.channel = testByte(channel, 0, OUTPUTS - 1); }
-
-byte FrankData::getMainMenuEnabled() { return stat.screen.mainMenu; }
-void FrankData::toogleMainMenu() { stat.screen.mainMenu = !stat.screen.mainMenu; }
-
-/*get, change und toggleData...
- wäre cool wenn wir die daten über ne funktion auch zum nem string convertieren könnten, dann muss ich das nicht im
-display immer machen. bin mir gerade aber grunsätzlich etwas unschlüssig wie man das mit den listen baut. haben ja nicht
-nur daten die 1mal vorliegen sondern auch teilweise mehrfach in den jeweiligen channels... mal mit index mal ohne ...
- müsste die funktion dann jeweils entscheiden welcher der aktuelle channel ist und dann aus wlcher liste sie die daten
-holt?
-
-Index kann ich ja übergeben.. und bei index 0 ließt er ja bei ner normalen variable einfach die Variable aus also das
-könnte eventuell von alleine funktionieren.
-
-Für die einzelnen funktionen müssen wie warscheinlich einzelne Listen anlegen:
-
-Also für toggle, get und change.
-
-Toggle können wir ja mit TXXX angeben
-Change mit CXXX und get einfach XXX.
-
-haben ja variablen wie GATE die nur getoggelt werden mit den push auf den Encoder.
-
- Wenn wir die Daten zu string konvertieren haben wir auch noch das Problem das dann ein char pointer übergeben wird der
-auf die lokale variable der Funktion zeit, muss dann statisch angelegt werden.. und deshalb jedesamal resettet werden,
-auch nicht so richtig geil.
-
-
-Alle funktionen hier drunter sind erstmal nur als dummy geschrieben, damit ich den display kram testen konnte:
-*/
+inline byte FrankData::getSubscreenMax() const {
+    return config.routing[stat.screen.channel].outSource ? stat.screen.subScreenMaxSeq : stat.screen.subScreenMaxLive;
+}
 
 // new set and get functions
 byte FrankData::get(frankData frankDataType) {
@@ -630,13 +595,16 @@ byte FrankData::get(frankData frankDataType) {
     case direction: return config.direction;
     case displayBrightness: return config.displayBrightness;
 
-    case screenChannel: return stat.screen.channel;
+    case screenOutputChannel: return stat.screen.channel;
     case screenConfig: return stat.screen.config;
     case screenMainMenu: return stat.screen.mainMenu;
     case screenSubScreen: return stat.screen.subscreen;
 
     case stepArp: return stat.stepArp;
     case stepSeq: return stat.stepSeq;
+    case activePage: return (stat.stepSeq / STEPPERPAGE);
+    case stepOnPage: return (stat.stepSeq - (get(activePage) * STEPPERPAGE));
+    case currentPageNumber: return getCurrentPageNumber();
     case bpm: return stat.bpm;
     case play: return stat.play;
     case rec: return stat.rec;
@@ -655,6 +623,7 @@ byte FrankData::get(frankData frankDataType, byte array) {
     case outputSeq: return config.routing[array].seq;
     case outputArp: return config.routing[array].arp;
     case outputCc: return config.routing[array].cc;
+    case outputCcEvaluated: return getLiveCcEvaluated(array);
     case outputLiveMode: return config.routing[array].liveMidiMode;
     case outputClock: return config.routing[array].clock;
 
@@ -663,6 +632,11 @@ byte FrankData::get(frankData frankDataType, byte array) {
     case liveAftertouch: return liveMidi[array].aftertouch;
     case liveSustain: return liveMidi[array].sustain;
     case liveTriggered: return liveMidi[array].triggered;
+    case liveKeyNoteEvaluated: return getLiveKeyEvaluated(array).note;
+    case liveKeyVelEvaluated: return getLiveKeyEvaluated(array).velocity;
+    case liveLatestKey: return liveMidi[array].getKeyLatest().note;
+    case liveLowestKey: return liveMidi[array].getKeyLowest().note;
+    case liveHighestKey: return liveMidi[array].getKeyHighest().note;
 
     case seqTuning: return seq[array].sequence.tuning;
 
@@ -682,6 +656,12 @@ byte FrankData::get(frankData frankDataType, byte array, byte step) {
     }
 }
 
+inline char *FrankData::getAsStr(frankData frankDataType) { return toStr(get(frankDataType)); }
+inline char *FrankData::getAsStr(frankData frankDataType, byte array) { return toStr(get(frankDataType, array)); }
+inline char *FrankData::getAsStr(frankData frankDataType, byte array, byte step) {
+    return toStr(get(frankDataType, array, step));
+}
+
 void FrankData::set(frankData frankDataType, byte data, bool clampChange) {
     switch (frankDataType) {
     case midiSource: config.midiSource = testByte(data, 0, 1, clampChange);
@@ -689,13 +669,13 @@ void FrankData::set(frankData frankDataType, byte data, bool clampChange) {
     case direction: config.direction = testByte(data, 0, 1, clampChange);
     case displayBrightness: config.displayBrightness = testByte(data, 0, 100, clampChange); // how high?
 
-    case screenChannel: stat.screen.channel = testByte(data, 0, 1, clampChange);
+    case screenOutputChannel: stat.screen.channel = testByte(data, 0, OUTPUTS - 1, clampChange);
     case screenConfig: stat.screen.config = testByte(data, 0, 1, clampChange);
     case screenMainMenu: stat.screen.mainMenu = testByte(data, 0, 1, clampChange);
-    case screenSubScreen: stat.screen.subscreen = testByte(data, 0, 4, clampChange);
+    case screenSubScreen: stat.screen.subscreen = testByte(data, 0, getSubscreenMax(), clampChange);
 
     case stepArp: stat.stepArp = testByte(data, 0, NOTERANGE, clampChange);
-    case stepSeq: stat.stepSeq = testByte(data, 0, LENGTH, clampChange);
+    case stepSeq: stat.stepSeq = testByte(data, 0, STEPPERPAGE * config.nbPages - 1, clampChange);
     case bpm: stat.bpm = testByte(data, 0, 255, clampChange);
     case play: stat.play = testByte(data, 0, 1, clampChange);
     case rec: stat.rec = testByte(data, 0, 1, clampChange);
@@ -715,7 +695,7 @@ void FrankData::set(frankData frankDataType, byte data, byte array, bool clampCh
     case outputArp: config.routing[array].arp = testByte(data, 0, 1, clampChange);
     case outputCc: config.routing[array].cc = testByte(data, 0, 4, clampChange);
     case outputLiveMode: config.routing[array].liveMidiMode = testByte(data, 0, 2, clampChange);
-    case outputClock: config.routing[array].clock = testByte(data, 0,5, clampChange);
+    case outputClock: config.routing[array].clock = testByte(data, 0, 5, clampChange);
 
     case liveMod: liveMidi[array].mod = testByte(data, 0, 127, clampChange);
     case livePitchbend: liveMidi[array].pitchbend = testByte(data, 0, 255, clampChange);
@@ -725,8 +705,7 @@ void FrankData::set(frankData frankDataType, byte data, byte array, bool clampCh
 
     case seqTuning: seq[array].sequence.tuning = testByte(data, 0, 255, clampChange);
 
-    default:
-        PRINTLN("FrankData set(frankData frankDataType, byte data, byte array, bool clampChange), no case found");
+    default: PRINTLN("FrankData set(frankData frankDataType, byte data, byte array, bool clampChange), no case found");
     }
 }
 void FrankData::set(frankData frankDataType, byte data, byte array, byte step, bool clampChange) {
@@ -753,7 +732,12 @@ inline void FrankData::change(frankData frankDataType, byte amount, byte array, 
     set(frankDataType, get(frankDataType, array, step) + amount, array, step, clampChange);
 }
 
-inline void FrankData::increase(frankData frankDataType, bool clampChange) { change(frankDataType, 1, clampChange); }
+inline void FrankData::increase(frankData frankDataType, bool clampChange) {
+    switch (frankDataType) {
+    case stepSeq: increaseStep(); break;
+    default: change(frankDataType, 1, clampChange);
+    }
+}
 inline void FrankData::increase(frankData frankDataType, byte array, bool clampChange) {
     change(frankDataType, 1, array, clampChange);
 }
@@ -761,7 +745,12 @@ inline void FrankData::increase(frankData frankDataType, byte array, byte step, 
     change(frankDataType, 1, array, step, clampChange);
 }
 
-inline void FrankData::decrease(frankData frankDataType, bool clampChange) { change(frankDataType, -1, clampChange); }
+inline void FrankData::decrease(frankData frankDataType, bool clampChange) {
+    switch (frankDataType) {
+    case stepSeq: decreaseStep(); break;
+    default: change(frankDataType, -1, clampChange);
+    }
+}
 inline void FrankData::decrease(frankData frankDataType, byte array, bool clampChange) {
     change(frankDataType, -1, array, clampChange);
 }
@@ -782,51 +771,129 @@ void FrankData::toggle(frankData frankDataType) {
     }
 }
 
-// Jacobs test
-void FrankData::setData(byte data, byte index) {} // brauchen wir warscheinlich nicht?
-char *FrankData::getDataString(byte data, byte index) {
-    int value = 100;
-    int channel = getScreenChannel();
+char *FrankData::getName(frankData frankDataType) {
+    switch (frankDataType) {
+    case seqNote: static char str[] = "Note"; return str;
+    case seqGate: static char str[] = "Gate"; return str;
+    case seqGateLength: static char str[] = "Gate Length"; return str;
+    case seqCc: static char str[] = "MidiCC"; return str;
+    case seqVelocity: static char str[] = "Vel"; return str;
+    case seqTuning: static char str[] = "Tuning"; return str;
+    case seqSize: static char str[] = "Seq Size"; return str;
 
-    //  data = (int)*list[channel][data][index];
+    case midiSource: static char str[] = "Midi Src"; return str;
+    case nbPages: static char str[] = "Pages"; return str;
+    case direction: static char str[] = "Direction"; return str;
+    case displayBrightness: static char str[] = "Brightness"; return str;
 
-    static char string[4];
-    itoa(value, string, 10);
+    case outputSource: static char str[] = "Out Src"; return str;
+    case outputChannel: static char str[] = "Midi Ch"; return str;
+    case outputSeq: static char str[] = "Seq"; return str;
+    case outputArp: static char str[] = "Arp"; return str;
+    case outputCc: static char str[] = "MidiCC"; return str;
+    case outputCcEvaluated: return getLiveCcEvaluatedStr();
+    case outputLiveMode: static char str[] = "Key select"; return str;
+    case outputLiveModeEvaluated: return getOutputLiveModeEvaluatedStr();
+    case outputClock: static char str[] = "Clock"; return str;
+    case outputClockEvaluated: return getOutputClockEvaluatedStr();
 
-    return string;
+    case screenOutputChannel: static char str[] = "Output Routing"; return str;
+    case screenConfig: static char str[] = "Config"; return str;
+    case screenMainMenu: static char str[] = "Main"; return str;
+    case screenSubScreen: static char str[] = "Sub"; return str;
+
+    case stepSeq: static char str[] = "Step"; return str;
+    case stepArp: static char str[] = "Arp Step"; return str;
+    case bpm: static char str[] = "BPM"; return str;
+    case play: static char str[] = "Play"; return str;
+    case rec: static char str[] = "Rec"; return str;
+    case error: static char str[] = "Error"; return str;
+    case bpmSync: static char str[] = "Sync"; return str;
+    case bpmPoti: static char str[] = "internal BPM"; return str;
+
+    case liveMod: static char str[] = "Mod"; return str;
+    case livePitchbend: static char str[] = "PitchBend"; return str;
+    case liveAftertouch: static char str[] = "Aftertouch"; return str;
+    case liveSustain: static char str[] = "Sustain"; return str;
+    case liveTriggered: static char str[] = "Triggered"; return str;
+    case liveLatestKey: static char str[] = "Latest Key"; return str;
+    case liveLowestKey: static char str[] = "Lowest Key"; return str;
+    case liveHighestKey: static char str[] = "Highest Key"; return str;
+
+    default:
+        PRINTLN("FrankData getName(frankData frankDataType), no case found");
+        static char str[] = "NONE";
+        return str;
+    }
 }
+char *FrankData::getValueName(frankData frankDataType) {
+    switch (frankDataType) {
+    case seqNote: static char str[] = getAsStr(frankDataType, stat.screen.channel, step); return str;
+    case seqGate: static char str[] = "Gate"; return str;
+    case seqGateLength: static char str[] = "Gate Length"; return str;
+    case seqCc: static char str[] = "MidiCC"; return str;
+    case seqVelocity: static char str[] = "Vel"; return str;
+    case seqTuning: static char str[] = "Tuning"; return str;
+    case seqSize: static char str[] = "Seq Size"; return str;
 
-int FrankData::getData(byte data, byte index) {
-    int value = 100;
-    int channel = getScreenChannel();
+    case midiSource: static char str[] = "Midi Src"; return str;
+    case nbPages: static char str[] = "Pages"; return str;
+    case direction: static char str[] = "Direction"; return str;
+    case displayBrightness: static char str[] = "Brightness"; return str;
 
-    //  data = (int)*list[channel][data][index];
+    case outputSource: static char str[] = "Out Src"; return str;
+    case outputChannel: static char str[] = "Midi Ch"; return str;
+    case outputSeq: static char str[] = "Seq"; return str;
+    case outputArp: static char str[] = "Arp"; return str;
+    case outputCc: return getLiveCcEvaluatedStr();
+    case outputLiveMode: return getOutputLiveModeEvaluatedStr();
+    case outputClock: return getOutputClockEvaluatedStr();
 
-    return data;
+    case screenOutputChannel: static char str[] = "Output Routing"; return str;
+    case screenConfig: static char str[] = "Config"; return str;
+    case screenMainMenu: static char str[] = "Main"; return str;
+    case screenSubScreen: static char str[] = "Sub"; return str;
+
+    case stepSeq: static char str[] = "Step"; return str;
+    case stepArp: static char str[] = "Arp Step"; return str;
+    case bpm: static char str[] = "BPM"; return str;
+    case play: static char str[] = "Play"; return str;
+    case rec: static char str[] = "Rec"; return str;
+    case error: static char str[] = "Error"; return str;
+    case bpmSync: static char str[] = "Sync"; return str;
+    case bpmPoti: static char str[] = "internal BPM"; return str;
+
+    case liveMod: static char str[] = "Mod"; return str;
+    case livePitchbend: static char str[] = "PitchBend"; return str;
+    case liveAftertouch: static char str[] = "Aftertouch"; return str;
+    case liveSustain: static char str[] = "Sustain"; return str;
+    case liveTriggered: static char str[] = "Triggered"; return str;
+    case liveLatestKey: static char str[] = "Latest Key"; return str;
+    case liveLowestKey: static char str[] = "Lowest Key"; return str;
+    case liveHighestKey: static char str[] = "Highest Key"; return str;
+
+    default:
+        PRINTLN("FrankData getName(frankData frankDataType), no case found");
+        static char str[] = "NONE";
+        return str;
+    }
 }
+char *FrankData::getValueName(frankData frankDataType, byte step) {
+    switch (frankDataType) {
+    case seqNote: static char str[] = getAsStr(frankDataType, stat.screen.channel, step); return str;
+    case seqGate: static char str[] = "Gate"; return str;
+    case seqGateLength: static char str[] = "Gate Length"; return str;
+    case seqCc: static char str[] = "MidiCC"; return str;
+    case seqVelocity: static char str[] = "Vel"; return str;
 
-char *FrankData::getDataName(byte data) {
-    static char string[] = "test";
-
-    return string;
-}
-
-void FrankData::toggleData(byte id, byte index) {}
-
-void FrankData::changeData(byte id, byte index, byte direction) {}
-
-///////////////
-
-byte FrankData::getOutputMode(byte channel) { // Live oder Seq?
-    return config.routing[channel].getOut();
-}
-
-byte FrankData::getArpModeEnable(byte channel) { // Live oder Seq?
-    return config.routing[channel].getArp();
+    default:
+        PRINTLN("FrankData getName(frankData frankDataType), no case found");
+        static char str[] = "NONE";
+        return str;
+    }
 }
 
 // utility
-
 // test byte range and return valid byte
 inline byte testByte(byte value, byte minimum, byte maximum, bool clampChange) {
     if (value > maximum) {
@@ -851,7 +918,7 @@ inline byte testByte(byte value, byte minimum, byte maximum, bool clampChange) {
 }
 
 // increase byte
-inline byte increaseByte(byte value, byte maximum) { 
+inline byte increaseByte(byte value, byte maximum) {
     if (value == maximum) {
         return value;
     } else {
@@ -860,7 +927,7 @@ inline byte increaseByte(byte value, byte maximum) {
 }
 
 // decrease byte
-inline byte decreaseByte(byte value, byte minimum) { 
+inline byte decreaseByte(byte value, byte minimum) {
     if (value == minimum) {
         return value;
     } else {
@@ -869,8 +936,7 @@ inline byte decreaseByte(byte value, byte minimum) {
 }
 
 // change byte value and check boundaries
-inline byte changeByte(byte value, int change, byte minimum, byte maximum,
-                       bool clampChange) { 
+inline byte changeByte(byte value, int change, byte minimum, byte maximum, bool clampChange) {
 
     if ((int)value + change >= maximum) { // test max
 
@@ -884,3 +950,10 @@ inline byte changeByte(byte value, int change, byte minimum, byte maximum,
 
 // toggle byte
 template <typename T> inline T toggleByte(T data) { return !data; }
+
+// convert number to string
+template <typename T> inline char *toStr(T data) {
+    static char str[4];
+    itoa(data, str, 10);
+    return str;
+}

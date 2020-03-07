@@ -2,20 +2,6 @@
 
 #include <Arduino.h>
 
-// zum Testen vom mapping
-#define NONE 0
-#define BPM 1
-#define NOTE 1
-#define GATE 1
-#define TGATE 1
-#define CGATE 1
-#define STEP 1
-#define CV 1
-#define CONF 1
-
-// Cxxx -> Global Channel data
-// Txxx -> Toggle Data
-
 #define LENGTH 64
 #define PAGES 8
 #define NOTERANGE 88
@@ -26,7 +12,7 @@
 
 class OutputRouting {
   public:
-    byte outSource;          // 0 = live, 1 = seq
+    byte outSource;    // 0 = live, 1 = seq
     byte channel;      // 0 = all, 1 = channel 1, ...
     byte seq;          // 0 = seq0, 1 = seq1
     byte arp;          // 0 = off, 1 = on
@@ -44,19 +30,19 @@ class OutputRouting {
         this->clock = 2;
     }
 
-    byte getOut();
-    byte getChannel();
-    byte getSeq();
-    byte getArp();
-    byte getCc();
-    byte getliveMidiMode();
+    // byte getOut();
+    // byte getChannel();
+    // byte getSeq();
+    // byte getArp();
+    // byte getCc();
+    // byte getliveMidiMode();
 
-    void setOut(byte data);
-    void setChannel(byte data);
-    void setSeq(byte data);
-    void setArp(byte data);
-    void setCc(byte data);
-    void setLiveMidiMode(byte data);
+    // void setOut(byte data);
+    // void setChannel(byte data);
+    // void setSeq(byte data);
+    // void setArp(byte data);
+    // void setCc(byte data);
+    // void setLiveMidiMode(byte data);
 };
 
 // Sequence struct holding all values for a sequence, to save it
@@ -70,7 +56,6 @@ typedef struct {
 } structSequence;
 
 // Settings struct for all settings that need to be saved permanently
-
 typedef struct {
     byte midiSource = 1;            // active MidiDevice (usb -> 1, din -> 0)
     byte nbPages = 4;               // nb Pages  1 -> 8
@@ -82,13 +67,14 @@ typedef struct {
 
 } structSettings;
 
-// Sequence struct holding all values for the screen
-
+// possible screen status
 typedef struct {
     byte channel = 0;   // active channel, 0-> Channel 1, 1-> Channel 2
     byte config = 0;    // display config, 0-> off, 1-> on
     byte mainMenu = 1;  // display Main Menu, 0-> off, 1-> on
     byte subscreen = 0; // subscreen -> current displayed screen .. note, gate, cv (seq) ; live, appregiator (live)
+    const byte subScreenMaxSeq = 2; // Number of subscreens for seq mode 
+    const byte subScreenMaxLive = 1; // Number of subscreens for live mode
 } structScreen;
 
 // all Settings that don't need to be saved permanently
@@ -239,6 +225,7 @@ class FrankData {
         seqGate,
         seqGateLength,
         seqCc,
+        seqCcEvaluated,
         seqVelocity,
         seqTuning,
         seqSize,
@@ -255,11 +242,14 @@ class FrankData {
         outputSeq,
         outputArp,
         outputCc,
+        outputCcEvaluated,
         outputLiveMode,
+        outputLiveModeEvaluated,
         outputClock,
+        outputClockEvaluated,
 
         // Screen Settings, needs value
-        screenChannel,
+        screenOutputChannel,
         screenConfig,
         screenMainMenu,
         screenSubScreen,
@@ -267,6 +257,9 @@ class FrankData {
         // structStatus, needs value
         stepSeq,
         stepArp,
+        activePage,
+        stepOnPage,
+        currentPageNumber,
         bpm,
         play,
         rec,
@@ -282,9 +275,11 @@ class FrankData {
         liveAftertouch,
         liveSustain,
         liveTriggered,
-        // liveLatestKey,
-        // liveHighestKey,
-        // liveLowestKey,
+        liveKeyNoteEvaluated,
+        liveKeyVelEvaluated,
+        liveLatestKey,
+        liveHighestKey,
+        liveLowestKey,
         // liveKeysPressed,
     };
 
@@ -300,7 +295,8 @@ class FrankData {
             this->seq[output].init();
         }
     }
-    public:
+
+    // public:
     structStatus stat;
     structSettings config;
 
@@ -311,10 +307,6 @@ class FrankData {
     // receive MIDI
     void receivedKeyPressed(byte channel, byte note, byte velocity);
     void receivedKeyReleased(byte channel, byte note);
-    void receivedMod(byte channel, byte data);
-    void receivedPitchbend(byte channel, byte data);
-    void receivedAftertouch(byte channel, byte data);
-    void receivedSustain(byte channel, byte data);
     void receivedMidiClock();
     void receivedMidiSongPosition(unsigned int spp);
     void receivedStart();
@@ -322,85 +314,46 @@ class FrankData {
     void receivedStop();
     void receivedReset();
 
-    // clock
+    // internal helper functions
+  private:
     void increaseMidiClock();
     void increaseBpm16thCount();
     void setBpm16thCount(unsigned int spp);
     byte getBpm16thCount();
-    void resetClock();
+    // inline void resetClock();
+    inline void calcBPM();
+    inline void increaseStep();
+    inline void decreaseStep();
+    inline byte getCurrentPageNumber();
+    inline byte getSubscreenMax() const;
+    inline byte getLiveCcEvaluated(byte array);
+    inline char *getLiveCcEvaluatedStr();
+    inline byte getOutputLiveModeEvaluated(byte array);
+    inline char *getOutputLiveModeEvaluatedStr();
+    inline byte getOutputClockEvaluated(byte array);
+    inline char *getOutputClockEvaluatedStr();
 
+  public:
+    inline structKey getLiveKeyEvaluated(byte array);
     structKey getKeyHighest(byte array);
     structKey getKeyLowest(byte array);
     structKey getKeyLatest(byte array);
+    void resetSubScreen(); // switch menu max 3 menu pages
 
     // settings
 
-    void setSync(byte bpmSync);
-    byte getSync();
 
-    void setRec(byte rec);
-    byte getRec();
-
-    void setBPM(int bpm);
-    void calcBPM();
-    int getBPM();
-
-    void setStep(byte stepSeq);
-    byte getStep();
-    void increaseStep();
-    void decreaseStep();
-
-    byte getActivePage();
-    byte getStepOnPage();
-
-    // void setPlayStop(byte mode);
-    // byte getPlayStop();
-
-    // void togglePlayStop();
-
-    // void setDirection(byte direction);
-    // byte getDirection();
-
-    // void setError(byte error);
-    // byte getError();
-
-    // void setDisplayBrightness(byte brightness);
-    // byte getDisplayBrightness();
-
-    // void setMidiSource(byte midi);
-    // byte getMidiSource();
-
-    // void setNumberPages(byte nbPages);
-    // byte getNumberPages();
-    byte getCurrentNumberPages();
-    Seq *getSeqObject();
-
-    // Screen config
-    void setSubScreen(byte subScreen, byte max);
-    byte getSubScreen();
-    void resetSubScreen(); // switch menu max 3 menu pages
-
-    void increaseSubScreen(byte max); // switch menu max 3 menu pages
-    void decreaseSubScreen();         // switch menu max 3 menu pages;
-
-    byte getScreenConfig(byte screen);
-    void toggleScreenConfig();
-
-    void setScreenChannel(byte channel);
-    byte getScreenChannel();
-
-    byte getMainMenuEnabled();
-    void toogleMainMenu();
-
-    byte getOutputMode(byte channel);    // Live oder Seq?
-    byte getArpModeEnable(byte channel); // Arp on or off
-
+  public:
     // get single type value
     byte get(frankData frankDataType);
     // get value that is part of an array, e.g. output, seq current step, ...
     byte get(frankData frankDataType, byte array);
     // get value for certain step
     byte get(frankData frankDataType, byte array, byte step);
+
+    inline char *getAsStr(frankData frankDataType);
+    inline char *getAsStr(frankData frankDataType, byte array);
+    inline char *getAsStr(frankData frankDataType, byte array, byte step);
 
     // set single type value
     void set(frankData frankDataType, byte data, bool clampChange = 0);
@@ -414,28 +367,16 @@ class FrankData {
     inline void change(frankData frankDataType, byte amount, bool clampChange = 0);
     inline void change(frankData frankDataType, byte amount, byte array, bool clampChange = 0);
     inline void change(frankData frankDataType, byte amount, byte array, byte step, bool clampChange = 0);
-    
+
     inline void increase(frankData frankDataType, bool clampChange = 0);
     inline void increase(frankData frankDataType, byte array, bool clampChange = 0);
     inline void increase(frankData frankDataType, byte array, byte step, bool clampChange = 0);
-    
+
     inline void decrease(frankData frankDataType, bool clampChange = 0);
     inline void decrease(frankData frankDataType, byte array, bool clampChange = 0);
     inline void decrease(frankData frankDataType, byte array, byte step, bool clampChange = 0);
 
-
-
-    // zum testen//
-    void setData(byte id, byte index = 0);
-
-    void toggleData(byte id, byte index = 0);
-
-    void changeData(byte id, byte index = 0, byte direction = 0);
-
-    int getData(byte id, byte index = 0);
-    char *getDataString(byte data, byte index = 0);
-
-    char *getDataName(byte id);
+    char *getName(frankData frankDataType);
 
     // singleton
     static FrankData &getDataObj();
@@ -445,8 +386,11 @@ class FrankData {
 };
 
 // utility
-inline byte testByte(byte value, byte minimum, byte maximum = 255, bool clampChange = 0); // test byte range and return valid byte
-inline byte increaseByte(byte value, byte maximum);                 // increase byte
-inline byte decreaseByte(byte value, byte minimum);                 // decrease byte
-inline byte changeByte(byte value, int change, byte minimum = 0, byte maximum = 255, bool clampChange = 0); // change byte
-template <typename T>inline T toggleByte(T data);
+inline byte testByte(byte value, byte minimum, byte maximum = 255,
+                     bool clampChange = 0);         // test byte range and return valid byte
+inline byte increaseByte(byte value, byte maximum); // increase byte
+inline byte decreaseByte(byte value, byte minimum); // decrease byte
+inline byte changeByte(byte value, int change, byte minimum = 0, byte maximum = 255,
+                       bool clampChange = 0); // change byte
+template <typename T> inline T toggleByte(T data);
+template <typename T> inline char *toStr(T data);
