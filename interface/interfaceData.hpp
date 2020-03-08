@@ -305,7 +305,7 @@ class FrankData {
     LiveMidi liveMidi[OUTPUTS];
     Seq seq[OUTPUTS];
 
-    char str[MAXSTRINGSIZE];
+    char str[MAXSTRINGSIZE+1]; // MAXSTRINGSIZE + escape char
 
   public:
     const char* returnStr = str;

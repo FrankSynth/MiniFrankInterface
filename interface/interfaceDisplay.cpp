@@ -273,7 +273,6 @@ inline void Display::drawHead() {
 
     if (DATAOBJ.get(FrankData::midiSource)) {
         bufferHead->print("USB");
-        6
     } else {
         bufferHead->print("DIN");
     }

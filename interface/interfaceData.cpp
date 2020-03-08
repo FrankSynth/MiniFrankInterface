@@ -187,14 +187,6 @@ structKey LiveMidi::getKeyLatest() {
     return key;
 }
 
-// byte LiveMidi::getMod() { return mod; }
-
-// byte LiveMidi::getPitchbend() { return pitchbend; }
-
-// byte LiveMidi::getAftertouch() { return aftertouch; }
-
-// byte LiveMidi::getSustain() { return sustain; }
-
 // new LiveMidi data trigger flag
 byte LiveMidi::getTriggered() {
     if (triggered) {
@@ -956,7 +948,7 @@ char *FrankData::tuningToChar(const byte &tuning) {
 
 inline void FrankData::setStr(const char *newStr) {
     strncpy(str, newStr, MAXSTRINGSIZE - 1);
-    str[MAXSTRINGSIZE-1] = '\0';
+    str[MAXSTRINGSIZE] = '\0';
 }
 
 // utility
