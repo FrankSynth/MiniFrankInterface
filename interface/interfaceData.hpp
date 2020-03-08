@@ -73,7 +73,7 @@ typedef struct {
     byte config = 0;    // display config, 0-> off, 1-> on
     byte mainMenu = 1;  // display Main Menu, 0-> off, 1-> on
     byte subscreen = 0; // subscreen -> current displayed screen .. note, gate, cv (seq) ; live, appregiator (live)
-    const byte subScreenMaxSeq = 2; // Number of subscreens for seq mode 
+    const byte subScreenMaxSeq = 2;  // Number of subscreens for seq mode
     const byte subScreenMaxLive = 1; // Number of subscreens for live mode
 } structScreen;
 
@@ -117,8 +117,8 @@ class PressedNotesElement {
 class PressedNotesList {
   public:
     PressedNotesElement *pressedNoteElement = NULL;
-    void appendKey(byte note, byte velocity);
-    void deleteKey(byte note);
+    void appendKey(const byte &note, const byte &velocity);
+    void deleteKey(const byte &note);
     void deleteAllKeys();
     bool containsElements();
     PressedNotesElement *getKeyHighest();
@@ -144,25 +144,25 @@ class LiveMidi {
         this->triggered = 0;
     }
 
-    void keyPressed(byte note, byte velocity);
-    void keyReleased(byte note);
+    void keyPressed(const byte &note, const byte &velocity);
+    void keyReleased(const byte &note);
 
     bool keysPressed();
 
-    void setMod(byte data);
-    void setPitchbend(byte data);
-    void setAftertouch(byte data);
-    void setSustain(byte data);
-    void resetTrigger();
+    // void setMod(byte data);
+    // void setPitchbend(byte data);
+    // void setAftertouch(byte data);
+    // void setSustain(byte data);
+    // void resetTrigger();
 
     structKey getKeyHighest();
     structKey getKeyLowest();
     structKey getKeyLatest();
 
-    byte getMod();
-    byte getPitchbend();
-    byte getAftertouch();
-    byte getSustain();
+    // byte getMod();
+    // byte getPitchbend();
+    // byte getAftertouch();
+    // byte getSustain();
     byte getTriggered();
 
     void reset();
@@ -305,8 +305,8 @@ class FrankData {
 
   public:
     // receive MIDI
-    void receivedKeyPressed(byte channel, byte note, byte velocity);
-    void receivedKeyReleased(byte channel, byte note);
+    void receivedKeyPressed(const byte &channel, const byte &note, const byte &velocity);
+    void receivedKeyReleased(const byte &channel, const byte &note);
     void receivedMidiClock();
     void receivedMidiSongPosition(unsigned int spp);
     void receivedStart();
@@ -326,57 +326,63 @@ class FrankData {
     inline void decreaseStep();
     inline byte getCurrentPageNumber();
     inline byte getSubscreenMax() const;
-    inline byte getLiveCcEvaluated(byte array);
+    inline byte getLiveCcEvaluated(const byte &array);
     inline char *getLiveCcEvaluatedStr();
-    inline byte getOutputLiveModeEvaluated(byte array);
+    inline byte getOutputLiveModeEvaluated(const byte &array);
     inline char *getOutputLiveModeEvaluatedStr();
-    inline byte getOutputClockEvaluated(byte array);
+    inline byte getOutputClockEvaluated(const byte &array);
     inline char *getOutputClockEvaluatedStr();
 
   public:
-    inline structKey getLiveKeyEvaluated(byte array);
-    structKey getKeyHighest(byte array);
-    structKey getKeyLowest(byte array);
-    structKey getKeyLatest(byte array);
+    inline structKey getLiveKeyEvaluated(const byte &array);
+    structKey getKeyHighest(const byte &array);
+    structKey getKeyLowest(const byte &array);
+    structKey getKeyLatest(const byte &array);
     void resetSubScreen(); // switch menu max 3 menu pages
 
     // settings
 
-
   public:
     // get single type value
-    byte get(frankData frankDataType);
+    byte get(const frankData &frankDataType);
     // get value that is part of an array, e.g. output, seq current step, ...
-    byte get(frankData frankDataType, byte array);
+    byte get(const frankData &frankDataType, const byte &array);
     // get value for certain step
-    byte get(frankData frankDataType, byte array, byte step);
+    byte get(const frankData &frankDataType, const byte &array, const byte &step);
 
-    inline char *getAsStr(frankData frankDataType);
-    inline char *getAsStr(frankData frankDataType, byte array);
-    inline char *getAsStr(frankData frankDataType, byte array, byte step);
+    inline char *getAsStr(const frankData &frankDataType);
+    inline char *getAsStr(const frankData &frankDataType, const byte &array);
+    inline char *getAsStr(const frankData &frankDataType, const byte &array, const byte &step);
 
     // set single type value
-    void set(frankData frankDataType, byte data, bool clampChange = 0);
+    void set(const frankData &frankDataType, const byte &data, const bool &clampChange = 0);
     // set value prat of an array
-    void set(frankData frankDataType, byte data, byte array, bool clampChange = 0);
+    void set(const frankData &frankDataType, const byte &data, const byte &array, const bool &clampChange = 0);
     // set value for certain step
-    void set(frankData frankDataType, byte data, byte array, byte step, bool clampChange = 0);
+    void set(const frankData &frankDataType, const byte &data, const byte &array, const byte &step,
+             const bool &clampChange = 0);
     // toggle what can be toggled
-    void toggle(frankData frankdataType);
+    void toggle(const frankData &frankdataType);
 
-    inline void change(frankData frankDataType, byte amount, bool clampChange = 0);
-    inline void change(frankData frankDataType, byte amount, byte array, bool clampChange = 0);
-    inline void change(frankData frankDataType, byte amount, byte array, byte step, bool clampChange = 0);
+    inline void change(const frankData &frankDataType, const byte &amount, const bool &clampChange = 0);
+    inline void change(const frankData &frankDataType, const byte &amount, const byte &array,
+                       const bool &clampChange = 0);
+    inline void change(const frankData &frankDataType, const byte &amount, const byte &array, const byte &step,
+                       const bool &clampChange = 0);
 
-    inline void increase(frankData frankDataType, bool clampChange = 0);
-    inline void increase(frankData frankDataType, byte array, bool clampChange = 0);
-    inline void increase(frankData frankDataType, byte array, byte step, bool clampChange = 0);
+    inline void increase(const frankData &frankDataType, const bool &clampChange = 0);
+    inline void increase(const frankData &frankDataType, const byte &array, const bool &clampChange = 0);
+    inline void increase(const frankData &frankDataType, const byte &array, const byte &step,
+                         const bool &clampChange = 0);
 
-    inline void decrease(frankData frankDataType, bool clampChange = 0);
-    inline void decrease(frankData frankDataType, byte array, bool clampChange = 0);
-    inline void decrease(frankData frankDataType, byte array, byte step, bool clampChange = 0);
+    inline void decrease(const frankData &frankDataType, const bool &clampChange = 0);
+    inline void decrease(const frankData &frankDataType, const byte &array, const bool &clampChange = 0);
+    inline void decrease(const frankData &frankDataType, const byte &array, const byte &step,
+                         const bool &clampChange = 0);
 
-    char *getName(frankData frankDataType);
+    char *getName(const frankData &frankDataType);
+    char *getValueName(const frankData &frankDataType);
+    char *getValueName(const frankData &frankDataType, const byte &step);
 
     // singleton
     static FrankData &getDataObj();
@@ -386,11 +392,11 @@ class FrankData {
 };
 
 // utility
-inline byte testByte(byte value, byte minimum, byte maximum = 255,
-                     bool clampChange = 0);         // test byte range and return valid byte
-inline byte increaseByte(byte value, byte maximum); // increase byte
-inline byte decreaseByte(byte value, byte minimum); // decrease byte
-inline byte changeByte(byte value, int change, byte minimum = 0, byte maximum = 255,
-                       bool clampChange = 0); // change byte
-template <typename T> inline T toggleByte(T data);
-template <typename T> inline char *toStr(T data);
+inline byte testByte(const byte &value, const byte &minimum, const byte &maximum = 255,
+                     const bool &clampChange = 0);                // test byte range and return valid byte
+inline byte increaseByte(const byte &value, const byte &maximum); // increase byte
+inline byte decreaseByte(const byte &value, const byte &minimum); // decrease byte
+inline byte changeByte(const byte &value, const int &change, const byte &minimum = 0, const byte &maximum = 255,
+                       const bool &clampChange = 0); // change byte
+template <typename T> inline T toggleByte(const T &data);
+template <typename T> inline char *toStr(const T &data);

@@ -18,11 +18,11 @@
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI); // Which serial???
 
 // callback handles
-void midiNoteOn(byte channel, byte note, byte velocity);
-void midiNoteOff(byte channel, byte note, byte velocity);
-void midiCC(byte channel, byte control, byte value);
-void midiPitchBend(byte channel, int value);
-void midiAfterTouch(byte channel, byte pressure);
+void midiNoteOn(const byte &channel, const byte &note, const byte &velocity);
+void midiNoteOff(const byte &channel, const byte &note, const byte &velocity);
+void midiCC(const byte &channel, const byte &control, const byte &value);
+void midiPitchBend(const byte &channel, int value);
+void midiAfterTouch(const byte &channel, const byte &pressure);
 void midiClock();
 void midiSongPosition(unsigned int spp);
 void midiStart();
@@ -189,17 +189,17 @@ void updateMidi() {
 
 // Midi actions
 
-void midiNoteOn(byte channel, byte note, byte velocity) {
+void midiNoteOn(const byte &channel, const byte &note, const byte &velocity) {
     PRINTLN("Key pressed");
     DATAOBJ.receivedKeyPressed(channel, note, velocity);
 }
 
-void midiNoteOff(byte channel, byte note, byte velocity) {
+void midiNoteOff(const byte &channel, const byte &note, const byte &velocity) {
     PRINTLN("Key released");
     DATAOBJ.receivedKeyReleased(channel, note);
 }
 
-void midiCC(byte channel, byte cc, byte midiData) {
+void midiCC(const byte &channel, const byte &cc, const byte &midiData) {
     if (cc == 1) {
         for (byte x = 0; x < OUTPUTS; x++) {
             if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
@@ -216,22 +216,22 @@ void midiCC(byte channel, byte cc, byte midiData) {
     }
 }
 
-void midiAfterTouch(byte channel, byte midiData) {
+void midiAfterTouch(const byte &channel, const byte &midiData) {
     for (byte x = 0; x < OUTPUTS; x++) {
         if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
             DATAOBJ.set(FrankData::liveAftertouch, midiData, x);
         }
     }
- }
+}
 
 // check byte to int convertion
- void midiPitchBend(byte channel, int value) {
-     for (byte x = 0; x < OUTPUTS; x++) {
-         if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
-             DATAOBJ.set(FrankData::livePitchbend, (byte)value, x);
-         }
-     }
- }
+void midiPitchBend(const byte &channel, int value) {
+    for (byte x = 0; x < OUTPUTS; x++) {
+        if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+            DATAOBJ.set(FrankData::livePitchbend, (byte)value, x);
+        }
+    }
+}
 
 void midiClock() { DATAOBJ.receivedMidiClock(); }
 

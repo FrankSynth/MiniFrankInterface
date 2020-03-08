@@ -63,9 +63,7 @@ inline void Display::drawBody() {
     bufferBody->fillScreen(0x39E7); // resetBuffer
 
     // !!!!! old statement said DATAOBJ.getScreenConfig(DATAOBJ.getScreenChannel())) - ist aber kein array??
-    if (DATAOBJ.get(FrankData::screenMainMenu) == 1 ||
-        DATAOBJ.get(FrankData::screenConfig)) { // Load Config Template
-
+    if (DATAOBJ.get(FrankData::screenMainMenu) == 1 || DATAOBJ.get(FrankData::screenConfig)) { // Load Config Template
 
         // BodyTemplateSeq();  //Load Seq Template
 
@@ -130,7 +128,7 @@ inline void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
 
                 /////Name/////
                 char *string = toStr(mapping(dataField)); // get name
-                byte offset = strlen(string) * 3;                       // get name length
+                byte offset = strlen(string) * 3;         // get name length
 
                 bufferBody->setCursor(posX + 20 - offset, posY + 7); // set Cursor
                 bufferBody->print(string);                           // print value to display
@@ -142,13 +140,12 @@ inline void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
                 // vll.. kann man alle werte auf string mappen damit wir int, sowie strings hier printen können, müsste
                 // aber in der datenklasse passieren, vll getDataString?
 
+                /*
+                                ===== what does the next line mean/should do?
+                                 "index" is a external function, thus a bad variable name,
+                                 because if not defined differently, it is known as a function pointer.
 
-/*
-                ===== what does the next line mean/should do?
-                 "index" is a external function, thus a bad variable name,
-                 because if not defined differently, it is known as a function pointer.
-          
-          */
+                          */
                 // char *data = toStr(mapping(dataField), index); // string buffer
                 char *data = toStr(mapping(dataField)); // temporary removed index
 
@@ -176,7 +173,7 @@ inline void Display::BodyTemplateSeq() { // has 2x4 dataFields + PageBar
     // DataFields
     for (int x = 0; x < 4; x++) {
         for (int y = 0; y < 2; y++) {
-            byte dataField = x + y * 4;                           // current DataField
+            byte dataField = x + y * 4; // current DataField
 
             byte dataFieldIndex = x + y * 4 + DATAOBJ.get(FrankData::activePage) * 8; // current index
 
@@ -202,7 +199,8 @@ inline void Display::BodyTemplateSeq() { // has 2x4 dataFields + PageBar
             // Data is NOTE type
             if (mapping(dataField) == NOTE) {
                 // Note Value
-                byte note = DATAOBJ.get(FrankData::seqNote, DATAOBJ.get(FrankData::screenOutputChannel), dataFieldIndex);
+                byte note =
+                    DATAOBJ.get(FrankData::seqNote, DATAOBJ.get(FrankData::screenOutputChannel), dataFieldIndex);
                 bufferBody->setCursor(x * 40 + 5, y * 35 + 20);
                 bufferBody->setFont(&FreeSansBold12pt7b);
                 bufferBody->print(valueToNote(note));
@@ -275,7 +273,7 @@ inline void Display::drawHead() {
 
     if (DATAOBJ.get(FrankData::midiSource)) {
         bufferHead->print("USB");
-6
+        6
     } else {
         bufferHead->print("DIN");
     }
@@ -358,7 +356,7 @@ inline void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, 
     lcd.endWrite();
 }
 
-char Display::valueToNote(byte noteIn) {
+char Display::valueToNote(const byte &noteIn) {
 
     byte note;
     note = (noteIn + 9) % 12;
@@ -379,7 +377,7 @@ char Display::valueToNote(byte noteIn) {
     return '\0';
 }
 
-char Display::valueToOctave(byte noteIn) {
+char Display::valueToOctave(const byte &noteIn) {
 
     byte octave;
     octave = (noteIn + 9) / 12;
@@ -399,7 +397,7 @@ char Display::valueToOctave(byte noteIn) {
     return '\0';
 }
 
-char Display::valueToSharp(byte noteIn) {
+char Display::valueToSharp(const byte &noteIn) {
     byte note;
     note = (noteIn + 9) % 12;
 
@@ -410,7 +408,7 @@ char Display::valueToSharp(byte noteIn) {
     return '\0';
 }
 
-const char *Display::tuningToChar(byte tuning) {
+const char *Display::tuningToChar(const byte &tuning) {
 
     switch (tuning) {
     case 0: return "C";

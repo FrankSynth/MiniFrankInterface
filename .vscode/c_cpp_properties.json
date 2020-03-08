@@ -4,9 +4,11 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
+                "C:/Program Files (x86)/Arduino/hardware/arduino/**",
                 "C:/Program Files (x86)/Arduino/hardware/teensy/avr/cores/teensy4/**",
-                "C:/Program Files (x86)/Arduino/hardware/teensy/avr/libraries/**",
                 "C:/Program Files (x86)/Arduino/hardware/tools/**",
+                "C:/Program Files (x86)/Arduino/hardware/teensy/avr/libraries/**",
+                
                 "${userprofile}/Documents/Arduino/libraries/**"
             ],
             "defines": [
@@ -14,10 +16,7 @@
                 "UNICODE",
                 "_UNICODE"
             ],
-            "intelliSenseMode": "msvc-x64",
-            "forcedInclude": [
-                "C:\\Program Files (x86)\\Arduino\\hardware\\teensy\\avr\\cores\\teensy4\\Arduino.h"
-            ]
+            "intelliSenseMode": "msvc-x64"
         }
     ],
     "version": 4

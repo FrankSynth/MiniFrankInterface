@@ -73,11 +73,11 @@ class Display {
     uint8_t h;
     uint8_t rotation;
 
-    inline char valueToNote(byte noteIn);
-    inline char valueToOctave(byte noteIn);
-    inline char valueToSharp(byte noteIn);
+    inline char valueToNote(const byte &noteIn);
+    inline char valueToOctave(const byte &noteIn);
+    inline char valueToSharp(const byte &noteIn);
 
-    inline const char *tuningToChar(byte tuning);
+    inline const char *tuningToChar(const byte &tuning);
 
     inline void initLCD(byte w, byte h, byte rotation);
     inline void initBuffer();

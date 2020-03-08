@@ -10,5 +10,6 @@
         "fstream": "cpp",
         "typeinfo": "cpp",
         "utility": "cpp"
-    }
+    },
+    "C_Cpp.intelliSenseEngineFallback": "Disabled",
 }
