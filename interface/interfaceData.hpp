@@ -7,6 +7,7 @@
 #define NOTERANGE 88
 #define STEPPERPAGE 8
 #define OUTPUTS 2 // Number of outputs
+#define MAXSTRINGSIZE 8
 
 #define DATAOBJ FrankData::getDataObj()
 
@@ -171,38 +172,39 @@ class LiveMidi {
 // Sequence class
 class Seq {
   public:
-    void init(byte note = 12, byte gate = 1, byte gateLength = 50, byte tuning = 10); // init sequence to default values
+    void init(const byte &note = 12, const byte &gate = 1, const byte &gateLength = 50,
+              const byte &tuning = 10); // init sequence to default values
 
     // Note
-    void setNote(byte index, byte note); // set note value
-    void setNotes(byte note);            // set all note values
-    byte getNote(byte index);            // return note value
+    void setNote(const byte &index, const byte &note); // set note value
+    void setNotes(const byte &note);                   // set all note values
+    byte getNote(const byte &index);                   // return note value
 
-    byte increaseNote(byte index); // increase note value and return new note, function take care of tuning
-    byte decreaseNote(byte index); // decrease note value and return new note, function take care of tuning
+    byte increaseNote(const byte &index); // increase note value and return new note, function take care of tuning
+    byte decreaseNote(const byte &index); // decrease note value and return new note, function take care of tuning
 
-    byte changeNote(byte index, int change); // change note value and return new note
-    void changeNotes(int change);            // change all note values
+    byte changeNote(const byte &index, const int &change); // change note value and return new note
+    void changeNotes(const int &change);                   // change all note values
 
     void octaveUp();   // All notes one octave down (if possible)
     void octaveDown(); // All notes one octave down (if possible)
 
     // TUNE
-    void setTuning(byte tuning);
+    void setTuning(const byte &tuning);
     byte getTuning();
 
     // Gate
-    void setGate(byte index, byte gate); // set gate value
-    byte getGate(byte index);            // return gate value
-    byte toggleGate(byte index);         // toggle gate and return new status;
+    void setGate(const byte &index, const byte &gate); // set gate value
+    byte getGate(const byte &index);                   // return gate value
+    byte toggleGate(const byte &index);                // toggle gate and return new status;
 
     // GateLength
-    void setGateLength(byte index, byte gateLength); // set gate length
-    byte getGateLength(byte index);                  // return gate length
-    byte changeGateLength(byte index, int change);   // increase note value and return new note
+    void setGateLength(const byte &index, const byte &gateLength); // set gate length
+    byte getGateLength(const byte &index);                         // return gate length
+    byte changeGateLength(const byte &index, const int &change);   // increase note value and return new note
 
-    void setGateLengths(byte gateLength); // set all gates at once
-    void changeGateLengths(int change);   // increase note value and return new note
+    void setGateLengths(const byte &gateLength); // set all gates at once
+    void changeGateLengths(const int &change);   // increase note value and return new note
 
     // Sequence
     void setSequence(structSequence *copySeq); // set all sequence values at once
@@ -244,9 +246,9 @@ class FrankData {
         outputCc,
         outputCcEvaluated,
         outputLiveMode,
-        outputLiveModeEvaluated,
+        // outputLiveModeEvaluated,
         outputClock,
-        outputClockEvaluated,
+        // outputClockEvaluated,
 
         // Screen Settings, needs value
         screenOutputChannel,
@@ -294,16 +296,20 @@ class FrankData {
         for (byte output = 0; output < OUTPUTS; output++) {
             this->seq[output].init();
         }
+
     }
 
-    // public:
     structStatus stat;
     structSettings config;
 
     LiveMidi liveMidi[OUTPUTS];
     Seq seq[OUTPUTS];
 
+    char str[MAXSTRINGSIZE];
+
   public:
+    const char* returnStr = str;
+
     // receive MIDI
     void receivedKeyPressed(const byte &channel, const byte &note, const byte &velocity);
     void receivedKeyReleased(const byte &channel, const byte &note);
@@ -325,13 +331,10 @@ class FrankData {
     inline void increaseStep();
     inline void decreaseStep();
     inline byte getCurrentPageNumber();
-    inline byte getSubscreenMax() const;
+    inline const byte getSubscreenMax();
     inline byte getLiveCcEvaluated(const byte &array);
-    inline char *getLiveCcEvaluatedStr();
     inline byte getOutputLiveModeEvaluated(const byte &array);
-    inline char *getOutputLiveModeEvaluatedStr();
     inline byte getOutputClockEvaluated(const byte &array);
-    inline char *getOutputClockEvaluatedStr();
 
   public:
     inline structKey getLiveKeyEvaluated(const byte &array);
@@ -380,15 +383,23 @@ class FrankData {
     inline void decrease(const frankData &frankDataType, const byte &array, const byte &step,
                          const bool &clampChange = 0);
 
-    char *getName(const frankData &frankDataType);
-    char *getValueName(const frankData &frankDataType);
-    char *getValueName(const frankData &frankDataType, const byte &step);
+    const char *getName(const frankData &frankDataType);
+    const char *getValueName(const frankData &frankDataType);
+    const char *getValueName(const frankData &frankDataType, const byte &step);
+
+    inline char valueToNote(const byte &noteIn);
+    inline char valueToOctave(const byte &noteIn);
+    inline char valueToSharp(const byte &noteIn);
+    inline char *tuningToChar(const byte &tuning);
+
+    inline void setStr(const char* newStr);
 
     // singleton
     static FrankData &getDataObj();
 
   protected:
     static FrankData *mainData;
+
 };
 
 // utility
