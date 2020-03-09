@@ -296,7 +296,7 @@ class FrankData {
     char str[MAXSTRINGSIZE+1]; // MAXSTRINGSIZE + escape char
 
   public:
-    const char* returnStr = str;
+    const char *returnStr = str;
 
     // receive MIDI
     void receivedKeyPressed(const byte &channel, const byte &note, const byte &velocity);

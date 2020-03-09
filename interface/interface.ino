@@ -12,18 +12,20 @@
 #include <avr/io.h>
 
 // Debug logging
-#define DEBUG 0
+#define DEBUG 1
 
 #if DEBUG == 1
 #define PRINTLN(x) Serial.println(x)
 #define PRINTLN2(x,y) Serial.println(x,y)
 #define PRINT(x) Serial.print(x)
 #define PRINT2(x,y) Serial.print(x,y)
+#define DEBUGPRINTBEGIN Serial.begin(115200)
 #else
 #define PRINTLN(x) 
 #define PRINTLN2(x,y) 
 #define PRINT(x)
 #define PRINT2(x,y)
+#define DEBUGPRINTBEGIN
 #endif
 
 // status settings;   //init status object;
@@ -66,11 +68,17 @@ void setup() {
     initMidi();
     initMiddleman();
 
-#if DEBUG == 1
-    Serial.begin(115200);
-#endif
-
+    DEBUGPRINTBEGIN;
+    PRINTLN("Debug Mode");
     PRINTLN("HELLO FRANK Mini");
+
+    PRINT("Brightness: ");
+    PRINTLN(DATAOBJ.get(FrankData::displayBrightness));
+    PRINTLN(DATAOBJ.get(FrankData::play));
+    PRINT("BPM: ");
+    PRINTLN(DATAOBJ.get(FrankData::bpm));
+    PRINT("Clock: ");
+    PRINTLN(DATAOBJ.get(FrankData::outputClock,0));
 
     ////////////////////////
     // Start Devices
@@ -123,6 +131,8 @@ void loop() {
     static long timer = 0;
     if (millis() - timer > 250) {
         DATAOBJ.increase(FrankData::stepSeq);
+        PRINT("Step: ");
+        PRINTLN(DATAOBJ.get(FrankData::stepSeq));
         timer = millis();
     }
 

@@ -479,9 +479,16 @@ inline byte FrankData::getCurrentPageNumber() { // number of pages, takes care i
 // Singleton
 FrankData *FrankData::mainData = nullptr;
 FrankData &FrankData::getDataObj() {
-    if (mainData == nullptr)
-        // mainData = new FrankData();
-        static FrankData mainData;
+    if (mainData == nullptr) {
+        // PRINTLN("Creating new FrankData");
+        mainData = new FrankData();
+        // PRINTLN("FrankData Created");
+    }
+    else {
+        // PRINTLN("FrankData already created");
+    }
+    // PRINTLN("FrankData returning");
+
     return *mainData;
 }
 
