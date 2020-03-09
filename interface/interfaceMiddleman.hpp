@@ -1,15 +1,18 @@
 #pragma once
 
-#include <Arduino.h>
 #include "interfaceData.hpp"
 #include "interfaceOut.hpp"
-
+#include <Arduino.h>
 
 #define TRIGGERLENGTH 20 // default trigger and clock pulse length in ms
 
-
 // save state for each output lane
 class PreviousOutputs {
+    public:
+    enum previousData {
+        dataNote, dataGate
+    };
+
     byte note;
     byte customCV;
     byte gate;
@@ -20,7 +23,7 @@ class PreviousOutputs {
     byte trigger;
     long triggerTimeSet;
 
-  public:
+public:
     PreviousOutputs() {
         this->note = 0;
         this->customCV = 0;
@@ -33,38 +36,18 @@ class PreviousOutputs {
         this->triggerTimeSet = 0;
     }
 
-    // set previous state values
-    void setNote(byte data);
-    void setCustomCV(byte data);
-    void setGate(byte data);
-    void setGateLength(byte data);
-    void setGateTimeSet();
-    void setClock(byte data);
-    void setClockTimeSet();
-    void setTrigger(byte data);
-    void setTriggerTimeSet();
-
-    // get previous state values
-    byte getNote();
-    byte getCustomCV();
-    byte getGate();
-    byte getGateLength();
-    long getGateTimeSet();
-    byte getClock();
-    long getClockTimeSet();
-    byte getTrigger();
-    long getTriggerTimeSet();
+    void setNewGateTimeSet();
+    void setNewClockTimeSet();
+    void setNewTriggerTimeSet();
 };
 
 // save general output state parameters
 class PreviousState {
+  public:
     byte old16thClockCount;
 
-  public:
     PreviousState() { this->old16thClockCount = 0; }
 
-    void setOld16thClockCount(byte data);
-    byte getOld16thClockCount();
 };
 
 // init Middleman

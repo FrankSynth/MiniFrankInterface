@@ -12,14 +12,14 @@
 #define CLK1 1
 #define CLK2 0
 
-void setVoltage(int dacpin, bool channel, bool gain, unsigned int mV);  //channel 0, 1, Gain = 2 (default)
+void setVoltage(int dacpin, bool channel, bool gain, unsigned int mV); // channel 0, 1, Gain = 2 (default)
 void initOutput();
-
 
 class channel {
   public:
-    channel(byte noteDac, byte noteChannel, byte cvDac, byte cvChannel,  byte triggerPin, byte gatePin)
-    :noteDac(noteDac), noteChannel(noteChannel), cvDac(cvDac), cvChannel(cvChannel), triggerPin(triggerPin), gatePin(gatePin){}
+    channel(byte noteDac, byte noteChannel, byte cvDac, byte cvChannel, byte triggerPin, byte gatePin)
+        : noteDac(noteDac), noteChannel(noteChannel), cvDac(cvDac), cvChannel(cvChannel), triggerPin(triggerPin),
+          gatePin(gatePin) {}
 
     void setTuning(float tuning);
     void setGate(byte state);
@@ -40,11 +40,10 @@ class channel {
     byte gatePin;
 };
 
-
 class clock {
   public:
-    clock(byte pin)
-    :pin(pin){}
+    clock(byte pin) : pin(pin) {}
+
   private:
     byte pin;
 };

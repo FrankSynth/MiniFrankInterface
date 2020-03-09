@@ -1,3 +1,9 @@
+#include "interfaceData.hpp"
+#include "interfaceDisplay.hpp"
+#include "interfaceIn.hpp"
+#include "interfaceMapping.hpp"
+#include "interfaceMiddleman.hpp"
+#include "interfaceMidi.hpp"
 #include <Arduino.h>
 #include <MIDI.h>
 #include <SPI.h>
@@ -5,16 +11,22 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
 
-#include "interfaceData.hpp"
-#include "interfaceDisplay.hpp"
-#include "interfaceIn.hpp"
-#include "interfaceMiddleman.hpp"
-#include "interfaceMidi.hpp"
-#include "interfaceMapping.hpp"
+// Debug logging
+#define DEBUG 1
 
-
-
- #define DEBUG
+#if DEBUG == 1
+#define PRINTLN(x) Serial.println(x)
+#define PRINTLN2(x,y) Serial.println(x,y)
+#define PRINT(x) Serial.print(x)
+#define PRINT2(x,y) Serial.print(x,y)
+#define DEBUGPRINTBEGIN Serial.begin(115200)
+#else
+#define PRINTLN(x) 
+#define PRINTLN2(x,y) 
+#define PRINT(x)
+#define PRINT2(x,y)
+#define DEBUGPRINTBEGIN
+#endif
 
 // status settings;   //init status object;
 // mfMidi midi0; //create midi object
@@ -24,8 +36,6 @@ controls cntrl;
 Display lcd = Display(160, 128, 3); // create display object, (width, heigh, rotation)
 
 IntervalTimer myTimer;
-
-
 
 // PressedNotesList noteList0;
 // PressedNotesList noteList1;
@@ -37,10 +47,8 @@ void readSerial3() {
     byte rcv;
     rcv = Serial3.read();
 
-#ifdef DEBUG
-    Serial.print("Message: ");
-    Serial.println(rcv, BIN);
-#endif
+    PRINT("Message: ");
+    PRINTLN2(rcv, BIN);
 
     cntrl.encode(rcv);
 }
@@ -60,10 +68,17 @@ void setup() {
     initMidi();
     initMiddleman();
 
-#ifdef DEBUG
-    Serial.begin(115200);
-    Serial.println("HELLO FRANK Mini");
-#endif
+    DEBUGPRINTBEGIN;
+    PRINTLN("Debug Mode");
+    PRINTLN("HELLO FRANK Mini");
+
+    PRINT("Brightness: ");
+    PRINTLN(DATAOBJ.get(FrankData::displayBrightness));
+    PRINTLN(DATAOBJ.get(FrankData::play));
+    PRINT("BPM: ");
+    PRINTLN(DATAOBJ.get(FrankData::bpm));
+    PRINT("Clock: ");
+    PRINTLN(DATAOBJ.get(FrankData::outputClock,0));
 
     ////////////////////////
     // Start Devices
@@ -81,21 +96,18 @@ void setup() {
         Serial3.write(send);
 
         if (millis() - timer > 2000) {
-            timeout = 1;           // we timed out
-            DATAOBJ.setError(1); // set error status
-#ifdef DEBUG
-            Serial.println("uC : connection failed (timeout)");
-#endif
+            timeout = 1;         // we timed out
+            DATAOBJ.set(FrankData::error, 1); // set error status
+            PRINTLN("uC : connection failed (timeout)");
         }
     }
 
     if ((B01010101 == Serial3.read()) && !timeout) {
-#ifdef DEBUG
 
-        Serial.println("Connected");
-#endif
+        PRINTLN("Connected");
+
     } else {
-        DATAOBJ.setError(1); // set error status
+        DATAOBJ.set(FrankData::error, 1); // set error status
     }
 
     attachInterrupt(digitalPinToInterrupt(SWSYNC), ISRSwitch, CHANGE);
@@ -104,7 +116,6 @@ void setup() {
 
     // Set timer interrupt (display refresh)
     myTimer.begin(updateDisplay, 40000); // display refresh
- 
 }
 
 void loop() {
@@ -119,7 +130,9 @@ void loop() {
     // Temp Clock
     static long timer = 0;
     if (millis() - timer > 250) {
-        DATAOBJ.increaseStep();
+        DATAOBJ.increase(FrankData::stepSeq);
+        PRINT("Step: ");
+        PRINTLN(DATAOBJ.get(FrankData::stepSeq));
         timer = millis();
     }
 
@@ -129,7 +142,5 @@ void loop() {
 
 void ISRSwitch() {
     cntrl.readSwitches();
-#ifdef DEBUG
-  //  Serial.println("INPUT: SWChange");
-#endif
+    //   PRINTLN("INPUT: SWChange");
 }

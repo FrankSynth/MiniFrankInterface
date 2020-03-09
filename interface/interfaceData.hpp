@@ -2,98 +2,71 @@
 
 #include <Arduino.h>
 
-//zum Testen vom mapping
-#define NONE 0
-#define BPM 1
-#define NOTE 1
-#define GATE 1
-#define TGATE 1
-#define CGATE 1
-#define STEP 1
-#define CV 1
-#define CONF 1
-
-//Cxxx -> Global Channel data
-//Txxx -> Toggle Data
-
-
-
 #define LENGTH 64
 #define PAGES 8
 #define NOTERANGE 88
 #define STEPPERPAGE 8
 #define OUTPUTS 2 // Number of outputs
+#define MAXSTRINGSIZE 8
 
 #define DATAOBJ FrankData::getDataObj()
-#define TESTOBJ Testclass::getDataObj()
-// #define GETDATAOBJ FrankData::getDataObj();
 
 class OutputRouting {
-    byte out;          // 0 = live, 1 = seq
+  public:
+    byte outSource;    // 0 = live, 1 = seq
     byte channel;      // 0 = all, 1 = channel 1, ...
     byte seq;          // 0 = seq0, 1 = seq1
     byte arp;          // 0 = off, 1 = on
     byte cc;           // 0 = vel, 1 = mod, 2 = pitchbend, 3 = aftertouch, 4 = sustain
     byte liveMidiMode; // 0 = latest, 1 = lowest, 2 = highest
+    byte clock;        // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
+    byte arpRatchet; // repeats per step
 
-  public:
     OutputRouting() {
-        this->out = 0;
+        this->outSource = 0;
         this->channel = 0;
         this->seq = 0;
         this->arp = 0;
         this->cc = 0;
         this->liveMidiMode = 0;
+        this->clock = 2;
     }
 
-    byte getOut();
-    byte getChannel();
-    byte getSeq();
-    byte getArp();
-    byte getCc();
-    byte getliveMidiMode();
-
-    void setOut(byte data);
-    void setChannel(byte data);
-    void setSeq(byte data);
-    void setArp(byte data);
-    void setCc(byte data);
-    void setLiveMidiMode(byte data);
 };
 
-// Sequence struct holding all values for a sequence
+// Sequence struct holding all values for a sequence, to save it
 typedef struct {
     byte note[LENGTH];
-    byte cv[LENGTH];
+    byte cc[LENGTH];
     byte gate[LENGTH];
     byte gateLength[LENGTH];
     byte velocity[LENGTH];
     byte tuning; // tuning offset
 } structSequence;
 
-// Settings struct for all settings that will get saved permanently
+// Settings struct for all settings that need to be saved permanently
 typedef struct {
     byte midiSource = 1;            // active MidiDevice (usb -> 1, din -> 0)
     byte nbPages = 4;               // nb Pages  1 -> 8
     byte direction = 1;             // 0 -> reverse ; 1 -> forward
     byte displayBrightness = 100;   // 0-255;
     OutputRouting routing[OUTPUTS]; // hold settings for that many outputs
-    byte clockOut0 = 0;             // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
-    byte clockOut1 = 1;             // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
 
 } structSettings;
 
-// Sequence struct holding all values for a sequence
+// possible screen status
 typedef struct {
-  byte channel = 0;    //active channel, 0-> Channel 1, 1-> Channel 2
-  byte config = 0;     //display config, 0-> off, 1-> on
-  byte mainMenu = 1;     //display Main Menu, 0-> off, 1-> on
-  byte subscreen = 0;  //subscreen -> current displayed screen .. note, gate, cv (seq) ; live, appregiator (live)
+    byte channel = 0;   // active channel, 0-> Channel 1, 1-> Channel 2
+    byte config = 0;    // display config, 0-> off, 1-> on
+    byte mainMenu = 1;  // display Main Menu, 0-> off, 1-> on
+    byte subscreen = 0; // subscreen -> current displayed screen .. note, gate, cv (seq) ; live, appregiator (live)
+    const byte subScreenMaxSeq = 2;  // Number of subscreens for seq mode
+    const byte subScreenMaxLive = 1; // Number of subscreens for live mode
 } structScreen;
 
 // all Settings that don't need to be saved permanently
 typedef struct {
-    structScreen screen; //screen status
+    structScreen screen; // screen status
 
     byte stepSeq = 0; // current Step
     byte stepArp = 0;
@@ -109,7 +82,7 @@ typedef struct {
     uint16_t bpmPoti = 0; // sync= 0 ? 0-1023 bpm log : divider /4, /2, 1, *2, *4 ; Range is 0-1023
 } structStatus;
 
-// Key press data
+// Midi Key data
 typedef struct {
     byte note = 0;
     byte velocity = 0;
@@ -131,8 +104,8 @@ class PressedNotesElement {
 class PressedNotesList {
   public:
     PressedNotesElement *pressedNoteElement = NULL;
-    void appendKey(byte note, byte velocity);
-    void deleteKey(byte note);
+    void appendKey(const byte &note, const byte &velocity);
+    void deleteKey(const byte &note);
     void deleteAllKeys();
     bool containsElements();
     PressedNotesElement *getKeyHighest();
@@ -142,6 +115,7 @@ class PressedNotesList {
 
 // save live midi data
 class LiveMidi {
+  public:
     PressedNotesList noteList;
     byte mod;
     byte pitchbend;
@@ -149,7 +123,6 @@ class LiveMidi {
     byte sustain;
     byte triggered;
 
-  public:
     LiveMidi() {
         this->mod = 0;
         this->pitchbend = 64;
@@ -158,25 +131,25 @@ class LiveMidi {
         this->triggered = 0;
     }
 
-    void keyPressed(byte note, byte velocity);
-    void keyReleased(byte note);
+    void keyPressed(const byte &note, const byte &velocity);
+    void keyReleased(const byte &note);
 
     bool keysPressed();
 
-    void setMod(byte data);
-    void setPitchbend(byte data);
-    void setAftertouch(byte data);
-    void setSustain(byte data);
-    void resetTrigger();
+    // void setMod(byte data);
+    // void setPitchbend(byte data);
+    // void setAftertouch(byte data);
+    // void setSustain(byte data);
+    // void resetTrigger();
 
     structKey getKeyHighest();
     structKey getKeyLowest();
     structKey getKeyLatest();
 
-    byte getMod();
-    byte getPitchbend();
-    byte getAftertouch();
-    byte getSustain();
+    // byte getMod();
+    // byte getPitchbend();
+    // byte getAftertouch();
+    // byte getSustain();
     byte getTriggered();
 
     void reset();
@@ -185,38 +158,39 @@ class LiveMidi {
 // Sequence class
 class Seq {
   public:
-    void init(byte note = 12, byte gate = 1, byte gateLength = 50, byte tuning = 10); // init sequence to default values
+    void init(const byte &note = 12, const byte &gate = 1, const byte &gateLength = 50,
+              const byte &tuning = 10); // init sequence to default values
 
     // Note
-    void setNote(byte index, byte note); // set note value
-    void setNotes(byte note);            // set all note values
-    byte getNote(byte index);            // return note value
+    void setNote(const byte &index, const byte &note); // set note value
+    void setNotes(const byte &note);                   // set all note values
+    byte getNote(const byte &index);                   // return note value
 
-    byte increaseNote(byte index); // increase note value and return new note, function take care of tuning
-    byte decreaseNote(byte index); // decrease note value and return new note, function take care of tuning
+    byte increaseNote(const byte &index); // increase note value and return new note, function take care of tuning
+    byte decreaseNote(const byte &index); // decrease note value and return new note, function take care of tuning
 
-    byte changeNote(byte index, int change); // change note value and return new note
-    void changeNotes(int change);            // change all note values
+    byte changeNote(const byte &index, const int &change); // change note value and return new note
+    void changeNotes(const int &change);                   // change all note values
 
     void octaveUp();   // All notes one octave down (if possible)
     void octaveDown(); // All notes one octave down (if possible)
 
     // TUNE
-    void setTuning(byte tuning);
+    void setTuning(const byte &tuning);
     byte getTuning();
 
     // Gate
-    void setGate(byte index, byte gate); // set gate value
-    byte getGate(byte index);            // return gate value
-    byte toggleGate(byte index);         // toggle gate and return new status;
+    void setGate(const byte &index, const byte &gate); // set gate value
+    byte getGate(const byte &index);                   // return gate value
+    byte toggleGate(const byte &index);                // toggle gate and return new status;
 
     // GateLength
-    void setGateLength(byte index, byte gateLength); // set gate length
-    byte getGateLength(byte index);                  // return gate length
-    byte changeGateLength(byte index, int change);   // increase note value and return new note
+    void setGateLength(const byte &index, const byte &gateLength); // set gate length
+    byte getGateLength(const byte &index);                         // return gate length
+    byte changeGateLength(const byte &index, const int &change);   // increase note value and return new note
 
-    void setGateLengths(byte gateLength); // set all gates at once
-    void changeGateLengths(int change);   // increase note value and return new note
+    void setGateLengths(const byte &gateLength); // set all gates at once
+    void changeGateLengths(const int &change);   // increase note value and return new note
 
     // Sequence
     void setSequence(structSequence *copySeq); // set all sequence values at once
@@ -224,7 +198,6 @@ class Seq {
 
     int getSequenceSize(); // return the struct size
 
-  private:
     // Sequence
     structSequence sequence;
 };
@@ -233,25 +206,102 @@ class Seq {
 class FrankData {
 
   public:
+    // storage enumerator
+    enum frankData : byte {
+        // frankData = 0 is referred to none, so if-statements will work as expected 
+        none, 
+
+        // Seq, needs value, array, step
+        seqNote,
+        seqGate,
+        seqGateLength,
+        seqCc,
+        seqCcEvaluated,
+        seqVelocity,
+        seqTuning,
+        seqSize,
+
+        // general Settings, needs value
+        midiSource,
+        nbPages,
+        direction,
+        displayBrightness,
+
+        // Output Routing Settings, needs value, array
+        outputSource,
+        outputChannel,
+        outputSeq,
+        outputArp,
+        outputCc,
+        outputCcEvaluated,
+        outputLiveMode,
+        // outputLiveModeEvaluated,
+        outputClock,
+        // outputClockEvaluated,
+
+        // Screen Settings, needs value
+        screenOutputChannel,
+        screenConfig,
+        screenMainMenu,
+        screenSubScreen,
+
+        // structStatus, needs value
+        stepSeq,
+        stepArp,
+        activePage,
+        stepOnPage,
+        currentPageNumber,
+        bpm,
+        play,
+        rec,
+        error,
+        bpmSync,
+        // midiClockCount,
+        bpm16thCount,
+        bpmPoti,
+
+        // liveMidi, needs value, array
+        liveMod,
+        livePitchbend,
+        liveAftertouch,
+        liveSustain,
+        liveTriggered,
+        liveKeyNoteEvaluated,
+        liveKeyVelEvaluated,
+        liveLatestKey,
+        liveHighestKey,
+        liveLowestKey,
+        // liveKeysPressed,
+    };
+
+    // idea for further enumerators
+    enum subscreenStates : byte { screenNote, screenGate, screenCv, screenLive, screenArp };
+    enum midiSourceStates : byte { din, usb };
+    enum directionStates : byte { reverse, forward };
+    enum beatStates : byte { sixteenth, eighth, quarter, half, bar, doublebar };
+
+  private:
+    FrankData() {
+        for (byte output = 0; output < OUTPUTS; output++) {
+            this->seq[output].init();
+        }
+
+    }
+
     structStatus stat;
     structSettings config;
 
     LiveMidi liveMidi[OUTPUTS];
     Seq seq[OUTPUTS];
 
-    FrankData() {
-        for (byte output = 0; output < OUTPUTS; output++) {
-            this->seq[output].init();
-        }
-    }
+    char str[MAXSTRINGSIZE+1]; // MAXSTRINGSIZE + escape char
+
+  public:
+    const char *returnStr = str;
 
     // receive MIDI
-    void receivedKeyPressed(byte channel, byte note, byte velocity);
-    void receivedKeyReleased(byte channel, byte note);
-    void receivedMod(byte channel, byte data);
-    void receivedPitchbend(byte channel, byte data);
-    void receivedAftertouch(byte channel, byte data);
-    void receivedSustain(byte channel, byte data);
+    void receivedKeyPressed(const byte &channel, const byte &note, const byte &velocity);
+    void receivedKeyReleased(const byte &channel, const byte &note);
     void receivedMidiClock();
     void receivedMidiSongPosition(unsigned int spp);
     void receivedStart();
@@ -259,109 +309,91 @@ class FrankData {
     void receivedStop();
     void receivedReset();
 
-    // clock
+    // internal helper functions
+  private:
     void increaseMidiClock();
     void increaseBpm16thCount();
     void setBpm16thCount(unsigned int spp);
     byte getBpm16thCount();
-    void resetClock();
+    // inline void resetClock();
+    inline void calcBPM();
+    inline void increaseStep();
+    inline void decreaseStep();
+    inline byte getCurrentPageNumber();
+    inline const byte getSubscreenMax();
+    inline byte getLiveCcEvaluated(const byte &array);
+    inline byte getOutputLiveModeEvaluated(const byte &array);
+    inline byte getOutputClockEvaluated(const byte &array);
+    inline void setStr(const char *newStr);
+
+  public:
+    inline structKey getLiveKeyEvaluated(const byte &array);
+    inline structKey getKeyHighest(const byte &array);
+    inline structKey getKeyLowest(const byte &array);
+    inline structKey getKeyLatest(const byte &array);
+    void resetSubScreen(); // switch menu max 3 menu pages
 
     // settings
 
-    void setSync(byte bpmSync);
-    byte getSync();
-
-    void setRec(byte rec);
-    byte getRec();
-
-    void setBPM(int bpm);
-    void calcBPM();
-    int getBPM();
+  public:
+    // get single type value
+    byte get(const frankData &frankDataType);
+    // get value that is part of an array, e.g. output, seq current step, ...
+    byte get(const frankData &frankDataType, const byte &array);
+    // get value for certain step
+    byte get(const frankData &frankDataType, const byte &array, const byte &step);
 
 
-    void setStep(byte stepSeq);
-    byte getStep();
-    void increaseStep();
-    void decreaseStep();
+    // set single type value
+    void set(const frankData &frankDataType, const byte &data, const bool &clampChange = 0);
+    // set value prat of an array
+    void set(const frankData &frankDataType, const byte &data, const byte &array, const bool &clampChange = 0);
+    // set value for certain step
+    void set(const frankData &frankDataType, const byte &data, const byte &array, const byte &step,
+             const bool &clampChange = 0);
+    // toggle what can be toggled
+    void toggle(const frankData &frankdataType);
+    void toggle(const frankData &frankdataType, const byte &array, const byte &step);
 
-    byte getActivePage();
-    byte getStepOnPage();
+    void change(const frankData &frankDataType, const byte &amount, const bool &clampChange = 0);
+    void change(const frankData &frankDataType, const byte &amount, const byte &array,
+                       const bool &clampChange = 0);
+    void change(const frankData &frankDataType, const byte &amount, const byte &array, const byte &step,
+                       const bool &clampChange = 0);
 
-    void setPlayStop(byte mode);
-    byte getPlayStop();
+    void increase(const frankData &frankDataType, const bool &clampChange = 0);
+    void increase(const frankData &frankDataType, const byte &array, const bool &clampChange = 0);
+    void increase(const frankData &frankDataType, const byte &array, const byte &step,
+                         const bool &clampChange = 0);
 
-    void togglePlayStop();
+    void decrease(const frankData &frankDataType, const bool &clampChange = 0);
+    void decrease(const frankData &frankDataType, const byte &array, const bool &clampChange = 0);
+    void decrease(const frankData &frankDataType, const byte &array, const byte &step,
+                         const bool &clampChange = 0);
 
+    const char *getNameAsStr(const frankData &frankDataType);
+    const char *getValueAsStr(const frankData &frankDataType);
+    const char *getValueAsStr(const frankData &frankDataType, const byte &step);
 
-    void setDirection(byte direction);
-    byte getDirection();
+    // singleton
+    static FrankData &getDataObj();
 
-    void setError(byte error);
-    byte getError();
-
-    void setDisplayBrightness(byte brightness);
-    byte getDisplayBrightness();
-
-    void setMidiSource(byte midi);
-    byte getMidiSource();
-
-    void setNumberPages(byte nbPages);
-    byte getNumberPages();
-    byte getCurrentNumberPages();
-    Seq *getSeqObject();
-
-
-
-    //Screen config
-    void setSubScreen(byte subScreen , byte max);
-    byte getSubScreen();
-    void resetSubScreen(); // switch menu max 3 menu pages
-
-    void increaseSubScreen(byte max); // switch menu max 3 menu pages
-    void decreaseSubScreen(); // switch menu max 3 menu pages;
-
-    byte getScreenConfig(byte screen);
-    void toggleScreenConfig();
-
-    void setScreenChannel(byte channel);
-    byte getScreenChannel();
-
-    byte getMainMenuEnabled();
-    void toogleMainMenu();
-
-    byte getOutputMode(byte channel);   // Live oder Seq?
-    byte getArpModeEnable(byte channel);   // Arp on or off
-
-
-
-
-
-    //zum testen//
-
-    void setData(byte id, byte index = 0);
-
-    void toggleData(byte id, byte index = 0);
-
-    void changeData(byte id, byte index = 0 , byte direction = 0);
-
-    int getData(byte id, byte index = 0);
-    char* getDataString(byte data, byte index = 0);
-
-    char* getDataName(byte id);
-
-
-    static FrankData& getDataObj();
-
-    protected:
-    static FrankData* mainData;
-
+  protected:
+    static FrankData *mainData;
 
 };
 
 // utility
-inline byte testByte(byte value, byte minimum, byte maximum = 255); // test byte range and return valid byte
-inline byte increaseByte(byte value, byte maximum);           // increase byte
-inline byte decreaseByte(byte value, byte minimum);           // decrease byte
-inline byte changeByte(byte value, int change, byte minimum = 0, byte maximum = 255); // change byte
-inline byte changeByteNoClampChange(byte value, int change, byte minimum = 0,
-                                    byte maximum = 255); // change byte (keeps original value if change not possible)
+inline byte testByte(const byte &value, const byte &minimum, const byte &maximum = 255,
+                     const bool &clampChange = 0);                // test byte range and return valid byte
+inline byte increaseByte(const byte &value, const byte &maximum); // increase byte
+inline byte decreaseByte(const byte &value, const byte &minimum); // decrease byte
+inline byte changeByte(const byte &value, const int &change, const byte &minimum = 0, const byte &maximum = 255,
+                       const bool &clampChange = 0); // change byte
+template <typename T> inline T toggleValue(const T &data);
+template <typename T> inline char *toStr(const T &data);
+
+char valueToNote(const byte &noteIn);
+char valueToOctave(const byte &noteIn);
+char valueToSharp(const byte &noteIn);
+const char *tuningToChar(const byte &tuning);

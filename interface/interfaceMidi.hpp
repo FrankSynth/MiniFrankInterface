@@ -3,10 +3,10 @@
 
 #pragma once
 
+#include "interfaceData.hpp"
 #include <Arduino.h>
 #include <MIDI.h>
 
-#include "interfaceData.hpp"
 
 void initMidi();
 void updateMidi();

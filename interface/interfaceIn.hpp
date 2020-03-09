@@ -24,11 +24,11 @@ class controls {
     void rotate(byte id, byte dir); // is a rotate message
     void push(byte id, byte push);  // is a switch message
 
-    void readSwitches();  //readSwitches
+    void readSwitches(); // readSwitches
 
-    void readSync();  //read Sync Switch
-    void readSeq();   //read Seq Swicch
-    void readRec();   //read Rec Switch
+    void readSync(); // read Sync Switch
+    void readSeq();  // read Seq Swicch
+    void readRec();  // read Rec Switch
 
     void init();
 };

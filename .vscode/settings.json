@@ -5,6 +5,13 @@
         "istream": "cpp",
         "limits": "cpp",
         "ostream": "cpp",
-        "streambuf": "cpp"
-    }
+        "streambuf": "cpp",
+        "type_traits": "cpp",
+        "fstream": "cpp",
+        "typeinfo": "cpp",
+        "utility": "cpp",
+        "vector": "cpp",
+        "*.idl": "cpp"
+    },
+    "C_Cpp.intelliSenseEngineFallback": "Disabled",
 }
