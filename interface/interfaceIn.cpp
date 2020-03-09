@@ -30,11 +30,11 @@ void controls::encode(byte message) {
 // rotate message
 void controls::rotate(byte id, byte dir) {
     if (id == 8) { // Control Encoder
-        DATAOBJ.changeData(CGATE, id, dir); //old!!!!!
+        DATAOBJ.change(GATE, id, dir); //old!!!!!
     } else if (id == 9) { // Step Encoder
-        DATAOBJ.changeData(STEP, id, dir); // old!!!!!
+        DATAOBJ.change(STEP, id, dir); // old!!!!!
     } else { // Note Encoder
-        DATAOBJ.changeData(mappingPush(id), id, dir); // old!!!!!
+        DATAOBJ.change(mappingPush(id), id, dir); // old!!!!!
     }
 }
 
@@ -44,7 +44,8 @@ void controls::push(byte id, byte push) { // switch message
     } else if (id == 9) { // Step Encoder
         DATAOBJ.toggle(FrankData::play);
     } else { // Note Encoder
-        DATAOBJ.toggleData(mappingPush(id), id); // old!!!!! what does it do?
+        // DATAOBJ.toggle(mappingPush(id), id); // old!!!!! what does it do?
+        DATAOBJ.toggle(mappingPush(id)); // old!!!!! what does it do?
     }
 }
 
@@ -57,12 +58,12 @@ void controls::readSwitches() {
     PRINT("INPUT: REC set: ");
     PRINTLN(digitalRead(SWREC));
 
-    DATAOBJ.setSync(digitalRead(SWSYNC));
-    DATAOBJ.setScreenChannel(digitalRead(SWSEQ));
-    DATAOBJ.setRec(digitalRead(SWREC));
+    DATAOBJ.set(FrankData::bpmSync, digitalRead(SWREC));
+    DATAOBJ.set(FrankData::screenOutputChannel, digitalRead(SWSEQ));
+    DATAOBJ.set(FrankData::rec,digitalRead(SWREC));
 }
 
-void controls::readSync() { DATAOBJ.setSync(digitalRead(SWSYNC)); }
-void controls::readRec() { DATAOBJ.setRec(digitalRead(SWREC)); }
+void controls::readSync() { DATAOBJ.set(FrankData::bpmSync, digitalRead(SWSYNC)); }
+void controls::readRec() { DATAOBJ.set(FrankData::bpmSync, digitalRead(SWREC)); }
 
-void controls::readSeq() { DATAOBJ.setScreenChannel(digitalRead(SWSEQ)); }
+void controls::readSeq() { DATAOBJ.set(FrankData::screenOutputChannel, digitalRead(SWSEQ)); }

@@ -13,8 +13,6 @@ class PreviousOutputs {
         dataNote, dataGate
     };
 
-
-private:
     byte note;
     byte customCV;
     byte gate;
@@ -38,42 +36,18 @@ public:
         this->triggerTimeSet = 0;
     }
 
-    // set previous state values
-    void setNote(byte data);
-    void setCustomCV(byte data);
-    void setGate(byte data);
-    void setGateLength(byte data);
-    void setClock(byte data);
-    void setTrigger(byte data);
     void setNewGateTimeSet();
     void setNewClockTimeSet();
     void setNewTriggerTimeSet();
-
-    // test
-    template <typename T> void set(T data, previousData destination);
-    template <typename T> T get(previousData destination);
-
-    // get previous state values
-    byte getNote();
-    byte getCustomCV();
-    byte getGate();
-    byte getGateLength();
-    long getGateTimeSet();
-    byte getClock();
-    long getClockTimeSet();
-    byte getTrigger();
-    long getTriggerTimeSet();
 };
 
 // save general output state parameters
 class PreviousState {
+  public:
     byte old16thClockCount;
 
-  public:
     PreviousState() { this->old16thClockCount = 0; }
 
-    void setOld16thClockCount(byte data);
-    byte getOld16thClockCount();
 };
 
 // init Middleman

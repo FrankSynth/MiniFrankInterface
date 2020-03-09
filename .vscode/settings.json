@@ -9,7 +9,9 @@
         "type_traits": "cpp",
         "fstream": "cpp",
         "typeinfo": "cpp",
-        "utility": "cpp"
+        "utility": "cpp",
+        "vector": "cpp",
+        "*.idl": "cpp"
     },
     "C_Cpp.intelliSenseEngineFallback": "Disabled",
 }

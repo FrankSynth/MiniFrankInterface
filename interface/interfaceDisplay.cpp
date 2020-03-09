@@ -53,13 +53,13 @@ void Display::refresh() {
     updateDisplay();
 }
 
-inline void Display::updateDisplay() {
+void Display::updateDisplay() {
     writeRGBMap(0, 0, bufferHead, w, 15);
     writeRGBMap(0, 15, bufferBody, w, 98);
     writeRGBMap(0, 113, bufferFoot, w, 15);
 }
 
-inline void Display::drawBody() {
+void Display::drawBody() {
     bufferBody->fillScreen(0x39E7); // resetBuffer
 
     // !!!!! old statement said DATAOBJ.getScreenConfig(DATAOBJ.getScreenChannel())) - ist aber kein array??
@@ -83,7 +83,7 @@ inline void Display::drawBody() {
     }
 }
 
-inline void Display::BodyTemplateLive() { // has 1 dataFields + GateSignal
+void Display::BodyTemplateLive() { // has 1 dataFields + GateSignal
     /////Draw the squares/////
     bufferBody->drawRect(1, 1, 158, 96, BLUE_DARK);
 
@@ -107,7 +107,7 @@ inline void Display::BodyTemplateLive() { // has 1 dataFields + GateSignal
     //                bufferBody->print(valueToOctave(DATAOBJ.getData(NOTE)));
 }
 
-inline void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
+void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
     // DataFields
 
     for (int x = 0; x < 4; x++) {
@@ -127,7 +127,7 @@ inline void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
                 bufferBody->setFont();                   // reset to default font
 
                 /////Name/////
-                char *string = toStr(mapping(dataField)); // get name
+                const char *string = DATAOBJ.getNameAsStr(mapping(dataField)); // get name
                 byte offset = strlen(string) * 3;         // get name length
 
                 bufferBody->setCursor(posX + 20 - offset, posY + 7); // set Cursor
@@ -147,7 +147,7 @@ inline void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
 
                           */
                 // char *data = toStr(mapping(dataField), index); // string buffer
-                char *data = toStr(mapping(dataField)); // temporary removed index
+                const char *data = DATAOBJ.getValueAsStr(mapping(dataField)); // temporary removed index
 
                 byte length = strlen(data); // string length
 
@@ -167,7 +167,7 @@ inline void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
     }
 }
 
-inline void Display::BodyTemplateSeq() { // has 2x4 dataFields + PageBar
+void Display::BodyTemplateSeq() { // has 2x4 dataFields + PageBar
     // Seq activeSeq = &DATAOBJ.seq[DATAOBJ.getScreenChannel()];
 
     // DataFields
@@ -216,7 +216,8 @@ inline void Display::BodyTemplateSeq() { // has 2x4 dataFields + PageBar
 
             // Data is default type (123456789, max 3 digits)
             else {
-                if (DATAOBJ.getData(mapping(dataField), dataFieldIndex) < 100) { // value less 100
+                if (DATAOBJ.get(mapping(dataField), DATAOBJ.get(FrankData::screenOutputChannel), dataFieldIndex) <
+                    100) { // value less 100
                     bufferBody->setFont(&FreeSansBold12pt7b);
                     bufferBody->setCursor(x * 40 + 7, y * 35 + 25);
 
@@ -224,7 +225,8 @@ inline void Display::BodyTemplateSeq() { // has 2x4 dataFields + PageBar
                     bufferBody->setFont(&FreeSansBold9pt7b);
                     bufferBody->setCursor(x * 40 + 4, y * 35 + 24);
                 }
-                bufferBody->print(DATAOBJ.getData(mapping(dataField), dataFieldIndex)); // print value
+                bufferBody->print(DATAOBJ.get(mapping(dataField), DATAOBJ.get(FrankData::screenOutputChannel),
+                                                  dataFieldIndex)); // print value
             }
         }
     }
@@ -243,7 +245,7 @@ inline void Display::BodyTemplateSeq() { // has 2x4 dataFields + PageBar
     }
 }
 
-inline void Display::drawHead() {
+void Display::drawHead() {
     // setup
     bufferHead->fillScreen(BLACK); // all Black
     bufferHead->setTextColor(WHITE, BLACK);
@@ -278,7 +280,7 @@ inline void Display::drawHead() {
     }
 }
 
-inline void Display::drawFoot() {
+void Display::drawFoot() {
     // setup
     bufferFoot->fillScreen(BLACK); // all Black
     bufferFoot->setTextColor(WHITE, BLACK);
@@ -340,7 +342,7 @@ inline void Display::drawFoot() {
     bufferFoot->print("v0.1");
 }
 
-inline void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t w, int16_t h) {
+void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t w, int16_t h) {
     const uint16_t *buffer = bufferObj->getBuffer();
     lcd.startWrite();
     for (int16_t j = 0; j < h; j++, y++) {
@@ -368,16 +370,16 @@ DispBuffer16::DispBuffer16(uint16_t w, uint16_t h) : Adafruit_GFX(w, h) {
 }
 
 DispBuffer16::~DispBuffer16(void) {
-    if (buffer)
-        free(buffer);
+    if (buffer) free(buffer);
+    if (buffer2) free(buffer2);
 }
 
-inline void DispBuffer16::copyBuffer(uint16_t bufferIndex) { buffer2[bufferIndex] = buffer[bufferIndex]; }
+void DispBuffer16::copyBuffer(uint16_t bufferIndex) { buffer2[bufferIndex] = buffer[bufferIndex]; }
 
-inline int DispBuffer16::compareBuffer(uint16_t bufferIndex) { return (buffer2[bufferIndex] != buffer[bufferIndex]); }
+int DispBuffer16::compareBuffer(uint16_t bufferIndex) { return (buffer2[bufferIndex] != buffer[bufferIndex]); }
 
 /////////////Stuff from Adafruit_GFX////////////
-inline void DispBuffer16::drawPixel(int16_t x, int16_t y, uint16_t color) {
+void DispBuffer16::drawPixel(int16_t x, int16_t y, uint16_t color) {
     if (buffer) {
         if ((x < 0) || (y < 0) || (x >= _width) || (y >= _height))
             return;
@@ -404,7 +406,7 @@ inline void DispBuffer16::drawPixel(int16_t x, int16_t y, uint16_t color) {
     }
 }
 
-inline void DispBuffer16::fillScreen(uint16_t color) {
+void DispBuffer16::fillScreen(uint16_t color) {
     if (buffer) {
         uint8_t hi = color >> 8, lo = color & 0xFF;
         if (hi == lo) {
@@ -417,7 +419,7 @@ inline void DispBuffer16::fillScreen(uint16_t color) {
     }
 }
 
-inline void DispBuffer16::byteSwap(void) {
+void DispBuffer16::byteSwap(void) {
     if (buffer) {
         uint32_t i, pixels = WIDTH * HEIGHT;
         for (i = 0; i < pixels; i++)

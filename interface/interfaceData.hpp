@@ -31,19 +31,6 @@ class OutputRouting {
         this->clock = 2;
     }
 
-    // byte getOut();
-    // byte getChannel();
-    // byte getSeq();
-    // byte getArp();
-    // byte getCc();
-    // byte getliveMidiMode();
-
-    // void setOut(byte data);
-    // void setChannel(byte data);
-    // void setSeq(byte data);
-    // void setArp(byte data);
-    // void setCc(byte data);
-    // void setLiveMidiMode(byte data);
 };
 
 // Sequence struct holding all values for a sequence, to save it
@@ -63,8 +50,6 @@ typedef struct {
     byte direction = 1;             // 0 -> reverse ; 1 -> forward
     byte displayBrightness = 100;   // 0-255;
     OutputRouting routing[OUTPUTS]; // hold settings for that many outputs
-    // byte clockOut0 = 2;
-    // byte clockOut1 = 2; // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
 
 } structSettings;
 
@@ -222,6 +207,9 @@ class FrankData {
   public:
     // storage enumerator
     enum frankData : byte {
+        // frankData = 0 is referred to none, so if-statements will work as expected 
+        none, 
+
         // Seq, needs value, array, step
         seqNote,
         seqGate,
@@ -268,7 +256,7 @@ class FrankData {
         error,
         bpmSync,
         // midiClockCount,
-        // bpm16thCount,
+        bpm16thCount,
         bpmPoti,
 
         // liveMidi, needs value, array
@@ -335,12 +323,13 @@ class FrankData {
     inline byte getLiveCcEvaluated(const byte &array);
     inline byte getOutputLiveModeEvaluated(const byte &array);
     inline byte getOutputClockEvaluated(const byte &array);
+    inline void setStr(const char *newStr);
 
   public:
     inline structKey getLiveKeyEvaluated(const byte &array);
-    structKey getKeyHighest(const byte &array);
-    structKey getKeyLowest(const byte &array);
-    structKey getKeyLatest(const byte &array);
+    inline structKey getKeyHighest(const byte &array);
+    inline structKey getKeyLowest(const byte &array);
+    inline structKey getKeyLatest(const byte &array);
     void resetSubScreen(); // switch menu max 3 menu pages
 
     // settings
@@ -353,9 +342,6 @@ class FrankData {
     // get value for certain step
     byte get(const frankData &frankDataType, const byte &array, const byte &step);
 
-    inline char *getAsStr(const frankData &frankDataType);
-    inline char *getAsStr(const frankData &frankDataType, const byte &array);
-    inline char *getAsStr(const frankData &frankDataType, const byte &array, const byte &step);
 
     // set single type value
     void set(const frankData &frankDataType, const byte &data, const bool &clampChange = 0);
@@ -366,33 +352,27 @@ class FrankData {
              const bool &clampChange = 0);
     // toggle what can be toggled
     void toggle(const frankData &frankdataType);
+    void toggle(const frankData &frankdataType, const byte &array, const byte &step);
 
-    inline void change(const frankData &frankDataType, const byte &amount, const bool &clampChange = 0);
-    inline void change(const frankData &frankDataType, const byte &amount, const byte &array,
+    void change(const frankData &frankDataType, const byte &amount, const bool &clampChange = 0);
+    void change(const frankData &frankDataType, const byte &amount, const byte &array,
                        const bool &clampChange = 0);
-    inline void change(const frankData &frankDataType, const byte &amount, const byte &array, const byte &step,
+    void change(const frankData &frankDataType, const byte &amount, const byte &array, const byte &step,
                        const bool &clampChange = 0);
 
-    inline void increase(const frankData &frankDataType, const bool &clampChange = 0);
-    inline void increase(const frankData &frankDataType, const byte &array, const bool &clampChange = 0);
-    inline void increase(const frankData &frankDataType, const byte &array, const byte &step,
+    void increase(const frankData &frankDataType, const bool &clampChange = 0);
+    void increase(const frankData &frankDataType, const byte &array, const bool &clampChange = 0);
+    void increase(const frankData &frankDataType, const byte &array, const byte &step,
                          const bool &clampChange = 0);
 
-    inline void decrease(const frankData &frankDataType, const bool &clampChange = 0);
-    inline void decrease(const frankData &frankDataType, const byte &array, const bool &clampChange = 0);
-    inline void decrease(const frankData &frankDataType, const byte &array, const byte &step,
+    void decrease(const frankData &frankDataType, const bool &clampChange = 0);
+    void decrease(const frankData &frankDataType, const byte &array, const bool &clampChange = 0);
+    void decrease(const frankData &frankDataType, const byte &array, const byte &step,
                          const bool &clampChange = 0);
 
-    const char *getName(const frankData &frankDataType);
-    const char *getValueName(const frankData &frankDataType);
-    const char *getValueName(const frankData &frankDataType, const byte &step);
-
-    inline char valueToNote(const byte &noteIn);
-    inline char valueToOctave(const byte &noteIn);
-    inline char valueToSharp(const byte &noteIn);
-    inline char *tuningToChar(const byte &tuning);
-
-    inline void setStr(const char* newStr);
+    const char *getNameAsStr(const frankData &frankDataType);
+    const char *getValueAsStr(const frankData &frankDataType);
+    const char *getValueAsStr(const frankData &frankDataType, const byte &step);
 
     // singleton
     static FrankData &getDataObj();
@@ -411,3 +391,8 @@ inline byte changeByte(const byte &value, const int &change, const byte &minimum
                        const bool &clampChange = 0); // change byte
 template <typename T> inline T toggleByte(const T &data);
 template <typename T> inline char *toStr(const T &data);
+
+char valueToNote(const byte &noteIn);
+char valueToOctave(const byte &noteIn);
+char valueToSharp(const byte &noteIn);
+char *tuningToChar(const byte &tuning);

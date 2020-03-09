@@ -26,7 +26,6 @@ PreviousOutputs previousOutputs[OUTPUTS];
 
 void initMiddleman() {
     initOutput(); // init Outputs
-    long testlong = previousOutputs[0].get<long>(PreviousOutputs::dataNote);
 }
 
 void updateAllOutputs() {
@@ -44,39 +43,11 @@ void updateNoteOut(byte output) {
 }
 void updateCustomCVOut(byte output) {}
 void updateGateOut(byte output) {}
-void updateClockOut(byte output) { byte currentClock = DATAOBJ.getBpm16thCount(); }
+void updateClockOut(byte output) { byte currentClock = DATAOBJ.get(FrankData::bpm16thCount); }
 void updateTriggerOut(byte output) {}
 
-void PreviousOutputs::setNote(byte midiData) { note = midiData; }
-void PreviousOutputs::setCustomCV(byte midiData) { customCV = midiData; }
-void PreviousOutputs::setGate(byte midiData) { gate = midiData; }
-void PreviousOutputs::setGateLength(byte midiData) { gatelength = midiData; }
-void PreviousOutputs::setClock(byte midiData) { clock = midiData; }
-void PreviousOutputs::setTrigger(byte midiData) { trigger = midiData; }
 void PreviousOutputs::setNewGateTimeSet() { gateTimeSet = millis(); }
 void PreviousOutputs::setNewClockTimeSet() { clockTimeSet = millis(); }
 void PreviousOutputs::setNewTriggerTimeSet() { triggerTimeSet = millis(); }
 
-template <typename T> void PreviousOutputs::set(T data, previousData destination) {}
-template <typename T> T PreviousOutputs::get(previousData destination) {
-    switch(destination) {
 
-    case dataNote: return note;
-    default:
-    break;
-
-    }
-}
-
-byte PreviousOutputs::getNote() { return note; }
-byte PreviousOutputs::getCustomCV() { return customCV; }
-byte PreviousOutputs::getGate() { return gate; }
-byte PreviousOutputs::getGateLength() { return gatelength; }
-long PreviousOutputs::getGateTimeSet() { return gateTimeSet; }
-byte PreviousOutputs::getClock() { return clock; }
-long PreviousOutputs::getClockTimeSet() { return clockTimeSet; }
-byte PreviousOutputs::getTrigger() { return trigger; }
-long PreviousOutputs::getTriggerTimeSet() { return triggerTimeSet; }
-
-void PreviousState::setOld16thClockCount(byte midiData) { old16thClockCount = midiData; }
-byte PreviousState::getOld16thClockCount() { return old16thClockCount; }

@@ -38,7 +38,7 @@ SEQ:
     Rotate => Global Gate Increase/Decrease
 */
 
-byte mapping(byte input) {
+FrankData::frankData mapping(byte input) {
 
     // Main Menu is enabled
     if (DATAOBJ.get(FrankData::screenMainMenu) == 1) {
@@ -73,10 +73,10 @@ byte mapping(byte input) {
             }
         }
     }
-    return NONE;
+    return FrankData::none;
 }
 
-byte mappingPush(byte input) {
+FrankData::frankData mappingPush(byte input) {
     // Main Menu is enabled
     if (DATAOBJ.get(FrankData::screenMainMenu) == 1) {
         return mappingMenu[input];
@@ -96,5 +96,5 @@ byte mappingPush(byte input) {
             }
         }
     }
-    return NONE;
+    return FrankData::none;
 }

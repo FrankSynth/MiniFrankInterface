@@ -35,24 +35,24 @@ SEQ:
 // #define CGATE 1
 #define STEP FrankData::stepSeq
 #define CV FrankData::seqCc
-#define CONF 1
+#define CONF FrankData::none
 
-static byte mappingSeqNote[] = {NOTE, NOTE, NOTE, NOTE, NOTE, NOTE, NOTE, NOTE};             // NOTE Mapping  Rotary
-static byte mappingSeqNotePush[] = {GATE, GATE, GATE, GATE, GATE, GATE, GATE, GATE}; // NOTE Mapping Push
-static byte mappingSeqNoteConfig[] = {CONF, CONF, CONF, CONF, CONF, CONF, CONF, CONF};       // NOTE Config Mapping
+static FrankData::frankData mappingSeqNote[] = {NOTE, NOTE, NOTE, NOTE, NOTE, NOTE, NOTE, NOTE};             // NOTE Mapping  Rotary
+static FrankData::frankData mappingSeqNotePush[] = {GATE, GATE, GATE, GATE, GATE, GATE, GATE, GATE}; // NOTE Mapping Push
+static FrankData::frankData mappingSeqNoteConfig[] = {CONF, CONF, CONF, CONF, CONF, CONF, CONF, CONF};       // NOTE Config Mapping
 
-static byte mappingSeqGate[] = {GATE, GATE, GATE, GATE, GATE, GATE, GATE, GATE};             // GATE Mapping Rotary
-static byte mappingSeqGatePush[] = {GATE, GATE, GATE, GATE, GATE, GATE, GATE, GATE}; // NOTE Mapping Push
-static byte mappingSeqGateConfig[] = {CONF, CONF, CONF, CONF, CONF, CONF, CONF, CONF};       // GATE Config Mapping
+static FrankData::frankData mappingSeqGate[] = {GATE, GATE, GATE, GATE, GATE, GATE, GATE, GATE};             // GATE Mapping Rotary
+static FrankData::frankData mappingSeqGatePush[] = {GATE, GATE, GATE, GATE, GATE, GATE, GATE, GATE}; // NOTE Mapping Push
+static FrankData::frankData mappingSeqGateConfig[] = {CONF, CONF, CONF, CONF, CONF, CONF, CONF, CONF};       // GATE Config Mapping
 
-static byte mappingSeqCV[] = {CV, CV, CV, CV, CV, CV, CV, CV};                             // CV Mapping
-static byte mappingSeqCVPush[] = {GATE, GATE, GATE, GATE, GATE, GATE, GATE, GATE}; // NOTE Mapping
-static byte mappingSeqCVConfig[] = {CONF, CONF, CONF, CONF, CONF, CONF, CONF, CONF};       // CV Config Mapping
+static FrankData::frankData mappingSeqCV[] = {CV, CV, CV, CV, CV, CV, CV, CV};                             // CV Mapping
+static FrankData::frankData mappingSeqCVPush[] = {GATE, GATE, GATE, GATE, GATE, GATE, GATE, GATE}; // NOTE Mapping
+static FrankData::frankData mappingSeqCVConfig[] = {CONF, CONF, CONF, CONF, CONF, CONF, CONF, CONF};       // CV Config Mapping
 
-static byte mappingLive[] = {FrankData::liveMod, FrankData::outputCcEvaluated, FrankData::outputClock, FrankData::outputArp, FrankData::outputLiveMode, FrankData::liveLowestKey, FrankData::liveHighestKey, FrankData::outputChannel};       // Live Mapping
-static byte mappingLiveConfig[] = {FrankData::outputCc, CONF, CONF, CONF, CONF, CONF, CONF, CONF}; // Live Mapping
+static FrankData::frankData mappingLive[] = {FrankData::liveMod, FrankData::outputCcEvaluated, FrankData::outputClock, FrankData::outputArp, FrankData::outputLiveMode, FrankData::liveLowestKey, FrankData::liveHighestKey, FrankData::outputChannel};       // Live Mapping
+static FrankData::frankData mappingLiveConfig[] = {FrankData::outputCc, CONF, CONF, CONF, CONF, CONF, CONF, CONF}; // Live Mapping
 
-static byte mappingMenu[] = {CONF, CONF, CONF, CONF, CONF, CONF, CONF, CONF}; // Routing Menu Mapping
+static FrankData::frankData mappingMenu[] = {CONF, CONF, CONF, CONF, CONF, CONF, CONF, CONF}; // Routing Menu Mapping
 
 /*/////ROUTING//////
 
@@ -60,5 +60,5 @@ static byte mappingMenu[] = {CONF, CONF, CONF, CONF, CONF, CONF, CONF, CONF}; //
 
 */
 
-byte mapping(byte input);     // return target ID
-byte mappingPush(byte input); // return target ID
+FrankData::frankData mapping(byte input); // return target ID
+FrankData::frankData mappingPush(byte input); // return target ID
