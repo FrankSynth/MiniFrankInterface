@@ -137,14 +137,6 @@ void LiveMidi::keyReleased(const byte &note) {
 // bool, are any keys pressed
 bool LiveMidi::keysPressed() { return noteList.containsElements() ? 1 : 0; }
 
-// void LiveMidi::setMod(byte data) { mod = data; }
-
-// void LiveMidi::setPitchbend(byte data) { pitchbend = data; }
-
-// void LiveMidi::setAftertouch(byte data) { aftertouch = data; }
-
-// void LiveMidi::setSustain(byte data) { sustain = data; }
-
 // return highest key pressed
 structKey LiveMidi::getKeyHighest() {
     structKey key;
@@ -222,8 +214,6 @@ void Seq::setNotes(const byte &note) { // set note value
 
 byte Seq::increaseNote(const byte &index) { // increase note value and return new note
 
-    // index = testByte(index, 0, LENGTH); // testIndex
-
     byte note = sequence.note[index];
 
     // no tuning
@@ -252,7 +242,7 @@ byte Seq::increaseNote(const byte &index) { // increase note value and return ne
 }
 
 byte Seq::decreaseNote(const byte &index) { // decrease  note value and return new note
-    // index = testByte(index, 0, LENGTH); // testIndex
+
     byte note = sequence.note[index];
 
     // no tuning
@@ -282,7 +272,7 @@ byte Seq::decreaseNote(const byte &index) { // decrease  note value and return n
 }
 
 byte Seq::changeNote(const byte &index, const int &change) { // change note
-    // index = testByte(index, 0, LENGTH);        // test index
+
     sequence.note[index] = changeByte(sequence.note[index], change, 0, NOTERANGE, 1);
 
     return sequence.note[index];
@@ -479,16 +469,7 @@ inline byte FrankData::getCurrentPageNumber() { // number of pages, takes care i
 // Singleton
 FrankData *FrankData::mainData = nullptr;
 FrankData &FrankData::getDataObj() {
-    if (mainData == nullptr) {
-        // PRINTLN("Creating new FrankData");
-        mainData = new FrankData();
-        // PRINTLN("FrankData Created");
-    }
-    else {
-        // PRINTLN("FrankData already created");
-    }
-    // PRINTLN("FrankData returning");
-
+    if (mainData == nullptr) mainData = new FrankData();
     return *mainData;
 }
 
@@ -662,7 +643,7 @@ void FrankData::set(const frankData &frankDataType, const byte &data, const byte
 void FrankData::set(const frankData &frankDataType, const byte &data, const byte &array, const byte &step,
                     const bool &clampChange) {
     switch (frankDataType) {
-    case seqNote: seq[array].sequence.note[step] = testByte(data, 0, 127, clampChange); break;
+    case seqNote: seq[array].setNote(step, data); break;
     case seqGate: seq[array].sequence.gate[step] = testByte(data, 0, 1, clampChange); break;
     case seqGateLength: seq[array].sequence.gateLength[step] = testByte(data, 0, 100, clampChange); break;
     case seqCc: seq[array].sequence.cc[step] = testByte(data, 0, 127, clampChange); break;
@@ -820,7 +801,7 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType) {
     case screenOutputChannel:
     case screenConfig:
     case screenMainMenu:
-    case screenSubScreen:;
+    case screenSubScreen:
 
     case stepSeq:
     case stepArp:

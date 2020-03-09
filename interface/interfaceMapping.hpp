@@ -49,7 +49,7 @@ static FrankData::frankData mappingSeqCV[] = {CV, CV, CV, CV, CV, CV, CV, CV};  
 static FrankData::frankData mappingSeqCVPush[] = {GATE, GATE, GATE, GATE, GATE, GATE, GATE, GATE}; // NOTE Mapping
 static FrankData::frankData mappingSeqCVConfig[] = {CONF, CONF, CONF, CONF, CONF, CONF, CONF, CONF};       // CV Config Mapping
 
-static FrankData::frankData mappingLive[] = {FrankData::liveMod, FrankData::outputCcEvaluated, FrankData::outputClock, FrankData::outputArp, FrankData::outputLiveMode, FrankData::liveLowestKey, FrankData::liveHighestKey, FrankData::outputChannel};       // Live Mapping
+static FrankData::frankData mappingLive[] = {FrankData::liveMod, FrankData::outputCcEvaluated, FrankData::outputClock, FrankData::outputArp, FrankData::liveKeyNoteEvaluated, FrankData::liveLowestKey, FrankData::liveHighestKey, FrankData::outputChannel};       // Live Mapping
 static FrankData::frankData mappingLiveConfig[] = {FrankData::outputCc, CONF, CONF, CONF, CONF, CONF, CONF, CONF}; // Live Mapping
 
 static FrankData::frankData mappingMenu[] = {CONF, CONF, CONF, CONF, CONF, CONF, CONF, CONF}; // Routing Menu Mapping

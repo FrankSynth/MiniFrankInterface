@@ -20,6 +20,7 @@ class OutputRouting {
     byte cc;           // 0 = vel, 1 = mod, 2 = pitchbend, 3 = aftertouch, 4 = sustain
     byte liveMidiMode; // 0 = latest, 1 = lowest, 2 = highest
     byte clock;        // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
+    byte arpRatchet; // repeats per step
 
     OutputRouting() {
         this->outSource = 0;
