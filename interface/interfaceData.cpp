@@ -608,24 +608,24 @@ byte FrankData::get(const frankData &frankDataType, const byte &array, const byt
 
 void FrankData::set(const frankData &frankDataType, const byte &data, const bool &clampChange) {
     switch (frankDataType) {
-    case midiSource: config.midiSource = testByte(data, 0, 1, clampChange);
-    case nbPages: config.nbPages = testByte(data, 1, PAGES, clampChange);
-    case direction: config.direction = testByte(data, 0, 1, clampChange);
-    case displayBrightness: config.displayBrightness = testByte(data, 0, 100, clampChange); // how high?
+    case midiSource: config.midiSource = testByte(data, 0, 1, clampChange); break;
+    case nbPages: config.nbPages = testByte(data, 1, PAGES, clampChange); break;
+    case direction: config.direction = testByte(data, 0, 1, clampChange); break;
+    case displayBrightness: config.displayBrightness = testByte(data, 0, 100, clampChange); break; // how high?
 
-    case screenOutputChannel: stat.screen.channel = testByte(data, 0, OUTPUTS - 1, clampChange);
-    case screenConfig: stat.screen.config = testByte(data, 0, 1, clampChange);
-    case screenMainMenu: stat.screen.mainMenu = testByte(data, 0, 1, clampChange);
-    case screenSubScreen: stat.screen.subscreen = testByte(data, 0, getSubscreenMax(), clampChange);
+    case screenOutputChannel: stat.screen.channel = testByte(data, 0, OUTPUTS - 1, clampChange); break;
+    case screenConfig: stat.screen.config = testByte(data, 0, 1, clampChange); break;
+    case screenMainMenu: stat.screen.mainMenu = testByte(data, 0, 1, clampChange); break;
+    case screenSubScreen: stat.screen.subscreen = testByte(data, 0, getSubscreenMax(), clampChange); break;
 
-    case stepArp: stat.stepArp = testByte(data, 0, NOTERANGE, clampChange);
-    case stepSeq: stat.stepSeq = testByte(data, 0, STEPPERPAGE * config.nbPages - 1, clampChange);
-    case bpm: stat.bpm = testByte(data, 0, 255, clampChange);
-    case play: stat.play = testByte(data, 0, 1, clampChange);
-    case rec: stat.rec = testByte(data, 0, 1, clampChange);
-    case error: stat.error = testByte(data, 0, 1, clampChange);
-    case bpmSync: stat.bpmSync = testByte(data, 0, 1, clampChange);
-    case bpmPoti: stat.bpmPoti = testByte(data, 0, 255, clampChange);
+    case stepArp: stat.stepArp = testByte(data, 0, NOTERANGE, clampChange); break;
+    case stepSeq: stat.stepSeq = testByte(data, 0, STEPPERPAGE * config.nbPages - 1, clampChange); break;
+    case bpm: stat.bpm = testByte(data, 0, 255, clampChange); break;
+    case play: stat.play = testByte(data, 0, 1, clampChange); break;
+    case rec: stat.rec = testByte(data, 0, 1, clampChange); break;
+    case error: stat.error = testByte(data, 0, 1, clampChange); break;
+    case bpmSync: stat.bpmSync = testByte(data, 0, 1, clampChange); break;
+    case bpmPoti: stat.bpmPoti = testByte(data, 0, 255, clampChange); break;
 
     default: PRINTLN("FrankData set(frankData frankDataType, byte data, bool clampChange = 0), no case found");
     }
@@ -633,21 +633,21 @@ void FrankData::set(const frankData &frankDataType, const byte &data, const bool
 
 void FrankData::set(const frankData &frankDataType, const byte &data, const byte &array, const bool &clampChange) {
     switch (frankDataType) {
-    case outputSource: config.routing[array].outSource = testByte(data, 0, 1, clampChange);
-    case outputChannel: config.routing[array].channel = testByte(data, 0, 16, clampChange);
-    case outputSeq: config.routing[array].seq = testByte(data, 0, OUTPUT, clampChange);
-    case outputArp: config.routing[array].arp = testByte(data, 0, 1, clampChange);
-    case outputCc: config.routing[array].cc = testByte(data, 0, 4, clampChange);
-    case outputLiveMode: config.routing[array].liveMidiMode = testByte(data, 0, 2, clampChange);
-    case outputClock: config.routing[array].clock = testByte(data, 0, 5, clampChange);
+    case outputSource: config.routing[array].outSource = testByte(data, 0, 1, clampChange); break;
+    case outputChannel: config.routing[array].channel = testByte(data, 0, 16, clampChange); break;
+    case outputSeq: config.routing[array].seq = testByte(data, 0, OUTPUT, clampChange); break;
+    case outputArp: config.routing[array].arp = testByte(data, 0, 1, clampChange); break;
+    case outputCc: config.routing[array].cc = testByte(data, 0, 4, clampChange); break;
+    case outputLiveMode: config.routing[array].liveMidiMode = testByte(data, 0, 2, clampChange); break;
+    case outputClock: config.routing[array].clock = testByte(data, 0, 5, clampChange); break;
 
-    case liveMod: liveMidi[array].mod = testByte(data, 0, 127, clampChange);
-    case livePitchbend: liveMidi[array].pitchbend = testByte(data, 0, 255, clampChange);
-    case liveAftertouch: liveMidi[array].aftertouch = testByte(data, 0, 127, clampChange);
-    case liveSustain: liveMidi[array].sustain = testByte(data, 0, 127, clampChange);
-    case liveTriggered: liveMidi[array].triggered = testByte(data, 0, 1, clampChange);
+    case liveMod: liveMidi[array].mod = testByte(data, 0, 127, clampChange); break;
+    case livePitchbend: liveMidi[array].pitchbend = testByte(data, 0, 255, clampChange); break;
+    case liveAftertouch: liveMidi[array].aftertouch = testByte(data, 0, 127, clampChange); break;
+    case liveSustain: liveMidi[array].sustain = testByte(data, 0, 127, clampChange); break;
+    case liveTriggered: liveMidi[array].triggered = testByte(data, 0, 1, clampChange); break;
 
-    case seqTuning: seq[array].sequence.tuning = testByte(data, 0, 255, clampChange);
+    case seqTuning: seq[array].sequence.tuning = testByte(data, 0, 255, clampChange); break;
 
     default: PRINTLN("FrankData set(frankData frankDataType, byte data, byte array, bool clampChange), no case found");
     }
@@ -655,11 +655,11 @@ void FrankData::set(const frankData &frankDataType, const byte &data, const byte
 void FrankData::set(const frankData &frankDataType, const byte &data, const byte &array, const byte &step,
                     const bool &clampChange) {
     switch (frankDataType) {
-    case seqNote: seq[array].sequence.note[step] = testByte(data, 0, 127, clampChange);
-    case seqGate: seq[array].sequence.gate[step] = testByte(data, 0, 1, clampChange);
-    case seqGateLength: seq[array].sequence.gateLength[step] = testByte(data, 0, 100, clampChange);
-    case seqCc: seq[array].sequence.cc[step] = testByte(data, 0, 127, clampChange);
-    case seqVelocity: seq[array].sequence.velocity[step] = testByte(data, 0, 127, clampChange);
+    case seqNote: seq[array].sequence.note[step] = testByte(data, 0, 127, clampChange); break;
+    case seqGate: seq[array].sequence.gate[step] = testByte(data, 0, 1, clampChange); break;
+    case seqGateLength: seq[array].sequence.gateLength[step] = testByte(data, 0, 100, clampChange); break;
+    case seqCc: seq[array].sequence.cc[step] = testByte(data, 0, 127, clampChange); break;
+    case seqVelocity: seq[array].sequence.velocity[step] = testByte(data, 0, 127, clampChange); break;
 
     default:
         PRINTLN("FrankData set(frankData frankDataType, byte data, byte array, byte step, bool clampChange), no case "
@@ -706,12 +706,12 @@ void FrankData::decrease(const frankData &frankDataType, const byte &array, cons
 
 void FrankData::toggle(const frankData &frankDataType) {
     switch (frankDataType) {
-    case direction: config.direction = toggleByte(config.direction); break;
-    case play: stat.play = toggleByte(stat.play); break;
-    case rec: stat.rec = toggleByte(stat.rec); break;
-    case bpmSync: stat.bpmSync = toggleByte(stat.bpmSync); break;
-    case screenMainMenu: stat.screen.mainMenu = toggleByte(stat.screen.mainMenu); break;
-    case screenConfig: stat.screen.config = toggleByte(stat.screen.config); break;
+    case direction: config.direction = toggleValue(config.direction); break;
+    case play: stat.play = toggleValue(stat.play); break;
+    case rec: stat.rec = toggleValue(stat.rec); break;
+    case bpmSync: stat.bpmSync = toggleValue(stat.bpmSync); break;
+    case screenMainMenu: stat.screen.mainMenu = toggleValue(stat.screen.mainMenu); break;
+    case screenConfig: stat.screen.config = toggleValue(stat.screen.config); break;
 
     default: PRINTLN("FrankData toggle(frankData frankDataType), no case found");
     }
@@ -719,7 +719,7 @@ void FrankData::toggle(const frankData &frankDataType) {
 
 void FrankData::toggle(const frankData &frankDataType, const byte &array, const byte &step) {
     switch (frankDataType) {
-    case seqGate: seq[array].sequence.gate[step] = toggleByte(seq[array].sequence.gate[step]); break;
+    case seqGate: seq[array].sequence.gate[step] = toggleValue(seq[array].sequence.gate[step]); break;
 
     default: PRINTLN("FrankData toggle(frankData frankDataType), no case found");
     }
@@ -735,7 +735,7 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
     case seqTuning: setStr("Tuning"); break;
     case seqSize: setStr("Seq"); break;
 
-    case midiSource: setStr("Midi Src"); break;
+    case midiSource: setStr("Src"); break;
     case nbPages: setStr("Pages"); break;
     case direction: setStr("Fw/Rv"); break;
     case displayBrightness: setStr("ScBr"); break;
@@ -756,13 +756,9 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
         }
         break;
 
-    case outputLiveMode:
-        setStr("Key sel");
-        break;
+    case outputLiveMode: setStr("Key sel"); break;
 
-    case outputClock:
-        setStr("Clock");
-        break;
+    case outputClock: setStr("Clock"); break;
 
     case screenOutputChannel: setStr("Rout"); break;
     case screenConfig: setStr("Conf"); break;
@@ -789,20 +785,21 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
     case liveKeyNoteEvaluated: setStr("Note"); break;
     case liveKeyVelEvaluated: setStr("Vel"); break;
 
+    case none: setStr(" "); break;
+
     default: PRINTLN("FrankData getName(frankData frankDataType), no case found"); setStr("NONE");
     }
     return returnStr;
 }
 
 const char *FrankData::getValueAsStr(const frankData &frankDataType) {
+    char tempStr[5];
+    
     switch (frankDataType) {
     case seqTuning:
     case seqSize:
 
-    case outputSource:
     case outputChannel:
-    case outputSeq:
-    case outputArp:
 
     case liveMod:
     case livePitchbend:
@@ -810,9 +807,7 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType) {
     case liveSustain:
     case liveTriggered: setStr(toStr(get(frankDataType, stat.screen.channel))); break;
 
-    case midiSource:
     case nbPages:
-    case direction:
     case displayBrightness:
 
     case screenOutputChannel:
@@ -823,11 +818,82 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType) {
     case stepSeq:
     case stepArp:
     case bpm:
-    case play:
-    case rec:
-    case error:
     case bpmSync:
     case bpmPoti: setStr(toStr(get(frankDataType))); break;
+
+    case outputSource:
+    case outputSeq:
+        switch (config.routing[stat.screen.channel].outSource) {
+        case 0: setStr("Midi"); break;
+        case 1:
+            itoa((int)get(frankDataType) + 1, tempStr, 10);
+            tempStr[3] = tempStr[0];
+            tempStr[0] = 'S';
+            tempStr[1] = 'e';
+            tempStr[2] = 'q';
+            tempStr[4] = '\0';
+            setStr(tempStr);
+            break;
+        default: setStr("NONE");
+        }
+        break;
+
+    case midiSource:
+        switch (config.routing[stat.screen.channel].outSource) {
+        case 0: setStr("DIN"); break;
+        case 1: setStr("USB"); break;
+        default: setStr("NONE");
+        }
+        break;
+
+    case direction:
+        char tempStr[2];
+        switch (config.direction) {
+        case 0:
+            tempStr[0] = (char)174;
+            tempStr[1] = '\0';
+            setStr(tempStr);
+            break;
+        case 1:
+            tempStr[0] = (char)175;
+            tempStr[1] = '\0';
+            setStr(tempStr);
+            break;
+        default: setStr("NONE");
+        }
+        break;
+
+    case outputArp:
+        switch (config.routing[stat.screen.channel].arp) {
+        case 0: setStr("OFF"); break;
+        case 1: setStr("ON"); break;
+        default: setStr("NONE");
+        }
+        break;
+
+    case play:
+        switch (stat.play) {
+        case 0: setStr("STOP"); break;
+        case 1: setStr("PLAY"); break;
+        default: setStr("NONE");
+        }
+        break;
+
+    case rec:
+        switch (stat.rec) {
+        case 0: setStr("-"); break;
+        case 1: setStr("REC"); break;
+        default: setStr("NONE");
+        }
+        break;
+
+    case error:
+        switch (stat.error) {
+        case 0: setStr(" "); break;
+        case 1: setStr("ERR"); break;
+        default: setStr("NONE");
+        }
+        break;
 
     case liveLatestKey: setStr(toStr(getKeyLatest(stat.screen.channel).note)); break;
     case liveLowestKey: setStr(toStr(getKeyLowest(stat.screen.channel).note)); break;
@@ -843,7 +909,7 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType) {
         case 0: setStr("Late"); break;
         case 1: setStr("Low"); break;
         case 2: setStr("High"); break;
-        default: setStr("NONE"); break;
+        default: setStr("NONE");
         }
         break;
 
@@ -855,11 +921,12 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType) {
         case 3: setStr("1/2"); break;
         case 4: setStr("1/1"); break;
         case 5: setStr("2/1"); break;
-        default: setStr("NONE"); break;
+        default: setStr("NONE");
         }
         break;
+    case none: setStr(" "); break;
 
-    default: PRINTLN("FrankData getValueName(const frankData &frankDataType), no case found");
+    default: setStr("NONE"); PRINTLN("FrankData getValueName(const frankData &frankDataType), no case found");
     }
     return returnStr;
 }
@@ -872,6 +939,8 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType, const byte 
     case seqCc:
     case seqVelocity: setStr(toStr(get(frankDataType, stat.screen.channel, step))); break;
 
+    case none: setStr(" "); break;
+
     default:
         PRINTLN("FrankData getValueName(const frankData &frankDataType, const byte &step), no case found");
         setStr("NONE");
@@ -883,8 +952,6 @@ inline void FrankData::setStr(const char *newStr) {
     strncpy(str, newStr, MAXSTRINGSIZE - 1);
     str[MAXSTRINGSIZE] = '\0';
 }
-
-
 
 // utility
 // test byte range and return valid byte
@@ -931,7 +998,7 @@ inline byte changeByte(const byte &value, const int &change, const byte &minimum
 }
 
 // toggle byte
-template <typename T> inline T toggleByte(const T &data) { return !data; }
+template <typename T> inline T toggleValue(const T &data) { return !data; }
 
 // convert number to string
 template <typename T> inline char *toStr(const T &data) {
@@ -992,7 +1059,7 @@ char valueToSharp(const byte &noteIn) {
     return '\0';
 }
 
-char *tuningToChar(const byte &tuning) {
+const char *tuningToChar(const byte &tuning) {
 
     switch (tuning) {
     case 0: return "C";

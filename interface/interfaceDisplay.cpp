@@ -273,11 +273,8 @@ void Display::drawHead() {
     bufferHead->print("MIDI:");
     bufferHead->setTextColor(BLACKBLUE, BLACK);
 
-    if (DATAOBJ.get(FrankData::midiSource)) {
-        bufferHead->print("USB");
-    } else {
-        bufferHead->print("DIN");
-    }
+        bufferHead->print(DATAOBJ.getValueAsStr(FrankData::midiSource));
+
 }
 
 void Display::drawFoot() {
@@ -293,7 +290,7 @@ void Display::drawFoot() {
     // Sequence
     bufferFoot->setCursor(2, 5);
     bufferFoot->setTextColor(WHITE, BLACKBLUE);
-    bufferFoot->print("CH:");
+    bufferFoot->print("OUT:");
 
     bufferFoot->print(DATAOBJ.get(FrankData::screenOutputChannel));
 
@@ -303,11 +300,8 @@ void Display::drawFoot() {
     bufferFoot->setCursor(40, 5);
     bufferFoot->setTextColor(WHITE, BLACKBLUE);
 
-    if (DATAOBJ.get(FrankData::play)) {
-        bufferFoot->print("PLAY");
-    } else {
-        bufferFoot->print("STOP");
-    }
+        bufferFoot->print(DATAOBJ.getValueAsStr(FrankData::play));
+
 
     // PlayDirection
     bufferFoot->setCursor(67, 5);

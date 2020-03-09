@@ -389,10 +389,10 @@ inline byte increaseByte(const byte &value, const byte &maximum); // increase by
 inline byte decreaseByte(const byte &value, const byte &minimum); // decrease byte
 inline byte changeByte(const byte &value, const int &change, const byte &minimum = 0, const byte &maximum = 255,
                        const bool &clampChange = 0); // change byte
-template <typename T> inline T toggleByte(const T &data);
+template <typename T> inline T toggleValue(const T &data);
 template <typename T> inline char *toStr(const T &data);
 
 char valueToNote(const byte &noteIn);
 char valueToOctave(const byte &noteIn);
 char valueToSharp(const byte &noteIn);
-char *tuningToChar(const byte &tuning);
+const char *tuningToChar(const byte &tuning);
