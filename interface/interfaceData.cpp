@@ -30,6 +30,7 @@ void PressedNotesList::appendKey(const byte &note, const byte &velocity) {
 
         pressedNoteElement = new PressedNotesElement(note, velocity);
     }
+    size++;
 }
 
 void PressedNotesList::deleteKey(const byte &note) {
@@ -59,6 +60,7 @@ void PressedNotesList::deleteKey(const byte &note) {
             delete listElement;
         }
     }
+    size--;
 }
 
 void PressedNotesList::deleteAllKeys() {
@@ -72,6 +74,7 @@ void PressedNotesList::deleteAllKeys() {
         delete pressedNoteElement;
         pressedNoteElement = NULL;
     }
+    size = 0;
 }
 
 bool PressedNotesList::containsElements() { return pressedNoteElement ? 1 : 0; }
@@ -182,18 +185,21 @@ void LiveMidi::reset() {
     aftertouch = 0;
     sustain = 0;
 
-    triggered = 1;
+    triggered = 1; // update outputs
 }
 
 // Sequence data for each sequence
-void Seq::init(const byte &note, const byte &gate, const byte &gateLength,
-               const byte &tuning) { // init sequence to default values
+// init sequence to default values
+void Seq::init(const byte &note, const byte &gate, const byte &gateLength, const byte &tuning, const byte &ratchet = 0,
+               const byte &gateLengthOffset = 50) {
     for (int i = 0; i < LENGTH; i++) {
         sequence.note[i] = note;  // test
         sequence.gate[i] = i % 2; // test
         sequence.gateLength[i] = gateLength;
     }
     sequence.tuning = tuning;
+    sequence.ratchet = ratchet;
+    sequence.gateLengthOffset = gateLengthOffset;
 }
 
 // Note
@@ -386,13 +392,18 @@ void FrankData::receivedStart() {
 void FrankData::receivedContinue() { set(play, 1); }
 void FrankData::receivedStop() { set(play, 0); }
 
-void FrankData::receivedReset() {
+void FrankData::receivedReset() {}
+
+void FrankData::reset() {
     stat.midiClockCount = 5;
     stat.bpm16thCount = 31;
+
     set(play, 0);
 
     for (byte x = 0; x < OUTPUTS; x++) {
         liveMidi[x].reset();
+        stat.stepArp[x] = 0;
+        stat.stepSeq[x] = 0;
     }
 }
 
@@ -408,6 +419,11 @@ void FrankData::increaseBpm16thCount() {
     stat.bpm16thCount++;
     if (stat.bpm16thCount == 32) {
         stat.bpm16thCount = 0;
+    }
+
+    if (bpmSync) {
+        if (stat.bpm16thCount % 4 == 0)
+            calcBPM();
     }
 }
 
@@ -427,41 +443,39 @@ inline void FrankData::calcBPM() {
 
 // int FrankData::getBPM() { return stat.bpm; } // return MidiSource
 
-inline void FrankData::increaseStep() {
-    if (!((stat.stepSeq + 1) % STEPPERPAGE)) {                      // if we make a pageJump
-        if (config.nbPages <= ((stat.stepSeq + 1) / STEPPERPAGE)) { // newPage above number of pages
-            stat.stepSeq = 0;                                       // set stepSeq 0
-        } else {                                                    // new page is valid.
-            stat.stepSeq++;                                         // increase Step
+inline void FrankData::increaseStepSeq(const byte &array) {
+    if (!((stat.stepSeq[array] + 1) % STEPPERPAGE)) { // if we make a pageJump
+        if (config.routing[array].nbPages <=
+            ((stat.stepSeq[array] + 1) / STEPPERPAGE)) { // newPage above number of pages
+            stat.stepSeq[array] = 0;                     // set stepSeq[array] 0
+        } else {                                         // new page is valid.
+            stat.stepSeq[array]++;                       // increase Step
         }
     } else {
-        stat.stepSeq++; // increase Step
+        stat.stepSeq[array]++; // increase Step
     }
-
-    calcBPM();
 }
 
-inline void FrankData::decreaseStep() {
-    if (stat.stepSeq == 0) {                             // we jump to the last page?
-        stat.stepSeq = config.nbPages * STEPPERPAGE - 1; // set to max stepSeq
+inline void FrankData::decreaseStepSeq(const byte &array) {
+    if (stat.stepSeq[array] == 0) {                                            // we jump to the last page?
+        stat.stepSeq[array] = config.routing[array].nbPages * STEPPERPAGE - 1; // set to max stepSeq[array]
 
-    } else if ((!stat.stepSeq % STEPPERPAGE)) {              // we make a pageJump?
-        if (config.nbPages > (stat.stepSeq / STEPPERPAGE)) { // newPage above number of pages
-            stat.stepSeq = config.nbPages * STEPPERPAGE - 1; // set jump to last stepSeq
-        } else {                                             // new page is valid.
-            stat.stepSeq--;                                  // decrease Step
+    } else if ((!stat.stepSeq[array] % STEPPERPAGE)) {                             // we make a pageJump?
+        if (config.routing[array].nbPages > (stat.stepSeq[array] / STEPPERPAGE)) { // newPage above number of pages
+            stat.stepSeq[array] = config.routing[array].nbPages * STEPPERPAGE - 1; // set jump to last stepSeq[array]
+        } else {                                                                   // new page is valid.
+            stat.stepSeq[array]--;                                                 // decrease Step
         }
     } else {
-        stat.stepSeq--; // decrease Step
+        stat.stepSeq[array]--; // decrease Step
     }
-
-    calcBPM();
 }
 
-inline byte FrankData::getCurrentPageNumber() { // number of pages, takes care if page number has changed
-    if (config.nbPages > (stat.stepSeq / 8))
-        return config.nbPages;     // is our stepSeq above the current number of pages?
-    return (stat.stepSeq / 8 + 1); // return current stepSeq page until the next page jump
+inline byte
+FrankData::getCurrentPageNumber(const byte &array) { // number of pages, takes care if page number has changed
+    if (config.routing[array].nbPages > (stat.stepSeq[array] / 8))
+        return config.routing[array].nbPages; // is our stepSeq above the current number of pages?
+    return (stat.stepSeq[array] / 8 + 1);     // return current stepSeq page until the next page jump
 }
 
 // Seq *FrankData::getSeqObject() { return seq; }
@@ -469,7 +483,8 @@ inline byte FrankData::getCurrentPageNumber() { // number of pages, takes care i
 // Singleton
 FrankData *FrankData::mainData = nullptr;
 FrankData &FrankData::getDataObj() {
-    if (mainData == nullptr) mainData = new FrankData();
+    if (mainData == nullptr)
+        mainData = new FrankData();
     return *mainData;
 }
 
@@ -514,7 +529,22 @@ inline byte FrankData::getOutputLiveModeEvaluated(const byte &array) {
 }
 
 // TO DO
-inline byte FrankData::getOutputClockEvaluated(const byte &array) { return config.routing[array].clock + 1; }
+inline byte FrankData::getOutputClockEvaluated(const byte &array) { return config.routing[array].clockSpeed + 1; }
+
+void FrankData::setSeqAllNotes(const byte &array, const byte &data) { seq[array].setNotes(data); }
+void FrankData::setSeqAllGateLengths(const byte &array, const byte &data) { seq[array].setGateLengths(data); }
+void FrankData::setSeqResetGateLengths(const byte &array) { seq[array].setGateLengths(50); }
+
+void FrankData::copySeq(const byte &source, const byte &destination) {
+    seq[destination].setSequence(&seq[source].sequence);
+}
+
+void FrankData::syncSteps() {
+    for (byte i = 1; i < OUTPUTS; i++) {
+        stat.stepSeq[i] = stat.stepSeq[0];
+        config.routing[i].stepSpeed = config.routing[0].stepSpeed;
+    }
+}
 
 // Screen config
 // void FrankData::setSubScreen(byte subScreen, byte max) { stat.screen.subscreen = testByte(subScreen, 0, max); }
@@ -528,7 +558,7 @@ inline const byte FrankData::getSubscreenMax() {
 byte FrankData::get(const frankData &frankDataType) {
     switch (frankDataType) {
     case midiSource: return config.midiSource;
-    case nbPages: return config.nbPages;
+
     case direction: return config.direction;
     case displayBrightness: return config.displayBrightness;
 
@@ -536,12 +566,10 @@ byte FrankData::get(const frankData &frankDataType) {
     case screenConfig: return stat.screen.config;
     case screenMainMenu: return stat.screen.mainMenu;
     case screenSubScreen: return stat.screen.subscreen;
+    case screenRouting: return stat.screen.routing;
+    case screenCal: return stat.screen.calibration;
+    case screenCalNote: return stat.screen.calibrateNote;
 
-    case stepArp: return stat.stepArp;
-    case stepSeq: return stat.stepSeq;
-    case activePage: return (stat.stepSeq / STEPPERPAGE);
-    case stepOnPage: return (stat.stepSeq - (get(activePage) * STEPPERPAGE));
-    case currentPageNumber: return getCurrentPageNumber();
     case bpm: return stat.bpm;
     case play: return stat.play;
     case rec: return stat.rec;
@@ -549,6 +577,9 @@ byte FrankData::get(const frankData &frankDataType) {
     case bpmSync: return stat.bpmSync;
     case bpmPoti: return stat.bpmPoti;
     case bpm16thCount: return stat.bpm16thCount;
+    case save:
+    case load: return stat.loadSaveSlot;
+    case pulseLength: return stat.pulseLength;
 
     default: PRINTLN("FrankData get(frankData frankDataType), no case found"); return 0;
     }
@@ -563,7 +594,9 @@ byte FrankData::get(const frankData &frankDataType, const byte &array) {
     case outputCc: return config.routing[array].cc;
     case outputCcEvaluated: return getLiveCcEvaluated(array);
     case outputLiveMode: return config.routing[array].liveMidiMode;
-    case outputClock: return config.routing[array].clock;
+    case outputClock: return config.routing[array].clockSpeed;
+    case outputArpRatchet: return config.routing[array].arpRatchet;
+    case outputArpOctave: return config.routing[array].arpOctaves;
 
     case liveMod: return liveMidi[array].mod;
     case livePitchbend: return liveMidi[array].pitchbend;
@@ -576,7 +609,17 @@ byte FrankData::get(const frankData &frankDataType, const byte &array) {
     case liveLowestKey: return liveMidi[array].getKeyLowest().note;
     case liveHighestKey: return liveMidi[array].getKeyHighest().note;
 
+    case nbPages: return config.routing[array].nbPages;
+    case stepArp: return stat.stepArp[array];
+    case stepSeq: return stat.stepSeq[array];
+    case stepSpeed: return config.routing[array].stepSpeed;
+    case activePage: return (stat.stepSeq[array] / STEPPERPAGE);
+    case stepOnPage: return (stat.stepSeq[array] - (get(activePage) * STEPPERPAGE));
+    case currentPageNumber: return getCurrentPageNumber(array);
+
     case seqTuning: return seq[array].sequence.tuning;
+    case seqRatchet: return seq[array].sequence.ratchet;
+    case seqGateLengthOffset: return seq[array].sequence.gateLengthOffset;
 
     default: PRINTLN("FrankData get(frankData frankDataType, byte array), no case found"); return 0;
     }
@@ -594,10 +637,11 @@ byte FrankData::get(const frankData &frankDataType, const byte &array, const byt
     }
 }
 
+// set data
 void FrankData::set(const frankData &frankDataType, const byte &data, const bool &clampChange) {
     switch (frankDataType) {
     case midiSource: config.midiSource = testByte(data, 0, 1, clampChange); break;
-    case nbPages: config.nbPages = testByte(data, 1, PAGES, clampChange); break;
+
     case direction: config.direction = testByte(data, 0, 1, clampChange); break;
     case displayBrightness: config.displayBrightness = testByte(data, 0, 100, clampChange); break; // how high?
 
@@ -605,20 +649,25 @@ void FrankData::set(const frankData &frankDataType, const byte &data, const bool
     case screenConfig: stat.screen.config = testByte(data, 0, 1, clampChange); break;
     case screenMainMenu: stat.screen.mainMenu = testByte(data, 0, 1, clampChange); break;
     case screenSubScreen: stat.screen.subscreen = testByte(data, 0, getSubscreenMax(), clampChange); break;
+    case screenRouting: stat.screen.routing = testByte(data, 0, 1, clampChange); break;
+    case screenCal: stat.screen.calibration = testByte(data, 0, 1, clampChange); break;
+    case screenCalNote: stat.screen.calibrateNote = testByte(data, 0, 1, clampChange); break;
 
-    case stepArp: stat.stepArp = testByte(data, 0, NOTERANGE, clampChange); break;
-    case stepSeq: stat.stepSeq = testByte(data, 0, STEPPERPAGE * config.nbPages - 1, clampChange); break;
     case bpm: stat.bpm = testByte(data, 0, 255, clampChange); break;
     case play: stat.play = testByte(data, 0, 1, clampChange); break;
     case rec: stat.rec = testByte(data, 0, 1, clampChange); break;
     case error: stat.error = testByte(data, 0, 1, clampChange); break;
     case bpmSync: stat.bpmSync = testByte(data, 0, 1, clampChange); break;
     case bpmPoti: stat.bpmPoti = testByte(data, 0, 255, clampChange); break;
+    case load:
+    case save: stat.loadSaveSlot = testByte(data, 1, 10, clampChange); break;
+    case pulseLength: stat.pulseLength = testByte(data, 0, 255, clampChange); break;
 
     default: PRINTLN("FrankData set(frankData frankDataType, byte data, bool clampChange = 0), no case found");
     }
 }
 
+// set data, array
 void FrankData::set(const frankData &frankDataType, const byte &data, const byte &array, const bool &clampChange) {
     switch (frankDataType) {
     case outputSource: config.routing[array].outSource = testByte(data, 0, 1, clampChange); break;
@@ -627,7 +676,9 @@ void FrankData::set(const frankData &frankDataType, const byte &data, const byte
     case outputArp: config.routing[array].arp = testByte(data, 0, 1, clampChange); break;
     case outputCc: config.routing[array].cc = testByte(data, 0, 4, clampChange); break;
     case outputLiveMode: config.routing[array].liveMidiMode = testByte(data, 0, 2, clampChange); break;
-    case outputClock: config.routing[array].clock = testByte(data, 0, 5, clampChange); break;
+    case outputClock: config.routing[array].clockSpeed = testByte(data, 0, 5, clampChange); break;
+    case outputArpRatchet: config.routing[array].arpRatchet = testByte(data, 0, 2, clampChange); break;
+    case outputArpOctave: config.routing[array].arpOctaves = testByte(data, 0, 6, clampChange); break;
 
     case liveMod: liveMidi[array].mod = testByte(data, 0, 127, clampChange); break;
     case livePitchbend: liveMidi[array].pitchbend = testByte(data, 0, 255, clampChange); break;
@@ -635,17 +686,28 @@ void FrankData::set(const frankData &frankDataType, const byte &data, const byte
     case liveSustain: liveMidi[array].sustain = testByte(data, 0, 127, clampChange); break;
     case liveTriggered: liveMidi[array].triggered = testByte(data, 0, 1, clampChange); break;
 
+    case stepArp: stat.stepArp[array] = testByte(data, 0, NOTERANGE, clampChange); break;
+    case stepSeq:
+        stat.stepSeq[array] = testByte(data, 0, STEPPERPAGE * config.routing[array].nbPages - 1, clampChange);
+        break;
+    case stepSpeed: config.routing[array].stepSpeed = testByte(data, 1, PAGES, clampChange); break;
+    case nbPages: config.routing[array].nbPages = testByte(data, 1, PAGES, clampChange); break;
+
     case seqTuning: seq[array].sequence.tuning = testByte(data, 0, 255, clampChange); break;
+    case seqRatchet: seq[array].sequence.ratchet = testByte(data, 0, 2, clampChange); break;
+    case seqGateLengthOffset: seq[array].sequence.gateLengthOffset = testByte(data, 0, 100, clampChange); break;
 
     default: PRINTLN("FrankData set(frankData frankDataType, byte data, byte array, bool clampChange), no case found");
     }
 }
+
+// set data, array, step
 void FrankData::set(const frankData &frankDataType, const byte &data, const byte &array, const byte &step,
                     const bool &clampChange) {
     switch (frankDataType) {
     case seqNote: seq[array].setNote(step, data); break;
     case seqGate: seq[array].sequence.gate[step] = testByte(data, 0, 1, clampChange); break;
-    case seqGateLength: seq[array].sequence.gateLength[step] = testByte(data, 0, 100, clampChange); break;
+    case seqGateLength: seq[array].setGateLength(step, data); break;
     case seqCc: seq[array].sequence.cc[step] = testByte(data, 0, 127, clampChange); break;
     case seqVelocity: seq[array].sequence.velocity[step] = testByte(data, 0, 127, clampChange); break;
 
@@ -667,26 +729,26 @@ void FrankData::change(const frankData &frankDataType, const byte &amount, const
 }
 
 void FrankData::increase(const frankData &frankDataType, const bool &clampChange) {
-    switch (frankDataType) {
-    case stepSeq: increaseStep(); break;
-    default: change(frankDataType, 1, clampChange);
-    }
+    change(frankDataType, 1, clampChange);
 }
 void FrankData::increase(const frankData &frankDataType, const byte &array, const bool &clampChange) {
-    change(frankDataType, 1, array, clampChange);
+    switch (frankDataType) {
+    case stepSeq: increaseStepSeq(array); break;
+    default: change(frankDataType, 1, array, clampChange);
+    }
 }
 void FrankData::increase(const frankData &frankDataType, const byte &array, const byte &step, const bool &clampChange) {
     change(frankDataType, 1, array, step, clampChange);
 }
 
 void FrankData::decrease(const frankData &frankDataType, const bool &clampChange) {
-    switch (frankDataType) {
-    case stepSeq: decreaseStep(); break;
-    default: change(frankDataType, -1, clampChange);
-    }
+    change(frankDataType, -1, clampChange);
 }
 void FrankData::decrease(const frankData &frankDataType, const byte &array, const bool &clampChange) {
-    change(frankDataType, -1, array, clampChange);
+    switch (frankDataType) {
+    case stepSeq: decreaseStepSeq(array); break;
+    default: change(frankDataType, -1, array, clampChange);
+    }
 }
 void FrankData::decrease(const frankData &frankDataType, const byte &array, const byte &step, const bool &clampChange) {
     change(frankDataType, -1, array, step, clampChange);
@@ -700,6 +762,9 @@ void FrankData::toggle(const frankData &frankDataType) {
     case bpmSync: stat.bpmSync = toggleValue(stat.bpmSync); break;
     case screenMainMenu: stat.screen.mainMenu = toggleValue(stat.screen.mainMenu); break;
     case screenConfig: stat.screen.config = toggleValue(stat.screen.config); break;
+    case screenRouting: stat.screen.routing = toggleValue(stat.screen.routing); break;
+    case screenCal: stat.screen.calibration = toggleValue(stat.screen.calibration); break;
+    case screenCalNote: stat.screen.calibrateNote = toggleValue(stat.screen.calibrateNote); break;
 
     default: PRINTLN("FrankData toggle(frankData frankDataType), no case found");
     }
@@ -722,6 +787,9 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
     case seqVelocity: setStr("Vel"); break;
     case seqTuning: setStr("Tuning"); break;
     case seqSize: setStr("Seq"); break;
+    case seqRatchet: setStr("Reps"); break;
+    case seqGateLengthOffset: setStr("GL-OF"); break;
+    case stepSpeed: setStr("Speed"); break;
 
     case midiSource: setStr("Src"); break;
     case nbPages: setStr("Pages"); break;
@@ -743,6 +811,8 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
         default: setStr("NONE"); break;
         }
         break;
+    case outputArpRatchet: setStr("Reps"); break;
+    case outputArpOctave: setStr("Oct"); break;
 
     case outputLiveMode: setStr("Key sel"); break;
 
@@ -752,6 +822,9 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
     case screenConfig: setStr("Conf"); break;
     case screenMainMenu: setStr("Main"); break;
     case screenSubScreen: setStr("Sub"); break;
+    case screenCal: setStr("Cal"); break;
+    case screenCalNote: setStr("CalNote"); break;
+    case screenRouting: setStr("Routing"); break;
 
     case stepSeq: setStr("Step"); break;
     case stepArp: setStr("Arp Step"); break;
@@ -761,6 +834,9 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
     case error: setStr("Error"); break;
     case bpmSync: setStr("Sync"); break;
     case bpmPoti: setStr("BPM"); break;
+    case load: setStr("Load"); break;
+    case save: setStr("Save"); break;
+    case pulseLength: setStr("PulsL"); break;
 
     case liveMod: setStr("Mod"); break;
     case livePitchbend: setStr("PB"); break;
@@ -782,20 +858,27 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
 
 const char *FrankData::getValueAsStr(const frankData &frankDataType) {
     char tempStr[5];
-    
+
     switch (frankDataType) {
     case seqTuning:
     case seqSize:
+    case seqRatchet:
+
+    case stepSeq:
+    case stepArp:
+    case nbPages:
 
     case outputChannel:
+    case outputArpOctave:
 
     case liveMod:
     case livePitchbend:
     case liveAftertouch:
     case liveSustain:
     case liveTriggered: setStr(toStr(get(frankDataType, stat.screen.channel))); break;
+    case outputArpRatchet: setStr(toStr(((int)get(frankDataType, stat.screen.channel)) - 3)); break;
+    case seqGateLengthOffset: setStr(toStr(((int)get(frankDataType, stat.screen.channel)) - 50)); break;
 
-    case nbPages:
     case displayBrightness:
 
     case screenOutputChannel:
@@ -803,10 +886,11 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType) {
     case screenMainMenu:
     case screenSubScreen:
 
-    case stepSeq:
-    case stepArp:
     case bpm:
     case bpmSync:
+    case load:
+    case save:
+    case pulseLength:
     case bpmPoti: setStr(toStr(get(frankDataType))); break;
 
     case outputSource:
@@ -901,8 +985,9 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType) {
         }
         break;
 
+    case stepSpeed:
     case outputClock:
-        switch (config.routing[stat.screen.channel].clock) {
+        switch (config.routing[stat.screen.channel].clockSpeed) {
         case 0: setStr("1/16"); break;
         case 1: setStr("1/8"); break;
         case 2: setStr("1/4"); break;

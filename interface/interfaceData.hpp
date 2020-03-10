@@ -19,8 +19,13 @@ class OutputRouting {
     byte arp;          // 0 = off, 1 = on
     byte cc;           // 0 = vel, 1 = mod, 2 = pitchbend, 3 = aftertouch, 4 = sustain
     byte liveMidiMode; // 0 = latest, 1 = lowest, 2 = highest
-    byte clock;        // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
-    byte arpRatchet; // repeats per step
+    byte clockSpeed;   // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
+    byte arpRatchet;   // repeats per step, 1 = 1 repeat (2 notes total), up to 3 repeats (ratchet = 2)
+    byte arpOctaves;   // Octaves 0 = -3, 3 = 0, 6 = +3
+    byte stepSpeed;    // ArpSeq Sync 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
+    byte nbPages;      // nb Pages  1 -> 8
+    float cvDacOffset;
+    // float noteCal[NOTERANGE];
 
     OutputRouting() {
         this->outSource = 0;
@@ -29,9 +34,13 @@ class OutputRouting {
         this->arp = 0;
         this->cc = 0;
         this->liveMidiMode = 0;
-        this->clock = 2;
+        this->clockSpeed = 2;
+        this->arpRatchet = 0;
+        this->arpOctaves = 3;
+        this->stepSpeed = 2;
+        this->nbPages = 8;
+        this->cvDacOffset = 0;
     }
-
 };
 
 // Sequence struct holding all values for a sequence, to save it
@@ -41,13 +50,15 @@ typedef struct {
     byte gate[LENGTH];
     byte gateLength[LENGTH];
     byte velocity[LENGTH];
-    byte tuning; // tuning offset
+    byte tuning;           // tuning offset
+    byte ratchet;          // repeats per step
+    byte gateLengthOffset; // 50 = no offset
 } structSequence;
 
 // Settings struct for all settings that need to be saved permanently
 typedef struct {
-    byte midiSource = 1;            // active MidiDevice (usb -> 1, din -> 0)
-    byte nbPages = 4;               // nb Pages  1 -> 8
+    byte midiSource = 1; // active MidiDevice (usb -> 1, din -> 0)
+
     byte direction = 1;             // 0 -> reverse ; 1 -> forward
     byte displayBrightness = 100;   // 0-255;
     OutputRouting routing[OUTPUTS]; // hold settings for that many outputs
@@ -56,10 +67,14 @@ typedef struct {
 
 // possible screen status
 typedef struct {
-    byte channel = 0;   // active channel, 0-> Channel 1, 1-> Channel 2
-    byte config = 0;    // display config, 0-> off, 1-> on
-    byte mainMenu = 1;  // display Main Menu, 0-> off, 1-> on
-    byte subscreen = 0; // subscreen -> current displayed screen .. note, gate, cv (seq) ; live, appregiator (live)
+    byte channel = 0;       // active channel, 0-> Channel 1, 1-> Channel 2
+    byte config = 0;        // display config, 0-> off, 1-> on
+    byte mainMenu = 1;      // display Main Menu, 0-> off, 1-> on
+    byte subscreen = 0;     // subscreen -> current displayed screen .. note, gate, cv (seq) ; live, appregiator (live)
+    byte calibration = 0;   // calibration screen
+    byte calibrateNote = 0; // Note calibration screen
+    byte routing = 0;       // routing screen
+
     const byte subScreenMaxSeq = 2;  // Number of subscreens for seq mode
     const byte subScreenMaxLive = 1; // Number of subscreens for live mode
 } structScreen;
@@ -68,13 +83,17 @@ typedef struct {
 typedef struct {
     structScreen screen; // screen status
 
-    byte stepSeq = 0; // current Step
-    byte stepArp = 0;
+    byte loadSaveSlot = 1; // laod save 1-10
 
     int bpm = 0;    // current bpm
     byte play = 0;  // play stop
     byte rec = 0;   // Rec Active
     byte error = 0; // ErrorFlag
+
+    byte pulseLength = 20; // pulse length in ms
+
+    byte stepSeq[OUTPUTS] = {0, 0};
+    byte stepArp[OUTPUTS] = {0, 0};
 
     byte bpmSync = 0; // Sync Active
     byte midiClockCount = 5;
@@ -111,6 +130,7 @@ class PressedNotesList {
     PressedNotesElement *getKeyHighest();
     PressedNotesElement *getKeyLowest();
     PressedNotesElement *getKeyLatest();
+    int size = 0;
 };
 
 // save live midi data
@@ -158,8 +178,10 @@ class LiveMidi {
 // Sequence class
 class Seq {
   public:
-    void init(const byte &note = 12, const byte &gate = 1, const byte &gateLength = 50,
-              const byte &tuning = 10); // init sequence to default values
+    Seq() { init(); }
+
+    void init(const byte &note = 12, const byte &gate = 1, const byte &gateLength = 50, const byte &tuning = 10,
+              const byte &ratchet = 0, const byte &gateLengthOffset = 50); // init sequence to default values
 
     // Note
     void setNote(const byte &index, const byte &note); // set note value
@@ -187,10 +209,10 @@ class Seq {
     // GateLength
     void setGateLength(const byte &index, const byte &gateLength); // set gate length
     byte getGateLength(const byte &index);                         // return gate length
-    byte changeGateLength(const byte &index, const int &change);   // increase note value and return new note
+    byte changeGateLength(const byte &index, const int &change);
 
     void setGateLengths(const byte &gateLength); // set all gates at once
-    void changeGateLengths(const int &change);   // increase note value and return new note
+    void changeGateLengths(const int &change);
 
     // Sequence
     void setSequence(structSequence *copySeq); // set all sequence values at once
@@ -208,8 +230,8 @@ class FrankData {
   public:
     // storage enumerator
     enum frankData : byte {
-        // frankData = 0 is referred to none, so if-statements will work as expected 
-        none, 
+        // frankData = 0 is referred to none, so if-statements will work as expected
+        none,
 
         // Seq, needs value, array, step
         seqNote,
@@ -218,12 +240,22 @@ class FrankData {
         seqCc,
         seqCcEvaluated,
         seqVelocity,
-        seqTuning,
         seqSize,
+
+        // Seq, needs value, array
+        seqTuning,
+        seqRatchet,
+        seqGateLengthOffset,
+        stepSpeed,
+        nbPages,
+        stepSeq,
+        stepArp,
+        activePage,
+        stepOnPage,
+        currentPageNumber,
 
         // general Settings, needs value
         midiSource,
-        nbPages,
         direction,
         displayBrightness,
 
@@ -232,33 +264,34 @@ class FrankData {
         outputChannel,
         outputSeq,
         outputArp,
+        outputArpRatchet,
+        outputArpOctave,
         outputCc,
         outputCcEvaluated,
         outputLiveMode,
-        // outputLiveModeEvaluated,
         outputClock,
-        // outputClockEvaluated,
 
         // Screen Settings, needs value
         screenOutputChannel,
         screenConfig,
         screenMainMenu,
         screenSubScreen,
+        screenCal,
+        screenCalNote,
+        screenRouting,
 
         // structStatus, needs value
-        stepSeq,
-        stepArp,
-        activePage,
-        stepOnPage,
-        currentPageNumber,
+
         bpm,
         play,
         rec,
         error,
         bpmSync,
-        // midiClockCount,
         bpm16thCount,
         bpmPoti,
+        load,
+        save,
+        pulseLength,
 
         // liveMidi, needs value, array
         liveMod,
@@ -281,12 +314,7 @@ class FrankData {
     enum beatStates : byte { sixteenth, eighth, quarter, half, bar, doublebar };
 
   private:
-    FrankData() {
-        for (byte output = 0; output < OUTPUTS; output++) {
-            this->seq[output].init();
-        }
-
-    }
+    FrankData() {}
 
     structStatus stat;
     structSettings config;
@@ -294,7 +322,7 @@ class FrankData {
     LiveMidi liveMidi[OUTPUTS];
     Seq seq[OUTPUTS];
 
-    char str[MAXSTRINGSIZE+1]; // MAXSTRINGSIZE + escape char
+    char str[MAXSTRINGSIZE + 1]; // MAXSTRINGSIZE + escape char
 
   public:
     const char *returnStr = str;
@@ -317,9 +345,9 @@ class FrankData {
     byte getBpm16thCount();
     // inline void resetClock();
     inline void calcBPM();
-    inline void increaseStep();
-    inline void decreaseStep();
-    inline byte getCurrentPageNumber();
+    inline void increaseStepSeq(const byte &array);
+    inline void decreaseStepSeq(const byte &array);
+    inline byte getCurrentPageNumber(const byte &array);
     inline const byte getSubscreenMax();
     inline byte getLiveCcEvaluated(const byte &array);
     inline byte getOutputLiveModeEvaluated(const byte &array);
@@ -333,6 +361,16 @@ class FrankData {
     inline structKey getKeyLatest(const byte &array);
     void resetSubScreen(); // switch menu max 3 menu pages
 
+    void setSeqAllNotes(const byte &array, const byte &data);
+    void setSeqAllGateLengths(const byte &array, const byte &data);
+    void setSeqResetGateLengths(const byte &array);
+
+    void copySeq(const byte &source, const byte &destination);
+
+    void syncSteps();
+
+    void reset();
+
     // settings
 
   public:
@@ -342,7 +380,6 @@ class FrankData {
     byte get(const frankData &frankDataType, const byte &array);
     // get value for certain step
     byte get(const frankData &frankDataType, const byte &array, const byte &step);
-
 
     // set single type value
     void set(const frankData &frankDataType, const byte &data, const bool &clampChange = 0);
@@ -356,20 +393,17 @@ class FrankData {
     void toggle(const frankData &frankdataType, const byte &array, const byte &step);
 
     void change(const frankData &frankDataType, const byte &amount, const bool &clampChange = 0);
-    void change(const frankData &frankDataType, const byte &amount, const byte &array,
-                       const bool &clampChange = 0);
+    void change(const frankData &frankDataType, const byte &amount, const byte &array, const bool &clampChange = 0);
     void change(const frankData &frankDataType, const byte &amount, const byte &array, const byte &step,
-                       const bool &clampChange = 0);
+                const bool &clampChange = 0);
 
     void increase(const frankData &frankDataType, const bool &clampChange = 0);
     void increase(const frankData &frankDataType, const byte &array, const bool &clampChange = 0);
-    void increase(const frankData &frankDataType, const byte &array, const byte &step,
-                         const bool &clampChange = 0);
+    void increase(const frankData &frankDataType, const byte &array, const byte &step, const bool &clampChange = 0);
 
     void decrease(const frankData &frankDataType, const bool &clampChange = 0);
     void decrease(const frankData &frankDataType, const byte &array, const bool &clampChange = 0);
-    void decrease(const frankData &frankDataType, const byte &array, const byte &step,
-                         const bool &clampChange = 0);
+    void decrease(const frankData &frankDataType, const byte &array, const byte &step, const bool &clampChange = 0);
 
     const char *getNameAsStr(const frankData &frankDataType);
     const char *getValueAsStr(const frankData &frankDataType);
@@ -380,7 +414,6 @@ class FrankData {
 
   protected:
     static FrankData *mainData;
-
 };
 
 // utility
