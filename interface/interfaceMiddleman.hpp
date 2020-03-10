@@ -15,8 +15,11 @@ class PreviousOutputs {
 
     byte note;
     byte customCV;
+    byte sustain;
     byte gate;
     byte gatelength;
+    byte stepSeq;
+    byte stepArp;
     long gateTimeSet;
     byte clock;
     long clockTimeSet;
@@ -27,9 +30,11 @@ public:
     PreviousOutputs() {
         this->note = 0;
         this->customCV = 0;
+        this->sustain = 0;
         this->gate = 0;
         this->gatelength = 0;
-        this->gateTimeSet = 0;
+        this->stepSeq = 0;
+        this->stepArp = 0;
         this->clock = 0;
         this->clockTimeSet = 0;
         this->trigger = 0;
@@ -62,6 +67,7 @@ void updateCustomCVOut(byte output);
 void updateGateOut(byte output);
 void updateClockOut(byte output);
 void updateTriggerOut(byte output);
+void updateArp(byte output);
 
-// advanced helper functions
-byte getArpeggiatedNote();
+    // advanced helper functions
+    byte getArpeggiatedNote();

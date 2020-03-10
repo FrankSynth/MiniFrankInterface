@@ -16,8 +16,7 @@
 #endif
 
 // OUTPUT Channels and clocks
-channel outputChannel[OUTPUTS] = {channel(DAC1, 0, DAC2, 0, TRIGGER1, GATE1),
-                                  channel(DAC1, 1, DAC2, 1, TRIGGER2, GATE2)};
+channel outputChannel[OUTPUTS] = {channel(DAC1, 0, DAC2, 0, TRIGGER1, GATE1), channel(DAC1, 1, DAC2, 1, TRIGGER2, GATE2)};
 
 clock outputClock[OUTPUTS] = {clock(CLK1), clock(CLK2)};
 
@@ -27,7 +26,6 @@ PreviousOutputs previousOutputs[OUTPUTS];
 void initMiddleman() {
     initOutput(); // init Outputs
 }
-
 void updateAllOutputs() {
     for (byte output = 0; output < OUTPUTS; output++) {
         updateNoteOut(output);
@@ -39,15 +37,61 @@ void updateAllOutputs() {
 }
 
 void updateNoteOut(byte output) {
+    // Live
+    if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
 
+        // Arp on
+        if (DATAOBJ.get(FrankData::outputArp, output)) {
+            byte tempStep = DATAOBJ.get(FrankData::stepArp);
+            if (tempStep != previousOutputs[output].stepArp) {
+                previousOutputs[output].stepArp = tempStep;
+
+                byte tempNote = DATAOBJ.get(FrankData::liveKeyArpEvaluated, output);
+                if (tempNote != previousOutputs[output].note) {
+                    previousOutputs[output].note = tempNote;
+                    // send new Note
+                }
+            }
+        }
+
+        // Arp Off
+        else {
+            byte tempNote = DATAOBJ.get(FrankData::liveKeyNoteEvaluated, output);
+            if (tempNote != previousOutputs[output].note) {
+                previousOutputs[output].note = tempNote;
+                // send new Note
+            }
+        }
+    }
+
+    // Seq
+    else {
+    }
 }
 void updateCustomCVOut(byte output) {}
 void updateGateOut(byte output) {}
-void updateClockOut(byte output) { byte currentClock = DATAOBJ.get(FrankData::bpm16thCount); }
+void updateClockOut(byte output) {
+    byte currentClock = DATAOBJ.get(FrankData::bpm16thCount);
+}
 void updateTriggerOut(byte output) {}
 
-void PreviousOutputs::setNewGateTimeSet() { gateTimeSet = millis(); }
-void PreviousOutputs::setNewClockTimeSet() { clockTimeSet = millis(); }
-void PreviousOutputs::setNewTriggerTimeSet() { triggerTimeSet = millis(); }
+void updateArp(byte output) {
+    if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
+        if (DATAOBJ.get(FrankData::outputArp, output)) {
+            if (previousOutputs[output].sustain > DATAOBJ.get(FrankData::liveSustain) && DATAOBJ.get(FrankData::liveSustain) < 64) {
+                PRINTLN("Middleman updates Arp");
+                DATAOBJ.updateArp(output);
+            }
+        }
+    }
+}
 
-
+void PreviousOutputs::setNewGateTimeSet() {
+    gateTimeSet = millis();
+}
+void PreviousOutputs::setNewClockTimeSet() {
+    clockTimeSet = millis();
+}
+void PreviousOutputs::setNewTriggerTimeSet() {
+    triggerTimeSet = millis();
+}

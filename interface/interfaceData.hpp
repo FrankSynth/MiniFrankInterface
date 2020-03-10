@@ -2,12 +2,15 @@
 
 #include <Arduino.h>
 
-#define LENGTH 64
+#define LENGTH 64 // max Seq length
 #define PAGES 8
 #define NOTERANGE 88
-#define STEPPERPAGE 8
-#define OUTPUTS 2 // Number of outputs
+#define STEPSPERPAGE 8
+#define OUTPUTS 2 // Number of output lanes
 #define MAXSTRINGSIZE 8
+#define RATCHETCENTEROFFSET 3
+#define GATELENGTHOFFSET 50
+#define CALOFFSET 127
 
 #define DATAOBJ FrankData::getDataObj()
 
@@ -17,6 +20,7 @@ class OutputRouting {
     byte channel;      // 0 = all, 1 = channel 1, ...
     byte seq;          // 0 = seq0, 1 = seq1
     byte arp;          // 0 = off, 1 = on
+    byte arpMode;      // 0 = up, 1 = down, 2 = updown, 3 = order, 4 = random
     byte cc;           // 0 = vel, 1 = mod, 2 = pitchbend, 3 = aftertouch, 4 = sustain
     byte liveMidiMode; // 0 = latest, 1 = lowest, 2 = highest
     byte clockSpeed;   // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
@@ -24,7 +28,6 @@ class OutputRouting {
     byte arpOctaves;   // Octaves 0 = -3, 3 = 0, 6 = +3
     byte stepSpeed;    // ArpSeq Sync 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
     byte nbPages;      // nb Pages  1 -> 8
-    float cvDacOffset;
     // float noteCal[NOTERANGE];
 
     OutputRouting() {
@@ -32,6 +35,7 @@ class OutputRouting {
         this->channel = 0;
         this->seq = 0;
         this->arp = 0;
+        this->arpMode = 0;
         this->cc = 0;
         this->liveMidiMode = 0;
         this->clockSpeed = 2;
@@ -39,9 +43,13 @@ class OutputRouting {
         this->arpOctaves = 3;
         this->stepSpeed = 2;
         this->nbPages = 8;
-        this->cvDacOffset = 0;
     }
 };
+
+typedef struct {
+    float noteCalibration[NOTERANGE];
+    float cvOffset;
+} structCalibration;
 
 // Sequence struct holding all values for a sequence, to save it
 typedef struct {
@@ -142,6 +150,7 @@ class LiveMidi {
     byte aftertouch;
     byte sustain;
     byte triggered;
+    byte arp[NOTERANGE];
 
     LiveMidi() {
         this->mod = 0;
@@ -156,21 +165,11 @@ class LiveMidi {
 
     bool keysPressed();
 
-    // void setMod(byte data);
-    // void setPitchbend(byte data);
-    // void setAftertouch(byte data);
-    // void setSustain(byte data);
-    // void resetTrigger();
+    void updateArp(const byte &arpSettings);
 
     structKey getKeyHighest();
     structKey getKeyLowest();
     structKey getKeyLatest();
-
-    // byte getMod();
-    // byte getPitchbend();
-    // byte getAftertouch();
-    // byte getSustain();
-    byte getTriggered();
 
     void reset();
 };
@@ -186,31 +185,15 @@ class Seq {
     // Note
     void setNote(const byte &index, const byte &note); // set note value
     void setNotes(const byte &note);                   // set all note values
-    byte getNote(const byte &index);                   // return note value
 
-    byte increaseNote(const byte &index); // increase note value and return new note, function take care of tuning
-    byte decreaseNote(const byte &index); // decrease note value and return new note, function take care of tuning
+    void increaseNote(const byte &index); // increase note value and return new note, function take care of tuning
+    void decreaseNote(const byte &index); // decrease note value and return new note, function take care of tuning
 
-    byte changeNote(const byte &index, const int &change); // change note value and return new note
-    void changeNotes(const int &change);                   // change all note values
-
-    void octaveUp();   // All notes one octave down (if possible)
-    void octaveDown(); // All notes one octave down (if possible)
-
-    // TUNE
-    void setTuning(const byte &tuning);
-    byte getTuning();
-
-    // Gate
-    void setGate(const byte &index, const byte &gate); // set gate value
-    byte getGate(const byte &index);                   // return gate value
-    byte toggleGate(const byte &index);                // toggle gate and return new status;
+    void changeNotes(const int &change); // change all note values
+    void octaveUp();                     // All notes one octave down (if possible)
+    void octaveDown();                   // All notes one octave down (if possible)
 
     // GateLength
-    void setGateLength(const byte &index, const byte &gateLength); // set gate length
-    byte getGateLength(const byte &index);                         // return gate length
-    byte changeGateLength(const byte &index, const int &change);
-
     void setGateLengths(const byte &gateLength); // set all gates at once
     void changeGateLengths(const int &change);
 
@@ -242,6 +225,12 @@ class FrankData {
         seqVelocity,
         seqSize,
 
+        // calibration, needs value, array, step
+        noteCal,
+
+        // calibration, needs value, array
+        cvCal,
+
         // Seq, needs value, array
         seqTuning,
         seqRatchet,
@@ -264,6 +253,7 @@ class FrankData {
         outputChannel,
         outputSeq,
         outputArp,
+        outputArpMode,
         outputArpRatchet,
         outputArpOctave,
         outputCc,
@@ -299,6 +289,7 @@ class FrankData {
         liveAftertouch,
         liveSustain,
         liveTriggered,
+        liveKeyArpEvaluated,
         liveKeyNoteEvaluated,
         liveKeyVelEvaluated,
         liveLatestKey,
@@ -318,10 +309,10 @@ class FrankData {
 
     structStatus stat;
     structSettings config;
+    structCalibration cal[OUTPUTS];
 
     LiveMidi liveMidi[OUTPUTS];
     Seq seq[OUTPUTS];
-
     char str[MAXSTRINGSIZE + 1]; // MAXSTRINGSIZE + escape char
 
   public:
@@ -354,20 +345,31 @@ class FrankData {
     inline byte getOutputClockEvaluated(const byte &array);
     inline void setStr(const char *newStr);
 
+    void setNoteCal(const byte &data, const byte &array, const byte &note);
+    byte getNoteCal(const byte &array, const byte &step);
+    void setCvCal(const byte &data, const byte &array);
+    byte getCvCal(const byte &array);
+
   public:
     inline structKey getLiveKeyEvaluated(const byte &array);
     inline structKey getKeyHighest(const byte &array);
     inline structKey getKeyLowest(const byte &array);
     inline structKey getKeyLatest(const byte &array);
+
+    byte getArpLiveKeyEvaluated(const byte &array);
+
     void resetSubScreen(); // switch menu max 3 menu pages
 
     void setSeqAllNotes(const byte &array, const byte &data);
     void setSeqAllGateLengths(const byte &array, const byte &data);
     void setSeqResetGateLengths(const byte &array);
-
+    void seqOctaveUp(const byte &array);
+    void seqOctaveDown(const byte &array);
     void copySeq(const byte &source, const byte &destination);
 
-    void syncSteps();
+    void updateArp(const byte &array);
+
+        void syncSteps();
 
     void reset();
 
