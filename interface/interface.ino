@@ -54,19 +54,15 @@ void readSerial3() {
 }
 
 void updateDisplay() { // update interrupt
+ 
     lcd.refresh();
+
 }
 
 void setup() {
     // GETDATAOBJ
     // pin setup
-    pinMode(5, OUTPUT);
-    digitalWrite(5, LOW);
-
-     lcd.displayBrightness(200);
-
-    initMidi();
-    initMiddleman();
+    SPI.begin() ;
 
     DEBUGPRINTBEGIN;
     PRINTLN("Debug Mode");
@@ -79,6 +75,15 @@ void setup() {
     PRINTLN(DATAOBJ.get(FrankData::bpm));
     PRINT("Clock: ");
     PRINTLN(DATAOBJ.get(FrankData::outputClock,0));
+
+    pinMode(5, OUTPUT);
+    digitalWrite(5, LOW);
+
+     lcd.displayBrightness(200);
+
+    initMidi();
+    initMiddleman();
+
 
     ////////////////////////
     // Start Devices
@@ -119,6 +124,7 @@ void setup() {
 }
 
 void loop() {
+
     // GETDATAOBJ
     // NEW Midi Signal
     updateMidi();
@@ -131,13 +137,14 @@ void loop() {
     static long timer = 0;
     if (millis() - timer > 250) {
         DATAOBJ.increase(FrankData::stepSeq);
-        PRINT("Step: ");
-        PRINTLN(DATAOBJ.get(FrankData::stepSeq));
+     //   PRINT("Step: ");
+      //  PRINTLN(DATAOBJ.get(FrankData::stepSeq));
         timer = millis();
     }
 
     // activate middleman
     updateAllOutputs();
+    cntrl.readBPMSpeed();
 }
 
 void ISRSwitch() {

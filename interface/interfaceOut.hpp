@@ -30,7 +30,7 @@ class channel {
   private:
     byte noteDac;
     byte noteChannel;
-    float noteTuning = 43;
+    float noteTuning = 47.069;
 
     byte cvDac;
     byte cvChannel;
@@ -43,6 +43,9 @@ class channel {
 class clock {
   public:
     clock(byte pin) : pin(pin) {}
+
+    void setClock(byte state);
+
 
   private:
     byte pin;

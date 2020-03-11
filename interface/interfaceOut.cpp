@@ -1,7 +1,7 @@
 #include "interfaceOut.hpp"
 
 // Debug logging
-#define DEBUG 0
+#define DEBUG 1
 
 #if DEBUG == 1
 #define PRINTLN(x) Serial.println(x)
@@ -71,3 +71,9 @@ void setVoltage(int dacpin, bool channel, bool gain, unsigned int mV) // channel
     digitalWrite(dacpin, HIGH);
     SPI.endTransaction();
 }
+
+
+    void clock::setClock(byte state){
+        digitalWrite(pin, state);
+    }
+
