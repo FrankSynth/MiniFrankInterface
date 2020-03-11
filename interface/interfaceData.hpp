@@ -28,7 +28,6 @@ class OutputRouting {
     byte arpOctaves;   // Octaves 0 = -3, 3 = 0, 6 = +3
     byte stepSpeed;    // ArpSeq Sync 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
     byte nbPages;      // nb Pages  1 -> 8
-    // float noteCal[NOTERANGE];
 
     OutputRouting() {
         this->outSource = 0;
@@ -138,6 +137,9 @@ class PressedNotesList {
     PressedNotesElement *getKeyHighest();
     PressedNotesElement *getKeyLowest();
     PressedNotesElement *getKeyLatest();
+
+    PressedNotesElement *getElement(const byte &element);
+
     int size = 0;
 };
 
@@ -150,7 +152,10 @@ class LiveMidi {
     byte aftertouch;
     byte sustain;
     byte triggered;
-    byte arp[NOTERANGE];
+    byte arpDirection;
+    byte arpRetrigger;
+    PressedNotesList arpList;
+    byte arpArray[NOTERANGE];
 
     LiveMidi() {
         this->mod = 0;
@@ -158,6 +163,8 @@ class LiveMidi {
         this->aftertouch = 0;
         this->sustain = 0;
         this->triggered = 0;
+        this->arpDirection = 0;
+        this->arpRetrigger = 0;
     }
 
     void keyPressed(const byte &note, const byte &velocity);
@@ -249,7 +256,7 @@ class FrankData {
         displayBrightness,
 
         // Output Routing Settings, needs value, array
-        outputSource,
+        outputSource, 
         outputChannel,
         outputSeq,
         outputArp,
@@ -394,9 +401,9 @@ class FrankData {
     void toggle(const frankData &frankdataType);
     void toggle(const frankData &frankdataType, const byte &array, const byte &step);
 
-    void change(const frankData &frankDataType, const byte &amount, const bool &clampChange = 0);
-    void change(const frankData &frankDataType, const byte &amount, const byte &array, const bool &clampChange = 0);
-    void change(const frankData &frankDataType, const byte &amount, const byte &array, const byte &step,
+    void change(const frankData &frankDataType, const int &amount, const bool &clampChange = 0);
+    void change(const frankData &frankDataType, const int &amount, const byte &array, const bool &clampChange = 0);
+    void change(const frankData &frankDataType, const int &amount, const byte &array, const byte &step,
                 const bool &clampChange = 0);
 
     void increase(const frankData &frankDataType, const bool &clampChange = 0);

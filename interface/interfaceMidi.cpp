@@ -207,13 +207,19 @@ void midiCC(const byte &channel, const byte &cc, const byte &midiData) {
             }
         }
     }
+
     if (cc == 64) {
         for (byte x = 0; x < OUTPUTS; x++) {
             if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
                 DATAOBJ.set(FrankData::liveSustain, midiData, x);
+
+                if (DATAOBJ.get(FrankData::outputArp, x) && !DATAOBJ.get(FrankData::outputSource, x)) {
+                    DATAOBJ.updateArp(x);
+                }
             }
         }
     }
+    
 }
 
 void midiAfterTouch(const byte &channel, const byte &midiData) {
