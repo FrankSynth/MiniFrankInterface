@@ -1,8 +1,10 @@
 #include "interfaceDisplay.hpp"
 #include <string.h>
 
+
+
 // Debug logging
-#define DEBUG 0
+#define DEBUG 1
 
 #if DEBUG == 1
 #define PRINTLN(x) Serial.println(x)
@@ -21,9 +23,17 @@
 void Display::initLCD(byte w, byte h, byte rotation) {
     pinMode(LCD_BL, OUTPUT);
 
-    lcd.initR(INITR_GREENTAB); // Init ST7735S chip, green tab   ST7735_MADCTL_BGR changed to 0x00 !!!!!
+    ////////////WICHTIG!!///////
+        
+    ////ST7735_MADCTL_BGR changed to 0x00 !!!!!
+
+    //////////////
+
+    lcd.initR(INITR_GREENTAB); // Init ST7735S chip, green tab   
     lcd.setRotation(rotation); // set display rotation
     lcd.fillScreen(BLACK);     // init black
+    #define ST7735_MADCTL_BGR 0x00
+
 }
 
 void Display::displayBrightness(byte brightness) { analogWrite(LCD_BL, brightness); }
@@ -61,30 +71,32 @@ void Display::updateDisplay() {
 
 void Display::drawBody() {
     bufferBody->fillScreen(0x39E7); // resetBuffer
+    BodyTemplateSeq(); // Load Seq Template
 
-    // !!!!! old statement said DATAOBJ.getScreenConfig(DATAOBJ.getScreenChannel())) - ist aber kein array??
-    if (DATAOBJ.get(FrankData::screenMainMenu) == 1 || DATAOBJ.get(FrankData::screenConfig)) { // Load Config Template
+    // // !!!!! old statement said DATAOBJ.getScreenConfig(DATAOBJ.getScreenChannel())) - ist aber kein array??
+    // if (DATAOBJ.get(FrankData::screenMainMenu) == 1 || DATAOBJ.get(FrankData::screenConfig)) { // Load Config Template
 
-        // BodyTemplateSeq();  //Load Seq Template
+    //     // BodyTemplateSeq();  //Load Seq Template
 
-        BodyTemplateMenu();
-    } else if (DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel))) {
-        if (DATAOBJ.get(FrankData::outputArp, DATAOBJ.get(FrankData::screenOutputChannel))) {
-            BodyTemplateSeq(); // Load Seq Template
+    //     BodyTemplateMenu();
+    // } else if (DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel))) {
+    //     if (DATAOBJ.get(FrankData::outputArp, DATAOBJ.get(FrankData::screenOutputChannel))) {
+    //         BodyTemplateSeq(); // Load Seq Template
 
-            // BodyTemplateArp(); //Load Arp Template
-        } else {
-            BodyTemplateSeq(); // Load Seq Template
+    //         // BodyTemplateArp(); //Load Arp Template
+    //     } else {
+    //         BodyTemplateSeq(); // Load Seq Template
 
-            //  BodyTemplateLive(); //Load Live Template
-        }
-    } else {
-        BodyTemplateSeq(); // Load Seq Template
-    }
+    //         //  BodyTemplateLive(); //Load Live Template
+    //     }
+    // } else {
+    //     BodyTemplateSeq(); // Load Seq Template
+    // }
 }
 
 void Display::BodyTemplateLive() { // has 1 dataFields + GateSignal
     /////Draw the squares/////
+    PRINTLN("template live");
     bufferBody->drawRect(1, 1, 158, 96, BLUE_DARK);
 
     /////Print Text to Field/////
@@ -109,7 +121,7 @@ void Display::BodyTemplateLive() { // has 1 dataFields + GateSignal
 
 void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
     // DataFields
-
+//PRINTLN("template menu");
     for (int x = 0; x < 4; x++) {
         for (int y = 0; y < 2; y++) {
             byte dataField = x + y * 4;       // current DataField
@@ -195,6 +207,9 @@ void Display::BodyTemplateSeq() { // has 2x4 dataFields + PageBar
             } else {
                 bufferBody->setTextColor(BLUE_LIGHT, BLUE); // Note Color GateOff
             }
+
+            PRINT("DataFieldType:");
+            PRINTLN(mapping(dataField));
 
             // Data is NOTE type
             if (mapping(dataField) == NOTE) {

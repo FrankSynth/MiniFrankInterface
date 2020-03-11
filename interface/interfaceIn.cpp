@@ -1,7 +1,7 @@
 #include "interfaceIn.hpp"
 
 // Debug logging
-#define DEBUG 0
+#define DEBUG 1
 
 #if DEBUG == 1
 #define PRINTLN(x) Serial.println(x)
@@ -20,33 +20,29 @@ void controls::encode(byte message) {
     byte id = (byte)(B00001111 & message); // extract Message from ID
 
     if (message & B10000000) { // is a switch?
+        if(message & B00010000){
         push(id, message & B00010000);
-
+        PRINT("Push : ");
+        }   
     } else { // seems to be an encoder
+        PRINT("Encoder : ");
         rotate(id, message & B00010000);
     }
 }
 
 // rotate message
-void controls::rotate(byte id, byte dir) {
-    if (id == 8) { // Control Encoder
-        DATAOBJ.change(GATE, id, dir); //old!!!!!
-    } else if (id == 9) { // Step Encoder
-        DATAOBJ.change(STEP, id, dir); // old!!!!!
-    } else { // Note Encoder
-        DATAOBJ.change(mappingPush(id), id, dir); // old!!!!!
-    }
-}
+void controls::rotate(byte id, byte dir) { 
+    PRINTLN(id);
+    PRINT("Direction: ");
+    PRINTLN(dir);
+    
+    DATAOBJ.change(mapping(id), DATAOBJ.get(FrankData::screenOutputChannel),); }
 
 void controls::push(byte id, byte push) { // switch message
-    if (id == 8) {                        // Control Encoder
-        DATAOBJ.toggle(FrankData::screenConfig);
-    } else if (id == 9) { // Step Encoder
-        DATAOBJ.toggle(FrankData::play);
-    } else { // Note Encoder
-        // DATAOBJ.toggle(mappingPush(id), id); // old!!!!! what does it do?
-        DATAOBJ.toggle(mappingPush(id)); // old!!!!! what does it do?
-    }
+        PRINTLN(id);
+        PRINT("Mapping:");
+        PRINTLN(mappingPush(id));
+    DATAOBJ.toggle(mappingPush(id));
 }
 
 void controls::readSwitches() {
@@ -60,10 +56,17 @@ void controls::readSwitches() {
 
     DATAOBJ.set(FrankData::bpmSync, digitalRead(SWREC));
     DATAOBJ.set(FrankData::screenOutputChannel, digitalRead(SWSEQ));
-    DATAOBJ.set(FrankData::rec,digitalRead(SWREC));
+    DATAOBJ.set(FrankData::rec, digitalRead(SWREC));
 }
 
 void controls::readSync() { DATAOBJ.set(FrankData::bpmSync, digitalRead(SWSYNC)); }
 void controls::readRec() { DATAOBJ.set(FrankData::bpmSync, digitalRead(SWREC)); }
 
 void controls::readSeq() { DATAOBJ.set(FrankData::screenOutputChannel, digitalRead(SWSEQ)); }
+
+
+void controls::readBPMSpeed(){
+    
+//PRINTLN("Speed:");
+//PRINTLN(analogRead(BPMPOT));
+}
