@@ -1,5 +1,10 @@
 BasedOnStyle: LLVM
 IndentWidth: 4
-ColumnLimit: 120
-AllowShortFunctionsOnASingleLine: All
+ColumnLimit: 150
+AllowShortFunctionsOnASingleLine: Inline
 AllowShortCaseLabelsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: Always
+
+BreakBeforeBraces: Custom
+BraceWrapping:
+  BeforeElse: true
