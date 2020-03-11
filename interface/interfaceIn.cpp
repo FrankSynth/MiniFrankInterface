@@ -29,24 +29,11 @@ void controls::encode(byte message) {
 
 // rotate message
 void controls::rotate(byte id, byte dir) {
-    if (id == 8) { // Control Encoder
-        DATAOBJ.change(GATE, id, dir); //old!!!!!
-    } else if (id == 9) { // Step Encoder
-        DATAOBJ.change(STEP, id, dir); // old!!!!!
-    } else { // Note Encoder
-        DATAOBJ.change(mappingPush(id), id, dir); // old!!!!!
-    }
+    DATAOBJ.change(mappingPush(id), id, dir); 
 }
 
 void controls::push(byte id, byte push) { // switch message
-    if (id == 8) {                        // Control Encoder
-        DATAOBJ.toggle(FrankData::screenConfig);
-    } else if (id == 9) { // Step Encoder
-        DATAOBJ.toggle(FrankData::play);
-    } else { // Note Encoder
-        // DATAOBJ.toggle(mappingPush(id), id); // old!!!!! what does it do?
-        DATAOBJ.toggle(mappingPush(id)); // old!!!!! what does it do?
-    }
+    DATAOBJ.toggle(mappingPush(id));
 }
 
 void controls::readSwitches() {

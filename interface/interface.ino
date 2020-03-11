@@ -63,7 +63,7 @@ void setup() {
     pinMode(5, OUTPUT);
     digitalWrite(5, LOW);
 
-    // lcd.init();
+     lcd.displayBrightness(200);
 
     initMidi();
     initMiddleman();

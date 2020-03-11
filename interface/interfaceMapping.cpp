@@ -98,3 +98,12 @@ FrankData::frankData mappingPush(byte input) {
     }
     return FrankData::none;
 }
+
+
+
+
+    if (id == 8) {                        // Control Encoder
+        DATAOBJ.toggle(FrankData::screenConfig);
+    } else if (id == 9) { /                 / Step Encoder
+        DATAOBJ.toggle(FrankData::play);
+    } else { // Note Encoder
