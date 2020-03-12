@@ -1055,7 +1055,6 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
     case stepArp:
     case nbPages:
 
-    case outputChannel:
     case outputArpRatchet:
     case seqRatchet:
 
@@ -1065,6 +1064,14 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
     case liveSustain:
 
     case liveTriggered: setStr(toStr(get(frankDataType, stat.screen.channel))); break;
+    case outputChannel:
+        if (outputChannel == 0) {
+            setStr("All");
+        }
+        else {
+            setStr(toStr(get(frankDataType, stat.screen.channel)));
+        }
+        break;
     case outputArpOctave: setStr(toStr(((int)get(frankDataType, stat.screen.channel)) - ARPOCTAVECENTEROFFSET)); break;
     case seqGateLengthOffset: setStr(toStr(((int)get(frankDataType, stat.screen.channel)) - GATELENGTHOFFSET)); break;
 
