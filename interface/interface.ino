@@ -120,14 +120,14 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(SWREC), ISRSwitch, CHANGE);
 
     // Set timer interrupt (display refresh)
-    // myTimer.begin(updateDisplay, 40000); // display refresh
+    myTimer.begin(updateDisplay, 40000); // display refresh
 }
 
 void loop() {
 
     // GETDATAOBJ
     // NEW Midi Signal
-    // updateMidi();
+    updateMidi();
     //   Read uC UART Data
     while (Serial3.available()) {
         readSerial3();
@@ -147,7 +147,6 @@ void loop() {
     // activate middleman
     //updateAllOutputs();
     cntrl.readBPMSpeed();
-
 }
 
 void ISRSwitch() {
