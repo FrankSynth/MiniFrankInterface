@@ -1063,17 +1063,17 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
     case liveAftertouch:
     case liveSustain:
 
-    case liveTriggered: setStr(toStr(get(frankDataType, stat.screen.channel))); break;
+    case liveTriggered: setStr(toStr(get(frankDataType, channel))); break;
     case outputChannel:
-        if (stat.screen.channel == 0) {
+        if (config.routing[channel] == 0) {
             setStr("All");
         }
         else {
-            setStr(toStr(get(frankDataType, stat.screen.channel)));
+            setStr(toStr(get(frankDataType, channel)));
         }
         break;
-    case outputArpOctave: setStr(toStr(((int)get(frankDataType, stat.screen.channel)) - ARPOCTAVECENTEROFFSET)); break;
-    case seqGateLengthOffset: setStr(toStr(((int)get(frankDataType, stat.screen.channel)) - GATELENGTHOFFSET)); break;
+    case outputArpOctave: setStr(toStr(((int)get(frankDataType, channel)) - ARPOCTAVECENTEROFFSET)); break;
+    case seqGateLengthOffset: setStr(toStr(((int)get(frankDataType, channel)) - GATELENGTHOFFSET)); break;
 
     case screenRouting:
     case screenCal:
@@ -1099,12 +1099,12 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
 
     case outputSource:
 
-        if (config.routing[stat.screen.channel].outSource == 0) {
+        if (config.routing[channel].outSource == 0) {
             setStr("Midi");
         }
-        else if (config.routing[stat.screen.channel].outSource <= OUTPUTS) {
+        else if (config.routing[channel].outSource <= OUTPUTS) {
 
-            itoa((int)config.routing[stat.screen.channel].outSource, tempStr, 10);
+            itoa((int)config.routing[channel].outSource, tempStr, 10);
 
             tempStr[3] = tempStr[0];
             tempStr[0] = 'S';
@@ -1178,36 +1178,36 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
         }
         break;
 
-    case liveLatestKey: setStr(toStr(getKeyLatest(stat.screen.channel).note)); break;
-    case liveLowestKey: setStr(toStr(getKeyLowest(stat.screen.channel).note)); break;
-    case liveHighestKey: setStr(toStr(getKeyHighest(stat.screen.channel).note)); break;
+    case liveLatestKey: setStr(toStr(getKeyLatest(channel).note)); break;
+    case liveLowestKey: setStr(toStr(getKeyLowest(channel).note)); break;
+    case liveHighestKey: setStr(toStr(getKeyHighest(channel).note)); break;
     case liveKeyNoteEvaluated:
-        if (liveMidi[stat.screen.channel].keysPressed()) {
-            setStr(toStr(getLiveKeyEvaluated(stat.screen.channel).note));
+        if (liveMidi[channel].keysPressed()) {
+            setStr(toStr(getLiveKeyEvaluated(channel).note));
         }
         else {
             setStr("-");
         }
         break;
     case liveKeyVelEvaluated:
-        if (liveMidi[stat.screen.channel].keysPressed()) {
-            setStr(toStr(getLiveKeyEvaluated(stat.screen.channel).velocity));
+        if (liveMidi[channel].keysPressed()) {
+            setStr(toStr(getLiveKeyEvaluated(channel).velocity));
         }
         else {
             setStr("-");
         }
         break;
     case liveKeyArpNoteEvaluated:
-        if (liveMidi[stat.screen.channel].keysPressed()) {
-            setStr(toStr(getArpKeyEvaluated(stat.screen.channel).note));
+        if (liveMidi[channel].keysPressed()) {
+            setStr(toStr(getArpKeyEvaluated(channel).note));
         }
         else {
             setStr("-");
         }
         break;
     case liveKeyArpVelEvaluated:
-        if (liveMidi[stat.screen.channel].keysPressed()) {
-            setStr(toStr(getArpKeyEvaluated(stat.screen.channel).velocity));
+        if (liveMidi[channel].keysPressed()) {
+            setStr(toStr(getArpKeyEvaluated(channel).velocity));
         }
         else {
             setStr("-");
@@ -1227,7 +1227,7 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
     case outputCcEvaluated: setStr(toStr(getLiveCcEvaluated(channel))); break;
 
     case outputLiveMode:
-        switch (config.routing[stat.screen.channel].liveMidiMode) {
+        switch (config.routing[channel].liveMidiMode) {
         case 0: setStr("Late"); break;
         case 1: setStr("Low"); break;
         case 2: setStr("High"); break;
@@ -1236,7 +1236,7 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
         break;
 
     case stepSpeed:
-        switch (config.routing[stat.screen.channel].stepSpeed) {
+        switch (config.routing[channel].stepSpeed) {
         case 0: setStr("1/16"); break;
         case 1: setStr("1/8"); break;
         case 2: setStr("1/4"); break;
@@ -1247,7 +1247,7 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
         }
         break;
     case outputClock:
-        switch (config.routing[stat.screen.channel].clockSpeed) {
+        switch (config.routing[channel].clockSpeed) {
         case 0: setStr("1/16"); break;
         case 1: setStr("1/8"); break;
         case 2: setStr("1/4"); break;
