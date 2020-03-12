@@ -1110,7 +1110,7 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
         break;
 
     case midiSource:
-        switch (config.routing[channel].outSource) {
+        switch (config.midiSource) {
         case 0: setStr("DIN"); break;
         case 1: setStr("USB"); break;
         default: setStr("ERR");
