@@ -40,7 +40,9 @@ void controls::rotate(byte id, byte dir) {
 
     FrankData::frankData mappedID = mapping(id);
 
-    id = id + DATAOBJ.get(FrankData::activePage, DATAOBJ.get(FrankData::screenOutputChannel)) * 8;
+    id = id + DATAOBJ.get(FrankData::activePage,
+                          DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1) *
+                  8;
 
     Serial.println(mappedID);
     switch (mappedID) {
@@ -50,10 +52,10 @@ void controls::rotate(byte id, byte dir) {
     case CV:
 
         if (dir) {
-            DATAOBJ.increase(mappedID, DATAOBJ.get(FrankData::screenOutputChannel), id);
+            DATAOBJ.increase(mappedID, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1, id);
         }
         else {
-            DATAOBJ.decrease(mappedID, DATAOBJ.get(FrankData::screenOutputChannel), id);
+            DATAOBJ.decrease(mappedID, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1, id);
         }
         break;
 
@@ -62,10 +64,10 @@ void controls::rotate(byte id, byte dir) {
     case GATELENGTH:
 
         if (dir) {
-            DATAOBJ.change(mappedID, 2, DATAOBJ.get(FrankData::screenOutputChannel), id);
+            DATAOBJ.change(mappedID, 2, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1, id);
         }
         else {
-            DATAOBJ.change(mappedID, -2, DATAOBJ.get(FrankData::screenOutputChannel), id);
+            DATAOBJ.change(mappedID, -2, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1, id);
         }
         break;
 
@@ -84,10 +86,10 @@ void controls::rotate(byte id, byte dir) {
     case FrankData::seqTuning:
 
             if (dir) {
-            DATAOBJ.increase(mappedID, DATAOBJ.get(FrankData::screenOutputChannel));
+            DATAOBJ.increase(mappedID, (byte)(DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1));
         }
         else {
-            DATAOBJ.decrease(mappedID, DATAOBJ.get(FrankData::screenOutputChannel));
+            DATAOBJ.decrease(mappedID, (byte)(DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1));
         }
 
         break;
@@ -96,10 +98,11 @@ void controls::rotate(byte id, byte dir) {
     case FrankData::seqGateLengthOffset:
 
         if (dir) {
-            DATAOBJ.change(mappedID, 2, DATAOBJ.get(FrankData::screenOutputChannel));
+            DATAOBJ.change(mappedID, 2,
+                           (byte)(DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1));
         }
         else {
-            DATAOBJ.change(mappedID, -2, DATAOBJ.get(FrankData::screenOutputChannel));
+            DATAOBJ.change(mappedID, -2, (byte)(DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1));
         }
         break;
 
