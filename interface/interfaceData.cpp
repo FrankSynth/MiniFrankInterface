@@ -623,7 +623,7 @@ void FrankData::seqSetAllGates(const byte &array, const byte &data) {
 void FrankData::seqSetAllGateLengths(const byte &array, const byte &data) {
     seq[array].setGateLengths(data);
 }
-void FrankData::seqResetGateLengths(const byte &array) {
+void FrankData::seqResetAllGateLengths(const byte &array) {
     seq[array].setGateLengths(50);
 }
 void FrankData::seqOctaveUp(const byte &array) {
@@ -633,10 +633,10 @@ void FrankData::seqOctaveDown(const byte &array) {
     seq[array].octaveDown();
 }
 
-void FrankData::seqResetNote(const byte &array) {
+void FrankData::seqResetAllNotes(const byte &array) {
     seq[array].setNotes(0);
 }
-void FrankData::seqResetGate(const byte &array) {
+void FrankData::seqResetAllGates(const byte &array) {
     seq[array].setGateLengths(50);
     seq[array].setGates(1);
 }
@@ -939,6 +939,11 @@ void FrankData::toggle(const frankData &frankDataType) {
         stat.screen.mainMenu = 0;
         stat.screen.calibrateNote = 1;
         break;
+
+    case seqResetGates: seqResetAllGates(stat.screen.config); break;
+    case seqResetNotes: seqResetAllNotes(stat.screen.config); break;
+    case seqResetGateLengths: seqResetAllGateLengths(stat.screen.config); break;
+
     case none: break;
     default: PRINTLN("FrankData toggle(frankData frankDataType), no case found");
     }
@@ -1078,8 +1083,9 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
     case screenRouting:
     case screenCal:
     case screenCalNote:
-    case seqResetNotes:
-    case seqResetGates: setStr("@"); break;
+    case seqResetGates:
+    case seqResetGateLengths:
+    case seqResetNotes: setStr("@"); break;
 
     case screenOutputChannel:
     case screenConfig:

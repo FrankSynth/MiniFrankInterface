@@ -237,6 +237,7 @@ class FrankData {
         activePage,
         seqResetNotes,
         seqResetGates,
+        seqResetGateLengths,
         stepOnPage,
         currentPageNumber,
 
@@ -362,9 +363,9 @@ class FrankData {
     void seqSetAllGates(const byte &array, const byte &data);
     void seqSetAllCC(const byte &array, const byte &data);
     void seqSetAllGateLengths(const byte &array, const byte &data);
-    void seqResetGateLengths(const byte &array);
-    void seqResetNote(const byte &array);
-    void seqResetGate(const byte &array);
+    void seqResetAllGateLengths(const byte &array);
+    void seqResetAllNotes(const byte &array);
+    void seqResetAllGates(const byte &array);
     void seqResetCC(const byte &array);
     void seqOctaveUp(const byte &array);
     void seqOctaveDown(const byte &array);
