@@ -41,6 +41,8 @@ void controls::rotate(byte id, byte dir) {
 
         FrankData::frankData mappedID = mapping(id);
 
+
+    id = id + DATAOBJ.get(FrankData::activePage , DATAOBJ.get(FrankData::screenOutputChannel)) * 8;
     Serial.println(mappedID);
     switch(mappedID){
         
