@@ -746,7 +746,7 @@ byte FrankData::get(const frankData &frankDataType, const byte &array) {
     case stepArp: return stat.stepArp[array];
     case stepSeq: return stat.stepSeq[array];
     case stepSpeed: return config.routing[array].stepSpeed;
-    case activePage: return (stat.stepSeq[array] / STEPSPERPAGE);
+    case activePage: return (byte)((float)stat.stepSeq[array] / (float)STEPSPERPAGE);
     case stepOnPage: return (stat.stepSeq[array] - (get(activePage, array) * STEPSPERPAGE));
     case currentPageNumber: return getCurrentPageNumber(array);
 
@@ -1055,7 +1055,6 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
     case stepArp:
     case nbPages:
 
-    case outputChannel:
     case outputArpRatchet:
     case seqRatchet:
 
@@ -1065,6 +1064,14 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
     case liveSustain:
 
     case liveTriggered: setStr(toStr(get(frankDataType, stat.screen.channel))); break;
+    case outputChannel:
+        if (outputChannel == 0) {
+            setStr("All");
+        }
+        else {
+            setStr(toStr(get(frankDataType, stat.screen.channel)));
+        }
+        break;
     case outputArpOctave: setStr(toStr(((int)get(frankDataType, stat.screen.channel)) - ARPOCTAVECENTEROFFSET)); break;
     case seqGateLengthOffset: setStr(toStr(((int)get(frankDataType, stat.screen.channel)) - GATELENGTHOFFSET)); break;
 
