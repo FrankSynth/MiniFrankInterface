@@ -112,18 +112,19 @@ class PressedNotesElement {
 
 class PressedNotesList {
   public:
+    int size = 0;
+
     PressedNotesElement *pressedNoteElement = NULL;
     void appendKey(const byte &note, const byte &velocity);
     void deleteKey(const byte &note);
     void deleteAllKeys();
     bool containsElements();
+
     PressedNotesElement *getKeyHighest();
     PressedNotesElement *getKeyLowest();
     PressedNotesElement *getKeyLatest();
 
-    PressedNotesElement *getElement(const byte &element);
-
-    int size = 0;
+    PressedNotesElement *getElement(const byte &eleme2nt);
 };
 
 // save live midi data
@@ -142,8 +143,9 @@ class LiveMidi {
     structKey arpArray[NOTERANGE];
 
     LiveMidi() {
-        keyPressed(0,0);
-        keyReleased(0);
+        // initialiye with a default key
+        keyPressed(24,0);
+        keyReleased(24);
     }
 
     void keyPressed(const byte &note, const byte &velocity);
@@ -293,7 +295,6 @@ class FrankData {
         liveLatestKey,
         liveHighestKey,
         liveLowestKey,
-        // liveKeysPressed,
     };
 
     // idea for further enumerators
