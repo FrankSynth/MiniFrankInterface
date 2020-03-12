@@ -36,7 +36,7 @@
 #define WHITE ST77XX_WHITE
 #define RED ST77XX_RED
 //#define GREEN      ST77XX_GREEN
-#define BLUE       ST77XX_BLUE
+//#define BLUE       ST77XX_BLUE
 #define CYAN ST77XX_CYAN
 #define MAGENTA ST77XX_MAGENTA
 #define YELLOW ST77XX_YELLOW
@@ -101,6 +101,11 @@ class Display {
     void drawHead();
     void drawFoot();
     void drawBody();
+
+
+    void FootLive();
+    void FootSeq();
+
 
     // Templates
     void BodyTemplateSeq();

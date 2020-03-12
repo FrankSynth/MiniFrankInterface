@@ -136,14 +136,16 @@ void loop() {
     // Temp Clock
     static long timer = 0;
     if (millis() - timer > 250) {
-        DATAOBJ.increase(FrankData::stepSeq);
+        DATAOBJ.increase(FrankData::stepSeq, (byte)0);
+        DATAOBJ.increase(FrankData::stepSeq, (byte)1);
+
      //   PRINT("Step: ");
       //  PRINTLN(DATAOBJ.get(FrankData::stepSeq));
         timer = millis();
     }
 
     // activate middleman
-    updateAllOutputs();
+    //updateAllOutputs();
     cntrl.readBPMSpeed();
 }
 

@@ -30,7 +30,7 @@ class OutputRouting {
     byte nbPages;      // nb Pages  1 -> 8
 
     OutputRouting() {
-        this->outSource = 0;
+        this->outSource = 1;
         this->channel = 0;
         this->seq = 0;
         this->arp = 0;
@@ -41,7 +41,7 @@ class OutputRouting {
         this->arpRatchet = 0;
         this->arpOctaves = 3;
         this->stepSpeed = 2;
-        this->nbPages = 8;
+        this->nbPages = 1;
     }
 };
 
@@ -67,7 +67,7 @@ typedef struct {
     byte midiSource = 1; // active MidiDevice (usb -> 1, din -> 0)
 
     byte direction = 1;             // 0 -> reverse ; 1 -> forward
-    byte displayBrightness = 100;   // 0-255;
+    byte displayBrightness = 200;   // 0-255;
     OutputRouting routing[OUTPUTS]; // hold settings for that many outputs
 
 } structSettings;
@@ -76,14 +76,14 @@ typedef struct {
 typedef struct {
     byte channel = 0;       // active channel, 0-> Channel 1, 1-> Channel 2
     byte config = 0;        // display config, 0-> off, 1-> on
-    byte mainMenu = 1;      // display Main Menu, 0-> off, 1-> on
+    byte mainMenu = 0;      // display Main Menu, 0-> off, 1-> on
     byte subscreen = 0;     // subscreen -> current displayed screen .. note, gate, cv (seq) ; live, appregiator (live)
     byte calibration = 0;   // calibration screen
     byte calibrateNote = 0; // Note calibration screen
     byte routing = 0;       // routing screen
 
     const byte subScreenMaxSeq = 2;  // Number of subscreens for seq mode
-    const byte subScreenMaxLive = 1; // Number of subscreens for live mode
+    const byte subScreenMaxLive = 0; // Number of subscreens for live mode
 } structScreen;
 
 // all Settings that don't need to be saved permanently
@@ -93,7 +93,7 @@ typedef struct {
     byte loadSaveSlot = 1; // laod save 1-10
 
     int bpm = 0;    // current bpm
-    byte play = 0;  // play stop
+    byte play = 1;  // play stop
     byte rec = 0;   // Rec Active
     byte error = 0; // ErrorFlag
 
@@ -391,11 +391,11 @@ class FrankData {
     byte get(const frankData &frankDataType, const byte &array, const byte &step);
 
     // set single type value
-    void set(const frankData &frankDataType, const byte &data, const bool &clampChange = 0);
+    void set(const frankData &frankDataType, const int &data, const bool &clampChange = 0);
     // set value prat of an array
-    void set(const frankData &frankDataType, const byte &data, const byte &array, const bool &clampChange = 0);
+    void set(const frankData &frankDataType, const int &data, const byte &array, const bool &clampChange = 0);
     // set value for certain step
-    void set(const frankData &frankDataType, const byte &data, const byte &array, const byte &step,
+    void set(const frankData &frankDataType, const int &data, const byte &array, const byte &step,
              const bool &clampChange = 0);
     // toggle what can be toggled
     void toggle(const frankData &frankdataType);
@@ -417,6 +417,13 @@ class FrankData {
     const char *getNameAsStr(const frankData &frankDataType);
     const char *getValueAsStr(const frankData &frankDataType);
     const char *getValueAsStr(const frankData &frankDataType, const byte &step);
+    const char *getValueAsStrChannel(const frankData &frankDataType, const byte channel );
+    const char *ValueToStr(const frankData frankDataType, const byte channel);
+
+
+
+
+
 
     // singleton
     static FrankData &getDataObj();
@@ -426,7 +433,7 @@ class FrankData {
 };
 
 // utility
-inline byte testByte(const byte &value, const byte &minimum, const byte &maximum = 255,
+inline byte testByte(const int &value, const byte &minimum, const byte &maximum = 255,
                      const bool &clampChange = 0);                // test byte range and return valid byte
 inline byte increaseByte(const byte &value, const byte &maximum); // increase byte
 inline byte decreaseByte(const byte &value, const byte &minimum); // decrease byte

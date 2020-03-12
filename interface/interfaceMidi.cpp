@@ -15,7 +15,7 @@
 #define PRINT2(x, y)
 #endif
 
-MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI); // Which serial???
+MIDI_CREATE_INSTANCE(HardwareSerial, Serial4, MIDI); // Which serial???
 
 // callback handles
 void midiNoteOn(const byte &channel, const byte &note, const byte &velocity);
