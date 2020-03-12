@@ -1345,7 +1345,7 @@ inline byte decreaseByte(const byte &value, const byte &minimum) {
 }
 
 // change byte value and check boundaries
-inline byte changeByte(const int &value, const byte &change, const byte &minimum, const byte &maximum, const bool &clampChange) {
+inline byte changeByte(const byte &value, const int &change, const byte &minimum, const byte &maximum, const bool &clampChange) {
 
     if ((int)value + change >= maximum) { // test max
 
