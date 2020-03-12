@@ -29,11 +29,13 @@
 #define YELLOW ST77XX_YELLOW
 #define ORANGE ST77XX_ORANGE
 
-#define BLACKBLUE 0x0410  // Schwarz Blau
-#define BLUE_LIGHT 0x94B2 // Hell Blau
-#define BLUE 0x39E7       // Blau
-#define BLUE_DARK 0x2965  // Dunkel Blau
+#define GREYWHITE 0x94B2  // Hell Blau
+#define GREY 0x39E7       
 #define GREEN 0x4208      // Grün
+#define COLORTHEME 0x230E
+#define DARKGREY 0x2965
+
+#define BACKGROUND 0x39E7
 
 ///  A 16-bit double buffer from the adafruit canvas
 class DispBuffer16 : public Adafruit_GFX {

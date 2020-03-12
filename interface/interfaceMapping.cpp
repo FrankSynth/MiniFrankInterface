@@ -17,7 +17,16 @@
 
 
 ////Sequencer////
-FrankData::frankData mappingSeqConfig[] = {FrankData::stepSpeed, FrankData::direction,  NONE,FrankData::seqGateLengthOffset, FrankData::nbPages, NONE, NONE, NONE, SUBSCREEN, STEP};       // CV Config Mapping
+FrankData::frankData mappingSeqConfig[] = {FrankData::stepSpeed,
+                                           FrankData::nbPages,
+                                           FrankData::seqResetNotes,
+                                           FrankData::seqResetGates,
+                                           NONE,
+                                           FrankData::direction,
+                                           FrankData::seqTuning,
+                                           FrankData::seqGateLengthOffset,
+                                           SUBSCREEN,
+                                           STEP}; // CV Config Mapping
 FrankData::frankData mappingSeqConfigPush[] = {NONE, FrankData::direction, NONE, NONE, NONE, NONE, NONE, NONE, MENU, PLAY};         // GATE Mapping Push
 
 FrankData::frankData mappingSeqNote[] = {NOTE, NOTE, NOTE, NOTE, NOTE, NOTE, NOTE, NOTE, SUBSCREEN, STEP};             // NOTE Mapping  Rotary
@@ -35,17 +44,36 @@ FrankData::frankData mappingLivePush[] = {FrankData::outputArp, NONE, NONE, NONE
 
 
 FrankData::frankData mappingLiveArp[] = {FrankData::outputArp, FrankData::outputArpOctave, NONE, NONE, FrankData::outputArpRatchet, FrankData::outputClock, NONE, NONE, NONE, STEP};       // Live Arp Mapping
-FrankData::frankData mappingLiveArpPush[] = {FrankData::outputArp, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, MENU, PLAY};       // Live Arp Mapping Push
+FrankData::frankData mappingLiveArpPush[] = {
+    FrankData::outputArp, NONE, NONE, NONE, NONE, NONE, NONE,  NONE, MENU, PLAY}; // Live Arp Mapping Push
 
 ////MENU////
 
-FrankData::frankData mappingMenu[] = {FrankData::load /*LOAD*/, FrankData::save /*SAVE*/, FrankData::screenRouting/*RoutingMenu*/, FrankData::screenCal /*CalibrationMenu*/,FrankData::outputClock /*CLK1*/, FrankData::outputClock /*CLK2*/, FrankData::pulseLength /*CLKLength*/, FrankData::displayBrightness, NONE, STEP};  // Menu Mapping
+FrankData::frankData mappingMenu[] = {FrankData::load /*LOAD*/,
+                                      FrankData::save /*SAVE*/,
+                                      FrankData::screenRouting /*RoutingMenu*/,
+                                      FrankData::screenCal /*CalibrationMenu*/,
+                                      NONE,
+                                      NONE,
+                                      FrankData::pulseLength /*CLKLength*/,
+                                      FrankData::displayBrightness,
+                                      NONE,
+                                      STEP}; // Menu Mapping
 FrankData::frankData mappingMenuPush[] = {NONE /*LOAD*/, NONE /*SAVE*/, FrankData::screenRouting,  FrankData::screenCal /*CalibrationMenu*/,NONE /*CLK1*/, NONE /*CLK2*/, NONE /*CLKLength*/, NONE, MENU, PLAY};  // Menu Mapping
 
 FrankData::frankData mappingMenuCal[] = {NONE, NONE, NONE, NONE, NONE, NONE, NONE, STEP}; // Routing Menu Mapping
 FrankData::frankData mappingMenuCalPush[] = {NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, MENU, PLAY}; // Routing Menu Mapping
 
-FrankData::frankData mappingMenuRouting[] = {FrankData::outputSource, FrankData::midiSource, FrankData::outputChannel, FrankData::outputCc,FrankData::outputSource, FrankData::midiSource, FrankData::outputChannel, FrankData::outputCc, SUBSCREEN, STEP}; // Routing Menu Mapping
+FrankData::frankData mappingMenuRouting[] = {FrankData::outputSource,
+                                             FrankData::midiSource,
+                                             FrankData::outputChannel,
+                                             FrankData::outputCc,
+                                             FrankData::outputClock,
+                                             NONE,
+                                             NONE,
+                                             NONE,
+                                             SUBSCREEN,
+                                             STEP};                                                           // Routing Menu Mapping
 FrankData::frankData mappingMenuRoutingPush[] = {NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, MENU, PLAY}; // Routing Menu Mapping
 
 ////LIVE////
@@ -74,13 +102,9 @@ FrankData::frankData mapping(byte input) {
     else {  
         if (DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) == 0) {
             if(DATAOBJ.get(FrankData::outputArp, DATAOBJ.get(FrankData::screenOutputChannel)) == 0){
-                if (DATAOBJ.get(FrankData::screenConfig)) return mappingMenuRouting[input];
                 return mappingLive[input];
             }
             else{
-
-                if (DATAOBJ.get(FrankData::screenConfig))
-                    return mappingMenuRouting[input];
                 return mappingLiveArp[input];       
             }
          
@@ -129,19 +153,14 @@ FrankData::frankData mappingPush(byte input) {
     }
     else {
         if (DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) == 0) {
-            if(DATAOBJ.get(FrankData::outputArp, DATAOBJ.get(FrankData::screenOutputChannel)) == 0){
-                if (DATAOBJ.get(FrankData::screenConfig)) return mappingMenuRoutingPush[input];
+            if (DATAOBJ.get(FrankData::outputArp, DATAOBJ.get(FrankData::screenOutputChannel)) == 0) {
                 return mappingLivePush[input];
-            }   
-            else{
-                if (DATAOBJ.get(FrankData::screenConfig))
-                    return mappingLiveConfigPush[input];
-                return mappingMenuRoutingPush[input];       
             }
-         
+            else {
+
+                return mappingLiveArpPush[input];
+            }
         }
-        
-    
 
         // Seq Mode
         else{
@@ -162,7 +181,6 @@ FrankData::frankData mappingPush(byte input) {
 
             }
         }
-        
     }
     return FrankData::none;
 
