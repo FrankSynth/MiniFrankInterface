@@ -237,7 +237,6 @@ class FrankData {
         stepSpeed,
         nbPages,
         stepSeq,
-        stepArp,
         activePage,
         seqResetNotes,
         seqResetGates,
@@ -254,6 +253,7 @@ class FrankData {
         displayBrightness,
 
         // Output Routing Settings, needs value, array
+        stepArp,
         outputSource,
         outputChannel,
         outputArp,

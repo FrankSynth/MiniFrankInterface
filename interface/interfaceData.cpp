@@ -351,8 +351,8 @@ void Seq::increaseNote(const byte &index) { // increase note value and return ne
             default: note++; break;
             }
         }
+        sequence.note[index] = note;
     }
-    sequence.note[index] = note;
 }
 
 void Seq::decreaseNote(const byte &index) { // decrease  note value and return new note
@@ -380,9 +380,8 @@ void Seq::decreaseNote(const byte &index) { // decrease  note value and return n
             default: note--; break;
             }
         }
+        sequence.note[index] = note;
     }
-
-    sequence.note[index] = note;
 }
 
 void Seq::changeNotes(const int &change) { // change note
@@ -581,9 +580,6 @@ structKey FrankData::getArpKeyEvaluated(const byte &array) {
         liveMidi[array].getArpKey(step);
     }
 
-
-
-
     // change octave for next round
     // no octaving
     if (config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET == 0) {
@@ -617,7 +613,7 @@ structKey FrankData::getArpKeyEvaluated(const byte &array) {
 }
 
 inline void FrankData::increaseArpOct(const byte &array) {
-// change octave for next round
+    // change octave for next round
     // no octaving
     if (config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET == 0) {
         liveMidi[array].arpOctave = 0;
@@ -668,18 +664,18 @@ inline void FrankData::decreaseArpOct(const byte &array) {
 inline void FrankData::nextArpStep(const byte &array) {
 
     switch (config.routing[array].arpMode) {
-        case 1: 
+    case 1:
         if (stat.stepArp[array] == 0) decreaseArpOct(array);
         stat.stepArp[array] = changeByteReverse(stat.stepArp[array], -1, 0, liveMidi[array].arpList.size);
         break;
-        case 0:
-        case 3:
-        case 4:
+    case 0:
+    case 3:
+    case 4:
         if (stat.stepArp[array] == liveMidi[array].arpList.size) increaseArpOct(array);
-        stat.stepArp[array] = changeByteReverse(stat.stepArp[array], 1, 0, liveMidi[array].arpList.size); break;
-        case 2:
-        default:;
-
+        stat.stepArp[array] = changeByteReverse(stat.stepArp[array], 1, 0, liveMidi[array].arpList.size);
+        break;
+    case 2:
+    default:;
     }
 }
 
@@ -1060,12 +1056,12 @@ void FrankData::toggle(const frankData &frankDataType) {
         stat.screen.calibrateNote = 1;
         break;
 
-    case seqResetGates: seqResetAllGates(stat.screen.config); break;
-    case seqResetNotes: seqResetAllNotes(stat.screen.config); break;
-    case seqResetGateLengths: seqResetAllGateLengths(stat.screen.config); break;
-    case seqResetCC: seqResetAllCC(stat.screen.config); break;
-    case seqOctaveUp: seqAllOctaveUp(stat.screen.config); break;
-    case seqOctaveDown: seqAllOctaveDown(stat.screen.config); break;
+    case seqResetGates: seqResetAllGates(config.routing[stat.screen.config].outSource - 1); break;
+    case seqResetNotes: seqResetAllNotes(config.routing[stat.screen.config].outSource - 1); break;
+    case seqResetGateLengths: seqResetAllGateLengths(config.routing[stat.screen.config].outSource - 1); break;
+    case seqResetCC: seqResetAllCC(config.routing[stat.screen.config].outSource - 1); break;
+    case seqOctaveUp: seqAllOctaveUp(config.routing[stat.screen.config].outSource - 1); break;
+    case seqOctaveDown: seqAllOctaveDown(config.routing[stat.screen.config].outSource - 1); break;
 
     case none: break;
     default: PRINTLN("FrankData toggle(frankData frankDataType), no case found");
@@ -1170,7 +1166,31 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
 }
 
 const char *FrankData::getValueAsStr(const frankData &frankDataType) {
-    byte channel = stat.screen.channel;
+    byte channel;
+    switch (frankDataType) {
+    case seqResetGates:
+    case seqResetGateLengths:
+    case seqResetCC:
+    case seqOctaveUp:
+    case seqOctaveDown:
+    case seqResetNotes:
+    case seqNote:
+    case seqGate:
+    case seqGateLength:
+    case seqCc:
+    case seqCcEvaluated:
+    case seqSize:
+    case seqRatchet:
+    case seqGateLengthOffset:
+    case stepOnPage:
+    case currentPageNumber:
+    case stepSpeed:
+    case nbPages:
+    case stepSeq:
+    case activePage:
+    case seqVelocity: channel = config.routing[stat.screen.config].outSource - 1;
+    default: channel = stat.screen.channel;
+    }
     return valueToStr(frankDataType, channel);
 }
 
@@ -1407,7 +1427,7 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType, const byte 
     case seqGate:
     case seqGateLength:
     case seqCc:
-    case seqVelocity: setStr(toStr(get(frankDataType, stat.screen.channel, step))); break;
+    case seqVelocity: setStr(toStr(get(frankDataType, config.routing[stat.screen.config].outSource - 1, step))); break;
 
     case noteCal: setStr(toStr(((int)get(frankDataType, stat.screen.channel, step)) - CALOFFSET)); break;
 
