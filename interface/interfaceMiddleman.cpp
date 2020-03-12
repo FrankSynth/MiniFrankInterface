@@ -16,7 +16,7 @@
 #endif
 
 // OUTPUT Channels and clocks
-channel outputChannel[OUTPUTS] = {channel(DAC1, 0, DAC2, 0, TRIGGER1, GATE1), channel(DAC1, 1, DAC2, 1, TRIGGER2, GATE2)};
+Channel outputChannel[OUTPUTS] = {Channel(DAC1, 0, DAC2, 0, TRIGGER1, GATE1), Channel(DAC1, 1, DAC2, 1, TRIGGER2, GATE2)};
 
 clock outputClock[OUTPUTS] = {clock(CLK1), clock(CLK2)};
 

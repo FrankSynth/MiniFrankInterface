@@ -14,9 +14,7 @@
 
 #define DATAOBJ FrankData::getDataObj()
 
-class OutputRouting {
-  public:
-
+typedef struct {
     byte outSource = 0;    // 0 = live, 1 = seq1, 2 = seq2, ...
     byte channel = 0;      // 0 = all, 1 = channel 1, ...
     byte arp = 1;          // 0 = off, 1 = on
@@ -28,10 +26,7 @@ class OutputRouting {
     byte arpOctaves = 3;   // Octaves 0 = -3, 3 = 0, 6 = +3
     byte stepSpeed = 2;    // ArpSeq Sync 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
     byte nbPages = 8;      // nb Pages  1 -> 8
-
-    OutputRouting() {}
-
-};
+} structOutputRouting;
 
 typedef struct {
     float noteCalibration[NOTERANGE];
@@ -56,7 +51,7 @@ typedef struct {
 
     byte direction = 1;             // 0 -> reverse ; 1 -> forward
     byte displayBrightness = 200;   // 0-255;
-    OutputRouting routing[OUTPUTS]; // hold settings for that many outputs
+    structOutputRouting routing[OUTPUTS]; // hold settings for that many outputs
 
 } structSettings;
 
