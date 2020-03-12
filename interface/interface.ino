@@ -127,7 +127,7 @@ void loop() {
 
     // GETDATAOBJ
     // NEW Midi Signal
-    // updateMidi();
+    updateMidi();
     //   Read uC UART Data
     while (Serial3.available()) {
         readSerial3();
@@ -147,7 +147,6 @@ void loop() {
     // activate middleman
     //updateAllOutputs();
     cntrl.readBPMSpeed();
-
 }
 
 void ISRSwitch() {

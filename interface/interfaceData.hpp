@@ -351,6 +351,7 @@ class FrankData {
     byte getNoteCal(const byte &array, const byte &step);
     void setCvCal(const byte &data, const byte &array);
     byte getCvCal(const byte &array);
+    const char *valueToStr(const frankData &frankDataType, const byte &channel);
 
   public:
     inline structKey getLiveKeyEvaluated(const byte &array);
@@ -395,7 +396,6 @@ class FrankData {
     // set value prat of an array
     void set(const frankData &frankDataType, const int &data, const byte &array, const bool &clampChange = 0);
     // set value for certain step
-
     void set(const frankData &frankDataType, const int &data, const byte &array, const byte &step, const bool &clampChange = 0);
 
     // toggle what can be toggled
@@ -417,13 +417,7 @@ class FrankData {
     const char *getNameAsStr(const frankData &frankDataType);
     const char *getValueAsStr(const frankData &frankDataType);
     const char *getValueAsStr(const frankData &frankDataType, const byte &step);
-    const char *getValueAsStrChannel(const frankData &frankDataType, const byte channel );
-    const char *ValueToStr(const frankData frankDataType, const byte channel);
-
-
-
-
-
+    const char *getValueAsStrChannel(const frankData &frankDataType, const byte &channel );
 
     // singleton
     static FrankData &getDataObj();

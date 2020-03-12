@@ -1019,19 +1019,19 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
 
 const char *FrankData::getValueAsStr(const frankData &frankDataType ) {
 byte channel = stat.screen.channel;
-return ValueToStr(frankDataType, channel);
+return valueToStr(frankDataType, channel);
 }
     
 
 
-const char *FrankData::getValueAsStrChannel(const frankData &frankDataType, const byte channel ) {
-return ValueToStr(frankDataType, channel);
+const char *FrankData::getValueAsStrChannel(const frankData &frankDataType, const byte &channel ) {
+return valueToStr(frankDataType, channel);
 }
 
 
 
 
-const char *FrankData::ValueToStr(const frankData frankDataType, const byte channel) {
+const char *FrankData::valueToStr(const frankData &frankDataType, const byte &channel) {
     char tempStr[5];
 
     switch (frankDataType) {
@@ -1110,7 +1110,7 @@ const char *FrankData::ValueToStr(const frankData frankDataType, const byte chan
         break;
 
     case midiSource:
-        switch (config.routing[channel].outSource) {
+        switch (config.midiSource) {
         case 0: setStr("DIN"); break;
         case 1: setStr("USB"); break;
         default: setStr("ERR");
@@ -1197,6 +1197,15 @@ const char *FrankData::ValueToStr(const frankData frankDataType, const byte chan
         break;
 
     case outputCc:
+        switch (channel) {
+        case 0: setStr("Vel"); break;
+        case 1: setStr("Mod"); break;
+        case 2: setStr("PB"); break;
+        case 3: setStr("AftT"); break;
+        case 4: setStr("Sus"); break;
+        default: setStr("ERR"); break;
+        }
+        break;
     case outputCcEvaluated: setStr(toStr(getLiveCcEvaluated(channel))); break;
 
     case outputLiveMode:
