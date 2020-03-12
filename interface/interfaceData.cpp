@@ -915,11 +915,30 @@ void FrankData::toggle(const frankData &frankDataType) {
         config.routing[stat.screen.channel].arp = toggleValue(config.routing[stat.screen.channel].arp);
         updateArp(stat.screen.channel);
         break;
-    case screenMainMenu: stat.screen.mainMenu = toggleValue(stat.screen.mainMenu); break;
+    case screenMainMenu:
+        if (stat.screen.mainMenu) {
+            stat.screen.mainMenu = 0;
+        }
+        else {
+            stat.screen.mainMenu = 1;
+            stat.screen.routing = 0;
+            stat.screen.calibration = 0;
+            stat.screen.calibrateNote = 0;
+        }
+        break;
     case screenConfig: stat.screen.config = toggleValue(stat.screen.config); break;
-    case screenRouting: stat.screen.routing = toggleValue(stat.screen.routing); break;
-    case screenCal: stat.screen.calibration = toggleValue(stat.screen.calibration); break;
-    case screenCalNote: stat.screen.calibrateNote = toggleValue(stat.screen.calibrateNote); break;
+    case screenRouting:
+        stat.screen.mainMenu = 0;
+        stat.screen.routing = 1;
+        break;
+    case screenCal:
+        stat.screen.mainMenu = 0;
+        stat.screen.calibration = 1;
+        break;
+    case screenCalNote:
+        stat.screen.mainMenu = 0;
+        stat.screen.calibrateNote = 1;
+        break;
     case none: break;
     default: PRINTLN("FrankData toggle(frankData frankDataType), no case found");
     }
@@ -1016,20 +1035,14 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
     return returnStr;
 }
 
-
-const char *FrankData::getValueAsStr(const frankData &frankDataType ) {
-byte channel = stat.screen.channel;
-return valueToStr(frankDataType, channel);
-}
-    
-
-
-const char *FrankData::getValueAsStrChannel(const frankData &frankDataType, const byte &channel ) {
-return valueToStr(frankDataType, channel);
+const char *FrankData::getValueAsStr(const frankData &frankDataType) {
+    byte channel = stat.screen.channel;
+    return valueToStr(frankDataType, channel);
 }
 
-
-
+const char *FrankData::getValueAsStrChannel(const frankData &frankDataType, const byte &channel) {
+    return valueToStr(frankDataType, channel);
+}
 
 const char *FrankData::valueToStr(const frankData &frankDataType, const byte &channel) {
     char tempStr[5];
@@ -1060,7 +1073,7 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
     case screenCalNote:
     case seqResetNotes:
     case seqResetGates: setStr("@"); break;
-    
+
     case screenOutputChannel:
     case screenConfig:
     case screenMainMenu:
@@ -1123,7 +1136,6 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
         case 0: setStr("->"); break;
         case 1: setStr("<-"); break;
         default: setStr("ERR");
-
         }
         break;
 
@@ -1158,7 +1170,6 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
         default: setStr("ERR");
         }
         break;
-
 
     case liveLatestKey: setStr(toStr(getKeyLatest(stat.screen.channel).note)); break;
     case liveLowestKey: setStr(toStr(getKeyLowest(stat.screen.channel).note)); break;
@@ -1197,7 +1208,7 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
         break;
 
     case outputCc:
-        switch (channel) {
+        switch (config.routing[channel].cc) {
         case 0: setStr("Vel"); break;
         case 1: setStr("Mod"); break;
         case 2: setStr("PB"); break;
@@ -1218,7 +1229,7 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
         break;
 
     case stepSpeed:
-    switch (config.routing[stat.screen.channel].stepSpeed) {
+        switch (config.routing[stat.screen.channel].stepSpeed) {
         case 0: setStr("1/16"); break;
         case 1: setStr("1/8"); break;
         case 2: setStr("1/4"); break;
