@@ -512,18 +512,6 @@ inline void FrankData::calcBPM() {
     }
 }
 
-inline void FrankData::increaseArpStep(const byte &array) {
-    if (stat.stepArp[array] >= liveMidi[array].arpList.size) {
-        stat.stepArp[array] = 0;
-    }
-}
-
-inline void FrankData::decreaseArpStep(const byte &array) {
-    if (stat.stepArp[array] == 0) {
-        stat.stepArp[array] = liveMidi[array].arpList.size;
-    }
-}
-
 inline void FrankData::increaseSeqStep(const byte &array) {
     if (!((stat.stepSeq[array] + 1) % STEPSPERPAGE)) {                                     // if we make a pageJump
         if (config.routing[array].nbPages <= ((stat.stepSeq[array] + 1) / STEPSPERPAGE)) { // newPage above number of pages
@@ -581,17 +569,23 @@ inline structKey FrankData::getLiveKeyEvaluated(const byte &array) {
 
 structKey FrankData::getArpKeyEvaluated(const byte &array) {
     byte step = stat.stepArp[array];
+    structKey key;
     static int octave = 0;
+
     if (config.routing[array].arpMode == 4) {
+        step = random(0, liveMidi[array].arpList.size);
+        key = liveMidi[array].getArpKey(step);
     }
 
     else {
         liveMidi[array].getArpKey(step);
     }
 
-    // change octave for next round
 
-    // 0
+
+
+    // change octave for next round
+    // no octaving
     if (config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET == 0) {
         octave = 0;
     }
@@ -619,7 +613,74 @@ structKey FrankData::getArpKeyEvaluated(const byte &array) {
         }
     }
 
-    return liveMidi[array].getArpKey(step);
+    return key;
+}
+
+inline void FrankData::increaseArpOct(const byte &array) {
+// change octave for next round
+    // no octaving
+    if (config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET == 0) {
+        liveMidi[array].arpOctave = 0;
+    }
+    else {
+        // eval new min and max
+        int newOctMin;
+        int newOctMax;
+
+        if (config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET < 0) {
+            newOctMin = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET;
+            newOctMax = 0;
+        }
+        else {
+            newOctMin = 0;
+            newOctMax = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET;
+        }
+
+        // down
+        liveMidi[array].arpOctave = changeIntReverse(liveMidi[array].arpOctave, -1, newOctMin, newOctMax);
+    }
+}
+
+inline void FrankData::decreaseArpOct(const byte &array) {
+    // no octaving
+    if (config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET == 0) {
+        liveMidi[array].arpOctave = 0;
+    }
+    else {
+        // eval new min and max
+        int newOctMin;
+        int newOctMax;
+
+        if (config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET < 0) {
+            newOctMin = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET;
+            newOctMax = 0;
+        }
+        else {
+            newOctMin = 0;
+            newOctMax = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET;
+        }
+
+        // up
+        liveMidi[array].arpOctave = changeIntReverse(liveMidi[array].arpOctave, 1, newOctMin, newOctMax);
+    }
+}
+
+inline void FrankData::nextArpStep(const byte &array) {
+
+    switch (config.routing[array].arpMode) {
+        case 1: 
+        if (stat.stepArp[array] == 0) decreaseArpOct(array);
+        stat.stepArp[array] = changeByteReverse(stat.stepArp[array], -1, 0, liveMidi[array].arpList.size);
+        break;
+        case 0:
+        case 3:
+        case 4:
+        if (stat.stepArp[array] == liveMidi[array].arpList.size) increaseArpOct(array);
+        stat.stepArp[array] = changeByteReverse(stat.stepArp[array], 1, 0, liveMidi[array].arpList.size); break;
+        case 2:
+        default:;
+
+    }
 }
 
 inline structKey FrankData::getKeyHighest(const byte &array) {

@@ -138,6 +138,7 @@ class LiveMidi {
     byte triggered = 0;
     byte arpDirection = 0;
     byte arpRetrigger = 0;
+    byte arpOctave = 0;
     structKey lastKey;
     PressedNotesList arpList;
     structKey arpArray[NOTERANGE];
@@ -341,8 +342,10 @@ class FrankData {
     inline void calcBPM();
     inline void increaseSeqStep(const byte &array);
     inline void decreaseSeqStep(const byte &array);
-    inline void increaseArpStep(const byte &array);
-    inline void decreaseArpStep(const byte &array);
+    inline void nextArpStep(const byte &array);
+    inline void increaseArpOct(const byte &array);
+    inline void decreaseArpOct(const byte &array);
+    
     inline byte getCurrentPageNumber(const byte &array);
     inline const byte getSubscreenMax();
     inline byte getLiveCcEvaluated(const byte &array);
