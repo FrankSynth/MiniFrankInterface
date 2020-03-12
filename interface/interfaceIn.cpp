@@ -30,14 +30,123 @@ void controls::encode(byte message) {
     }
 }
 
+
+
 // rotate message
 void controls::rotate(byte id, byte dir) { 
     PRINTLN(id);
     PRINT("Direction: ");
     PRINTLN(dir);
-    
-    DATAOBJ.change(mapping(id), DATAOBJ.get(FrankData::screenOutputChannel)); }
+        Serial.print("mapping: ");
 
+        FrankData::frankData mappedID = mapping(id);
+
+    Serial.println(mappedID);
+    switch(mappedID){
+        
+        
+        //TYPE,Channel,Index;
+        case NOTE :
+        case CV :
+
+            if(dir){
+                DATAOBJ.increase(mappedID, DATAOBJ.get(FrankData::screenOutputChannel), id); 
+            }
+            else{
+                DATAOBJ.decrease(mappedID, DATAOBJ.get(FrankData::screenOutputChannel), id); 
+            }
+            break;
+
+
+        //TYPE,Channel,Index;  DoubleStep
+
+        case GATELENGTH :
+
+            if(dir){
+                DATAOBJ.change(mappedID, 2, DATAOBJ.get(FrankData::screenOutputChannel), id); 
+            }
+            else{
+                DATAOBJ.change(mappedID, -2, DATAOBJ.get(FrankData::screenOutputChannel), id); 
+            }
+            break;
+
+        //Type, Channel;
+        case FrankData::nbPages:
+        case FrankData::stepSpeed:
+        case FrankData::outputArpOctave:
+        case FrankData::outputClock:
+        case FrankData::outputArpRatchet:
+      
+
+                    if(dir){
+                        DATAOBJ.increase(mappedID, DATAOBJ.get(FrankData::screenOutputChannel)); 
+                    }
+                    else{
+                        DATAOBJ.decrease(mappedID, DATAOBJ.get(FrankData::screenOutputChannel)); 
+                    }
+
+                    break;
+
+        //Type, Channel; DoubleStep
+        case  FrankData::seqGateLengthOffset:
+
+
+            if(dir){
+                DATAOBJ.change(mappedID, 2, DATAOBJ.get(FrankData::screenOutputChannel)); 
+            }
+            else{
+                DATAOBJ.change(mappedID, -2, DATAOBJ.get(FrankData::screenOutputChannel)); 
+            }
+            break;
+
+
+
+
+
+
+
+
+        case SUBSCREEN:
+            if(dir){
+
+            if(DATAOBJ.get(SUBSCREEN) == 0 && DATAOBJ.get(FrankData::screenConfig) == 1){
+                DATAOBJ.toggle(FrankData::screenConfig);
+            }
+            else{
+            DATAOBJ.increase(SUBSCREEN); 
+
+            }
+            }
+            else{
+
+                if(DATAOBJ.get(FrankData::screenSubScreen) == 0 && DATAOBJ.get(FrankData::screenConfig )== 0){
+                    DATAOBJ.toggle(FrankData::screenConfig);
+                }
+                else{
+                DATAOBJ.decrease(FrankData::screenSubScreen); 
+
+                }
+            }
+            break;
+
+
+
+
+
+        //Type;
+        default:    if(dir){
+                        DATAOBJ.increase(mappedID); 
+                    }
+                    else{
+                        DATAOBJ.decrease(mappedID); 
+                    }
+
+        
+   
+
+
+    }
+}
 void controls::push(byte id, byte push) { // switch message
         PRINTLN(id);
         PRINT("Mapping:");

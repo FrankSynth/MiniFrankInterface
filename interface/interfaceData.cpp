@@ -708,6 +708,7 @@ byte FrankData::get(const frankData &frankDataType) {
     case save:
     case load: return stat.loadSaveSlot;
     case pulseLength: return stat.pulseLength;
+
     case none: return (byte)0;
     default: PRINTLN("FrankData get(frankData frankDataType), no case found"); return 0;
     }
@@ -752,7 +753,9 @@ byte FrankData::get(const frankData &frankDataType, const byte &array) {
     case seqTuning: return seq[array].sequence.tuning;
     case seqRatchet: return seq[array].sequence.ratchet;
     case seqGateLengthOffset: return seq[array].sequence.gateLengthOffset;
+
     case none: return (byte)0;
+
     default: PRINTLN("FrankData get(frankData frankDataType, byte array), no case found"); return 0;
     }
 }
@@ -766,7 +769,9 @@ byte FrankData::get(const frankData &frankDataType, const byte &array, const byt
     case seqVelocity: return seq[array].sequence.velocity[step];
 
     case noteCal: return getNoteCal(array, step);
+
     case none: return (byte)0;
+
     default: PRINTLN("FrankData get(frankData frankDataType, byte array, byte step), no case found"); return 0;
     }
 }
@@ -1011,7 +1016,22 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
     return returnStr;
 }
 
-const char *FrankData::getValueAsStr(const frankData &frankDataType) {
+
+const char *FrankData::getValueAsStr(const frankData &frankDataType ) {
+byte channel = stat.screen.channel;
+return ValueToStr(frankDataType, channel);
+}
+    
+
+
+const char *FrankData::getValueAsStrChannel(const frankData &frankDataType, const byte channel ) {
+return ValueToStr(frankDataType, channel);
+}
+
+
+
+
+const char *FrankData::ValueToStr(const frankData frankDataType, const byte channel) {
     char tempStr[5];
 
     switch (frankDataType) {
@@ -1030,6 +1050,7 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType) {
     case livePitchbend:
     case liveAftertouch:
     case liveSustain:
+
     case liveTriggered: setStr(toStr(get(frankDataType, stat.screen.channel))); break;
     case outputArpOctave: setStr(toStr(((int)get(frankDataType, stat.screen.channel)) - ARPOCTAVECENTEROFFSET)); break;
     case seqGateLengthOffset: setStr(toStr(((int)get(frankDataType, stat.screen.channel)) - GATELENGTHOFFSET)); break;
@@ -1054,15 +1075,17 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType) {
     case pulseLength:
     case bpmPoti: setStr(toStr(get(frankDataType))); break;
 
-    case cvCal: setStr(toStr(((int)get(frankDataType, stat.screen.channel)) - CALOFFSET)); break;
+    case cvCal: setStr(toStr(((int)get(frankDataType, channel)) - CALOFFSET)); break;
 
     case outputSource:
+
         if (config.routing[stat.screen.channel].outSource == 0) {
             setStr("Midi");
         }
         else if (config.routing[stat.screen.channel].outSource <= OUTPUTS) {
 
             itoa((int)config.routing[stat.screen.channel].outSource, tempStr, 10);
+
             tempStr[3] = tempStr[0];
             tempStr[0] = 'S';
             tempStr[1] = 'e';
@@ -1076,7 +1099,7 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType) {
         break;
 
     case outputArpMode:
-        switch (config.routing[stat.screen.channel].arpMode) {
+        switch (config.routing[channel].arpMode) {
         case 0: setStr("up"); break;
         case 1: setStr("down"); break;
         case 2: setStr("updn"); break;
@@ -1087,7 +1110,7 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType) {
         break;
 
     case midiSource:
-        switch (config.routing[stat.screen.channel].outSource) {
+        switch (config.routing[channel].outSource) {
         case 0: setStr("DIN"); break;
         case 1: setStr("USB"); break;
         default: setStr("ERR");
@@ -1096,14 +1119,16 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType) {
 
     case direction:
         switch (config.direction) {
-        case 0: setStr("<-"); break;
-        case 1: setStr("->"); break;
+
+        case 0: setStr("->"); break;
+        case 1: setStr("<-"); break;
         default: setStr("ERR");
+
         }
         break;
 
     case outputArp:
-        switch (config.routing[stat.screen.channel].arp) {
+        switch (config.routing[channel].arp) {
         case 0: setStr("OFF"); break;
         case 1: setStr("ON"); break;
         default: setStr("ERR");
@@ -1133,6 +1158,7 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType) {
         default: setStr("ERR");
         }
         break;
+
 
     case liveLatestKey: setStr(toStr(getKeyLatest(stat.screen.channel).note)); break;
     case liveLowestKey: setStr(toStr(getKeyLowest(stat.screen.channel).note)); break;
@@ -1169,8 +1195,9 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType) {
             setStr("-");
         }
         break;
+
     case outputCc:
-    case outputCcEvaluated: setStr(toStr(getLiveCcEvaluated(stat.screen.channel))); break;
+    case outputCcEvaluated: setStr(toStr(getLiveCcEvaluated(channel))); break;
 
     case outputLiveMode:
         switch (config.routing[stat.screen.channel].liveMidiMode) {
@@ -1182,6 +1209,16 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType) {
         break;
 
     case stepSpeed:
+    switch (config.routing[stat.screen.channel].stepSpeed) {
+        case 0: setStr("1/16"); break;
+        case 1: setStr("1/8"); break;
+        case 2: setStr("1/4"); break;
+        case 3: setStr("1/2"); break;
+        case 4: setStr("1/1"); break;
+        case 5: setStr("2/1"); break;
+        default: setStr("NONE");
+        }
+        break;
     case outputClock:
         switch (config.routing[stat.screen.channel].clockSpeed) {
         case 0: setStr("1/16"); break;
@@ -1257,7 +1294,7 @@ inline byte decreaseByte(const byte &value, const byte &minimum) {
 }
 
 // change byte value and check boundaries
-inline byte changeByte(const byte &value, const int &change, const byte &minimum, const byte &maximum, const bool &clampChange) {
+inline byte changeByte(const int &value, const byte &change, const byte &minimum, const byte &maximum, const bool &clampChange) {
 
     if ((int)value + change >= maximum) { // test max
 
