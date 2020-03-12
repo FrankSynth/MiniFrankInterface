@@ -49,8 +49,8 @@ typedef struct {
 typedef struct {
     byte midiSource = 1; // active MidiDevice (usb -> 1, din -> 0)
 
-    byte direction = 1;             // 0 -> reverse ; 1 -> forward
-    byte displayBrightness = 200;   // 0-255;
+    byte direction = 1;                   // 0 -> reverse ; 1 -> forward
+    byte displayBrightness = 200;         // 0-255;
     structOutputRouting routing[OUTPUTS]; // hold settings for that many outputs
 
 } structSettings;
@@ -138,13 +138,14 @@ class LiveMidi {
     byte triggered = 0;
     byte arpDirection = 0;
     byte arpRetrigger = 0;
+    byte arpOctave = 0;
     structKey lastKey;
     PressedNotesList arpList;
     structKey arpArray[NOTERANGE];
 
     LiveMidi() {
         // initialiye with a default key
-        keyPressed(24,0);
+        keyPressed(24, 0);
         keyReleased(24);
     }
 
@@ -174,13 +175,14 @@ class Seq {
   public:
     Seq() { init(); }
 
-    void init(const byte &note = 12, const byte &gate = 1, const byte &gateLength = 50, const byte &cc = 64, const byte &tuning = 0, const byte &ratchet = 0,
+    void init(const byte &note = 12, const byte &gate = 1, const byte &gateLength = 50, const byte &cc = 64, const byte &tuning = 0,
+              const byte &ratchet = 0,
               const byte &gateLengthOffset = 100); // init sequence to default values
 
     // Note
     void setNote(const byte &index, const byte &note); // set note value
     void setNotes(const byte &note);                   // set all note values
-    void setCCs(const byte &cc);                   // set all note values
+    void setCCs(const byte &cc);                       // set all note values
     void setGates(const byte &gate);                   // set all note values
 
     void increaseNote(const byte &index); // increase note value and return new note, function take care of tuning
@@ -240,6 +242,9 @@ class FrankData {
         seqResetNotes,
         seqResetGates,
         seqResetGateLengths,
+        seqResetCC,
+        seqOctaveUp,
+        seqOctaveDown,
         stepOnPage,
         currentPageNumber,
 
@@ -335,8 +340,12 @@ class FrankData {
     byte getBpm16thCount();
     // inline void resetClock();
     inline void calcBPM();
-    inline void increaseStepSeq(const byte &array);
-    inline void decreaseStepSeq(const byte &array);
+    inline void increaseSeqStep(const byte &array);
+    inline void decreaseSeqStep(const byte &array);
+    inline void nextArpStep(const byte &array);
+    inline void increaseArpOct(const byte &array);
+    inline void decreaseArpOct(const byte &array);
+    
     inline byte getCurrentPageNumber(const byte &array);
     inline const byte getSubscreenMax();
     inline byte getLiveCcEvaluated(const byte &array);
@@ -367,9 +376,9 @@ class FrankData {
     void seqResetAllGateLengths(const byte &array);
     void seqResetAllNotes(const byte &array);
     void seqResetAllGates(const byte &array);
-    void seqResetCC(const byte &array);
-    void seqOctaveUp(const byte &array);
-    void seqOctaveDown(const byte &array);
+    void seqResetAllCC(const byte &array);
+    void seqAllOctaveUp(const byte &array);
+    void seqAllOctaveDown(const byte &array);
     void seqCopy(const byte &source, const byte &destination);
 
     void updateArp(const byte &array);
@@ -414,7 +423,7 @@ class FrankData {
     const char *getNameAsStr(const frankData &frankDataType);
     const char *getValueAsStr(const frankData &frankDataType);
     const char *getValueAsStr(const frankData &frankDataType, const byte &step);
-    const char *getValueAsStrChannel(const frankData &frankDataType, const byte &channel );
+    const char *getValueAsStrChannel(const frankData &frankDataType, const byte &channel);
 
     // singleton
     static FrankData &getDataObj();
@@ -430,6 +439,8 @@ inline byte increaseByte(const byte &value, const byte &maximum); // increase by
 inline byte decreaseByte(const byte &value, const byte &minimum); // decrease byte
 inline byte changeByte(const byte &value, const int &change, const byte &minimum = 0, const byte &maximum = 255,
                        const bool &clampChange = 0); // change byte
+inline byte changeByteReverse(const byte &value, const int &change, const byte &minimum = 0, const byte &maximum = 255);
+inline int changeIntReverse(const int &value, const int &change, const int &minimum, const int &maximum);
 template <typename T> inline T toggleValue(const T &data);
 template <typename T> inline char *toStr(const T &data);
 

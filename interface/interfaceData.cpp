@@ -237,6 +237,7 @@ structKey LiveMidi::getKeyLatest() {
 // reset performance
 void LiveMidi::reset() {
     noteList.deleteAllKeys();
+    arpList.deleteAllKeys();
     mod = 0;
     pitchbend = 64;
     aftertouch = 0;
@@ -247,10 +248,6 @@ void LiveMidi::reset() {
 
 void LiveMidi::printArray() {
     for (int x = 0; x < arpList.size; x++) {
-        PRINT("Arp Array ");
-        PRINT(x);
-        PRINT(": ");
-        PRINTLN(arpArray[x].note);
     }
 }
 
@@ -259,7 +256,7 @@ void LiveMidi::updateArpArray(const byte &arpSettings) {
 
     switch (arpSettings) {
     case 0:
-    case 2:
+    case 2: sortList(1); break;
     case 1: sortList(0); break;
 
     default:;
@@ -285,8 +282,9 @@ void LiveMidi::sortList(const byte &order) {
 }
 
 structKey LiveMidi::getArpKey(const byte &step) {
-
-    return arpArray[step];
+    if (arpList.containsElements()) return arpArray[step];
+    else
+        return lastKey;
 }
 
 // Sequence data for each sequence
@@ -514,7 +512,7 @@ inline void FrankData::calcBPM() {
     }
 }
 
-inline void FrankData::increaseStepSeq(const byte &array) {
+inline void FrankData::increaseSeqStep(const byte &array) {
     if (!((stat.stepSeq[array] + 1) % STEPSPERPAGE)) {                                     // if we make a pageJump
         if (config.routing[array].nbPages <= ((stat.stepSeq[array] + 1) / STEPSPERPAGE)) { // newPage above number of pages
             stat.stepSeq[array] = 0;                                                       // set stepSeq[array] 0
@@ -528,7 +526,7 @@ inline void FrankData::increaseStepSeq(const byte &array) {
     }
 }
 
-inline void FrankData::decreaseStepSeq(const byte &array) {
+inline void FrankData::decreaseSeqStep(const byte &array) {
     if (stat.stepSeq[array] == 0) {                                             // we jump to the last page?
         stat.stepSeq[array] = config.routing[array].nbPages * STEPSPERPAGE - 1; // set to max stepSeq[array]
     }
@@ -570,8 +568,119 @@ inline structKey FrankData::getLiveKeyEvaluated(const byte &array) {
 }
 
 structKey FrankData::getArpKeyEvaluated(const byte &array) {
+    byte step = stat.stepArp[array];
+    structKey key;
+    static int octave = 0;
 
-    return liveMidi[array].getArpKey(0);
+    if (config.routing[array].arpMode == 4) {
+        step = random(0, liveMidi[array].arpList.size);
+        key = liveMidi[array].getArpKey(step);
+    }
+
+    else {
+        liveMidi[array].getArpKey(step);
+    }
+
+
+
+
+    // change octave for next round
+    // no octaving
+    if (config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET == 0) {
+        octave = 0;
+    }
+    else {
+        // eval new min and max
+        int newOctMin;
+        int newOctMax;
+
+        if (config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET < 0) {
+            newOctMin = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET;
+            newOctMax = 0;
+        }
+        else {
+            newOctMin = 0;
+            newOctMax = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET;
+        }
+
+        // down
+        if (config.routing[array].arpMode == 2) {
+            octave = changeIntReverse(octave, -1, newOctMin, newOctMax);
+        }
+        // all others go up
+        else {
+            octave = changeIntReverse(octave, 1, newOctMin, newOctMax);
+        }
+    }
+
+    return key;
+}
+
+inline void FrankData::increaseArpOct(const byte &array) {
+// change octave for next round
+    // no octaving
+    if (config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET == 0) {
+        liveMidi[array].arpOctave = 0;
+    }
+    else {
+        // eval new min and max
+        int newOctMin;
+        int newOctMax;
+
+        if (config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET < 0) {
+            newOctMin = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET;
+            newOctMax = 0;
+        }
+        else {
+            newOctMin = 0;
+            newOctMax = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET;
+        }
+
+        // down
+        liveMidi[array].arpOctave = changeIntReverse(liveMidi[array].arpOctave, -1, newOctMin, newOctMax);
+    }
+}
+
+inline void FrankData::decreaseArpOct(const byte &array) {
+    // no octaving
+    if (config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET == 0) {
+        liveMidi[array].arpOctave = 0;
+    }
+    else {
+        // eval new min and max
+        int newOctMin;
+        int newOctMax;
+
+        if (config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET < 0) {
+            newOctMin = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET;
+            newOctMax = 0;
+        }
+        else {
+            newOctMin = 0;
+            newOctMax = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET;
+        }
+
+        // up
+        liveMidi[array].arpOctave = changeIntReverse(liveMidi[array].arpOctave, 1, newOctMin, newOctMax);
+    }
+}
+
+inline void FrankData::nextArpStep(const byte &array) {
+
+    switch (config.routing[array].arpMode) {
+        case 1: 
+        if (stat.stepArp[array] == 0) decreaseArpOct(array);
+        stat.stepArp[array] = changeByteReverse(stat.stepArp[array], -1, 0, liveMidi[array].arpList.size);
+        break;
+        case 0:
+        case 3:
+        case 4:
+        if (stat.stepArp[array] == liveMidi[array].arpList.size) increaseArpOct(array);
+        stat.stepArp[array] = changeByteReverse(stat.stepArp[array], 1, 0, liveMidi[array].arpList.size); break;
+        case 2:
+        default:;
+
+    }
 }
 
 inline structKey FrankData::getKeyHighest(const byte &array) {
@@ -626,10 +735,10 @@ void FrankData::seqSetAllGateLengths(const byte &array, const byte &data) {
 void FrankData::seqResetAllGateLengths(const byte &array) {
     seq[array].setGateLengths(50);
 }
-void FrankData::seqOctaveUp(const byte &array) {
+void FrankData::seqAllOctaveUp(const byte &array) {
     seq[array].octaveUp();
 }
-void FrankData::seqOctaveDown(const byte &array) {
+void FrankData::seqAllOctaveDown(const byte &array) {
     seq[array].octaveDown();
 }
 
@@ -640,7 +749,7 @@ void FrankData::seqResetAllGates(const byte &array) {
     seq[array].setGateLengths(50);
     seq[array].setGates(1);
 }
-void FrankData::seqResetCC(const byte &array) {
+void FrankData::seqResetAllCC(const byte &array) {
     seq[array].setCCs(64);
 }
 
@@ -657,6 +766,7 @@ void FrankData::resetAllStepCounter() {
 void FrankData::updateArp(const byte &array) {
     if (config.routing[array].outSource == 0 && config.routing[array].arp) {
         liveMidi[array].updateArpArray(config.routing[array].arpMode);
+        stat.stepArp[array] = testByte(stat.stepArp[array], 0, liveMidi[array].arpList.size, true);
     }
 }
 
@@ -878,7 +988,7 @@ void FrankData::increase(const frankData &frankDataType, const bool &clampChange
 }
 void FrankData::increase(const frankData &frankDataType, const byte &array, const bool &clampChange) {
     switch (frankDataType) {
-    case stepSeq: increaseStepSeq(array); break;
+    case stepSeq: increaseSeqStep(array); break;
     default: change(frankDataType, 1, array, clampChange);
     }
 }
@@ -894,7 +1004,7 @@ void FrankData::decrease(const frankData &frankDataType, const bool &clampChange
 }
 void FrankData::decrease(const frankData &frankDataType, const byte &array, const bool &clampChange) {
     switch (frankDataType) {
-    case stepSeq: decreaseStepSeq(array); break;
+    case stepSeq: decreaseSeqStep(array); break;
     default: change(frankDataType, -1, array, clampChange);
     }
 }
@@ -921,6 +1031,7 @@ void FrankData::toggle(const frankData &frankDataType) {
         }
         else {
             stat.screen.mainMenu = 1;
+            stat.screen.config = 0;
             stat.screen.routing = 0;
             stat.screen.calibration = 0;
             stat.screen.calibrateNote = 0;
@@ -929,20 +1040,32 @@ void FrankData::toggle(const frankData &frankDataType) {
     case screenConfig: stat.screen.config = toggleValue(stat.screen.config); break;
     case screenRouting:
         stat.screen.mainMenu = 0;
+        stat.screen.config = 0;
         stat.screen.routing = 1;
+        stat.screen.calibration = 0;
+        stat.screen.calibrateNote = 0;
         break;
     case screenCal:
         stat.screen.mainMenu = 0;
+        stat.screen.config = 0;
+        stat.screen.routing = 0;
         stat.screen.calibration = 1;
+        stat.screen.calibrateNote = 0;
         break;
     case screenCalNote:
         stat.screen.mainMenu = 0;
+        stat.screen.config = 0;
+        stat.screen.routing = 0;
+        stat.screen.calibration = 0;
         stat.screen.calibrateNote = 1;
         break;
 
     case seqResetGates: seqResetAllGates(stat.screen.config); break;
     case seqResetNotes: seqResetAllNotes(stat.screen.config); break;
     case seqResetGateLengths: seqResetAllGateLengths(stat.screen.config); break;
+    case seqResetCC: seqResetAllCC(stat.screen.config); break;
+    case seqOctaveUp: seqAllOctaveUp(stat.screen.config); break;
+    case seqOctaveDown: seqAllOctaveDown(stat.screen.config); break;
 
     case none: break;
     default: PRINTLN("FrankData toggle(frankData frankDataType), no case found");
@@ -969,6 +1092,12 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
     case seqRatchet: setStr("Reps"); break;
     case seqGateLengthOffset: setStr("GL-OF"); break;
     case stepSpeed: setStr("Speed"); break;
+    case seqResetNotes: setStr("Rs Nt"); break;
+    case seqResetGates: setStr("Rs Gt"); break;
+    case seqResetGateLengths: setStr("Rs GL"); break;
+    case seqResetCC: setStr("Rs CC"); break;
+    case seqOctaveUp: setStr("OctUp"); break;
+    case seqOctaveDown: setStr("OctDn"); break;
 
     case midiSource: setStr("Src"); break;
     case nbPages: setStr("Pages"); break;
@@ -993,7 +1122,7 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
     case outputArpRatchet: setStr("Reps"); break;
     case outputArpOctave: setStr("Oct"); break;
 
-    case outputLiveMode: setStr("Key sel"); break;
+    case outputLiveMode: setStr("Key"); break;
 
     case outputClock: setStr("Clock"); break;
 
@@ -1053,7 +1182,6 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
     char tempStr[5];
 
     switch (frankDataType) {
-    case seqTuning:
     case seqSize:
 
     case stepSeq:
@@ -1071,7 +1199,7 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
     case liveTriggered: setStr(toStr(get(frankDataType, channel))); break;
     case outputChannel:
         if (config.routing[channel].channel == 0) {
-            setStr("All");
+            setStr("ALL");
         }
         else {
             setStr(toStr(get(frankDataType, channel)));
@@ -1079,12 +1207,16 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
         break;
     case outputArpOctave: setStr(toStr(((int)get(frankDataType, channel)) - ARPOCTAVECENTEROFFSET)); break;
     case seqGateLengthOffset: setStr(toStr(((int)get(frankDataType, channel)) - GATELENGTHOFFSET)); break;
+    case seqTuning: setStr(tuningToChar(seq[channel].sequence.tuning)); break;
 
     case screenRouting:
     case screenCal:
     case screenCalNote:
     case seqResetGates:
     case seqResetGateLengths:
+    case seqResetCC:
+    case seqOctaveUp:
+    case seqOctaveDown:
     case seqResetNotes: setStr("@"); break;
 
     case screenOutputChannel:
@@ -1112,11 +1244,10 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
 
             itoa((int)config.routing[channel].outSource, tempStr, 10);
 
-            tempStr[3] = tempStr[0];
+            tempStr[2] = tempStr[0];
             tempStr[0] = 'S';
-            tempStr[1] = 'e';
-            tempStr[2] = 'q';
-            tempStr[4] = '\0';
+            tempStr[1] = 'q';
+            tempStr[3] = '\0';
             setStr(tempStr);
         }
         else {
@@ -1146,8 +1277,8 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
     case direction:
         switch (config.direction) {
 
-        case 0: setStr("->"); break;
-        case 1: setStr("<-"); break;
+        case 0: setStr("<-"); break;
+        case 1: setStr("->"); break;
         default: setStr("ERR");
         }
         break;
@@ -1327,7 +1458,7 @@ inline byte decreaseByte(const byte &value, const byte &minimum) {
 }
 
 // change byte value and check boundaries
-inline byte changeByte(const int &value, const byte &change, const byte &minimum, const byte &maximum, const bool &clampChange) {
+inline byte changeByte(const byte &value, const int &change, const byte &minimum, const byte &maximum, const bool &clampChange) {
 
     if ((int)value + change >= maximum) { // test max
 
@@ -1338,6 +1469,34 @@ inline byte changeByte(const int &value, const byte &change, const byte &minimum
     }
     else {
         return (byte)((int)value + change); // return new value
+    }
+}
+
+inline byte changeByteReverse(const byte &value, const int &change, const byte &minimum, const byte &maximum) {
+
+    if ((int)value + change > maximum) { // test max
+
+        return minimum;
+    }
+    else if ((int)value + change < minimum) { // test min
+        return maximum;
+    }
+    else {
+        return ((byte)value + change); // return new value
+    }
+}
+
+inline int changeIntReverse(const int &value, const int &change, const int &minimum, const int &maximum) {
+
+    if (value + change > maximum) { // test max
+
+        return minimum;
+    }
+    else if (value + change < minimum) { // test min
+        return maximum;
+    }
+    else {
+        return (value + change); // return new value
     }
 }
 
