@@ -49,8 +49,8 @@ typedef struct {
 typedef struct {
     byte midiSource = 1; // active MidiDevice (usb -> 1, din -> 0)
 
-    byte direction = 1;             // 0 -> reverse ; 1 -> forward
-    byte displayBrightness = 200;   // 0-255;
+    byte direction = 1;                   // 0 -> reverse ; 1 -> forward
+    byte displayBrightness = 200;         // 0-255;
     structOutputRouting routing[OUTPUTS]; // hold settings for that many outputs
 
 } structSettings;
@@ -144,7 +144,7 @@ class LiveMidi {
 
     LiveMidi() {
         // initialiye with a default key
-        keyPressed(24,0);
+        keyPressed(24, 0);
         keyReleased(24);
     }
 
@@ -174,13 +174,14 @@ class Seq {
   public:
     Seq() { init(); }
 
-    void init(const byte &note = 12, const byte &gate = 1, const byte &gateLength = 50, const byte &cc = 64, const byte &tuning = 0, const byte &ratchet = 0,
+    void init(const byte &note = 12, const byte &gate = 1, const byte &gateLength = 50, const byte &cc = 64, const byte &tuning = 0,
+              const byte &ratchet = 0,
               const byte &gateLengthOffset = 100); // init sequence to default values
 
     // Note
     void setNote(const byte &index, const byte &note); // set note value
     void setNotes(const byte &note);                   // set all note values
-    void setCCs(const byte &cc);                   // set all note values
+    void setCCs(const byte &cc);                       // set all note values
     void setGates(const byte &gate);                   // set all note values
 
     void increaseNote(const byte &index); // increase note value and return new note, function take care of tuning
@@ -240,6 +241,9 @@ class FrankData {
         seqResetNotes,
         seqResetGates,
         seqResetGateLengths,
+        seqResetCC,
+        seqOctaveUp,
+        seqOctaveDown,
         stepOnPage,
         currentPageNumber,
 
@@ -367,9 +371,9 @@ class FrankData {
     void seqResetAllGateLengths(const byte &array);
     void seqResetAllNotes(const byte &array);
     void seqResetAllGates(const byte &array);
-    void seqResetCC(const byte &array);
-    void seqOctaveUp(const byte &array);
-    void seqOctaveDown(const byte &array);
+    void seqResetAllCC(const byte &array);
+    void seqAllOctaveUp(const byte &array);
+    void seqAllOctaveDown(const byte &array);
     void seqCopy(const byte &source, const byte &destination);
 
     void updateArp(const byte &array);
@@ -414,7 +418,7 @@ class FrankData {
     const char *getNameAsStr(const frankData &frankDataType);
     const char *getValueAsStr(const frankData &frankDataType);
     const char *getValueAsStr(const frankData &frankDataType, const byte &step);
-    const char *getValueAsStrChannel(const frankData &frankDataType, const byte &channel );
+    const char *getValueAsStrChannel(const frankData &frankDataType, const byte &channel);
 
     // singleton
     static FrankData &getDataObj();

@@ -626,10 +626,10 @@ void FrankData::seqSetAllGateLengths(const byte &array, const byte &data) {
 void FrankData::seqResetAllGateLengths(const byte &array) {
     seq[array].setGateLengths(50);
 }
-void FrankData::seqOctaveUp(const byte &array) {
+void FrankData::seqAllOctaveUp(const byte &array) {
     seq[array].octaveUp();
 }
-void FrankData::seqOctaveDown(const byte &array) {
+void FrankData::seqAllOctaveDown(const byte &array) {
     seq[array].octaveDown();
 }
 
@@ -640,7 +640,7 @@ void FrankData::seqResetAllGates(const byte &array) {
     seq[array].setGateLengths(50);
     seq[array].setGates(1);
 }
-void FrankData::seqResetCC(const byte &array) {
+void FrankData::seqResetAllCC(const byte &array) {
     seq[array].setCCs(64);
 }
 
@@ -930,19 +930,28 @@ void FrankData::toggle(const frankData &frankDataType) {
     case screenRouting:
         stat.screen.mainMenu = 0;
         stat.screen.routing = 1;
+        stat.screen.calibration = 0;
+        stat.screen.calibrateNote = 0;
         break;
     case screenCal:
         stat.screen.mainMenu = 0;
+        stat.screen.routing = 0;
         stat.screen.calibration = 1;
+        stat.screen.calibrateNote = 0;
         break;
     case screenCalNote:
         stat.screen.mainMenu = 0;
+        stat.screen.routing = 0;
+        stat.screen.calibration = 0;
         stat.screen.calibrateNote = 1;
         break;
 
     case seqResetGates: seqResetAllGates(stat.screen.config); break;
     case seqResetNotes: seqResetAllNotes(stat.screen.config); break;
     case seqResetGateLengths: seqResetAllGateLengths(stat.screen.config); break;
+    case seqResetCC: seqResetAllCC(stat.screen.config); break;
+    case seqOctaveUp: seqAllOctaveUp(stat.screen.config); break;
+    case seqOctaveDown: seqAllOctaveDown(stat.screen.config); break;
 
     case none: break;
     default: PRINTLN("FrankData toggle(frankData frankDataType), no case found");
@@ -969,6 +978,12 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
     case seqRatchet: setStr("Reps"); break;
     case seqGateLengthOffset: setStr("GL-OF"); break;
     case stepSpeed: setStr("Speed"); break;
+    case seqResetNotes: setStr("Rs Nt"); break;
+    case seqResetGates: setStr("Rs Gt"); break;
+    case seqResetGateLengths: setStr("Rs GL"); break;
+    case seqResetCC: setStr("Rs CC"); break;
+    case seqOctaveUp: setStr("OctUp"); break;
+    case seqOctaveDown: setStr("OctDn"); break;
 
     case midiSource: setStr("Src"); break;
     case nbPages: setStr("Pages"); break;
@@ -1053,7 +1068,6 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
     char tempStr[5];
 
     switch (frankDataType) {
-    case seqTuning:
     case seqSize:
 
     case stepSeq:
@@ -1079,12 +1093,16 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
         break;
     case outputArpOctave: setStr(toStr(((int)get(frankDataType, channel)) - ARPOCTAVECENTEROFFSET)); break;
     case seqGateLengthOffset: setStr(toStr(((int)get(frankDataType, channel)) - GATELENGTHOFFSET)); break;
+    case seqTuning: setStr(tuningToChar(seq[channel].sequence.tuning)); break;
 
     case screenRouting:
     case screenCal:
     case screenCalNote:
     case seqResetGates:
     case seqResetGateLengths:
+    case seqResetCC:
+    case seqOctaveUp:
+    case seqOctaveDown:
     case seqResetNotes: setStr("@"); break;
 
     case screenOutputChannel:
