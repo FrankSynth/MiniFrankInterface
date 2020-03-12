@@ -32,8 +32,6 @@ void Display::initLCD(byte w, byte h, byte rotation) {
     lcd.initR(INITR_GREENTAB); // Init ST7735S chip, green tab   
     lcd.setRotation(rotation); // set display rotation
     lcd.fillScreen(BLACK);     // init black
-    #define ST7735_MADCTL_BGR 0x00
-
 }
 
 void Display::displayBrightness(byte brightness) { analogWrite(LCD_BL, brightness); }

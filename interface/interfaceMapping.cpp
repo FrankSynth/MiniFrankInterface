@@ -45,7 +45,7 @@ FrankData::frankData mappingMenuPush[] = {NONE /*LOAD*/, NONE /*SAVE*/, FrankDat
 FrankData::frankData mappingMenuCal[] = {NONE, NONE, NONE, NONE, NONE, NONE, NONE, STEP}; // Routing Menu Mapping
 FrankData::frankData mappingMenuCalPush[] = {NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, MENU, PLAY}; // Routing Menu Mapping
 
-FrankData::frankData mappingMenuRouting[] = {FrankData::liveMod, FrankData::outputSource, FrankData::outputChannel, FrankData::outputCc,FrankData::liveMod, FrankData::outputSource, FrankData::outputChannel, FrankData::outputCc, NONE, STEP}; // Routing Menu Mapping
+FrankData::frankData mappingMenuRouting[] = {FrankData::outputSource, FrankData::midiSource, FrankData::outputChannel, FrankData::outputCcEvaluated,FrankData::outputSource, FrankData::midiSource, FrankData::outputChannel, FrankData::outputCcEvaluated, SUBSCREEN, STEP}; // Routing Menu Mapping
 FrankData::frankData mappingMenuRoutingPush[] = {NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, MENU, PLAY}; // Routing Menu Mapping
 
 ////LIVE////
@@ -74,13 +74,13 @@ FrankData::frankData mapping(byte input) {
     else {  
         if (DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) == 0) {
             if(DATAOBJ.get(FrankData::outputArp, DATAOBJ.get(FrankData::screenOutputChannel)) == 0){
-                if (DATAOBJ.get(FrankData::screenConfig)) return mappingLiveConfig[input];
+                if (DATAOBJ.get(FrankData::screenConfig)) return mappingMenuRouting[input];
                 return mappingLive[input];
             }
             else{
 
                 if (DATAOBJ.get(FrankData::screenConfig))
-                    return mappingLiveConfig[input];
+                    return mappingMenuRouting[input];
                 return mappingLiveArp[input];       
             }
          
@@ -130,13 +130,13 @@ FrankData::frankData mappingPush(byte input) {
     else {
         if (DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) == 0) {
             if(DATAOBJ.get(FrankData::outputArp, DATAOBJ.get(FrankData::screenOutputChannel)) == 0){
-                if (DATAOBJ.get(FrankData::screenConfig)) return mappingLiveConfigPush[input];
+                if (DATAOBJ.get(FrankData::screenConfig)) return mappingMenuRoutingPush[input];
                 return mappingLivePush[input];
             }   
             else{
                 if (DATAOBJ.get(FrankData::screenConfig))
                     return mappingLiveConfigPush[input];
-                return mappingLiveArpPush[input];       
+                return mappingMenuRoutingPush[input];       
             }
          
         }

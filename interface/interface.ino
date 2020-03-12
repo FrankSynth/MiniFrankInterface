@@ -120,7 +120,7 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(SWREC), ISRSwitch, CHANGE);
 
     // Set timer interrupt (display refresh)
-    // myTimer.begin(updateDisplay, 40000); // display refresh
+    myTimer.begin(updateDisplay, 40000); // display refresh
 }
 
 void loop() {

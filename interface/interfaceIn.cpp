@@ -44,7 +44,6 @@ void controls::rotate(byte id, byte dir) {
     Serial.println(mappedID);
     switch(mappedID){
         
-        
         //TYPE,Channel,Index;
         case NOTE :
         case CV :
@@ -70,7 +69,22 @@ void controls::rotate(byte id, byte dir) {
             }
             break;
 
+
+
+
+
+
+
+
         //Type, Channel;
+
+
+
+        //case FrankData::midiSource :
+        case FrankData::outputCcEvaluated:
+        case FrankData::outputChannel:
+        case FrankData::outputSource:
+        case FrankData::liveMod:
         case FrankData::nbPages:
         case FrankData::stepSpeed:
         case FrankData::outputArpOctave:
@@ -142,7 +156,7 @@ void controls::rotate(byte id, byte dir) {
                     }
 
         
-   
+    
 
 
     }
