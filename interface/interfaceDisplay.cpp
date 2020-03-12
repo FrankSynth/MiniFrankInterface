@@ -70,7 +70,7 @@ void Display::updateDisplay() {
 void Display::drawBody() {
     bufferBody->fillScreen(0x39E7); // resetBuffer
 
-    if (DATAOBJ.get(FrankData::screenMainMenu) == 1 || DATAOBJ.get(FrankData::screenConfig) == 1) { // Load Config Template
+    if (DATAOBJ.get(FrankData::screenMainMenu) == 1 || DATAOBJ.get(FrankData::screenConfig) == 1 || DATAOBJ.get(FrankData::screenRouting) == 1 || DATAOBJ.get(FrankData::screenCal) == 1) { // Load Config Template
        BodyTemplateMenu();
     } 
     

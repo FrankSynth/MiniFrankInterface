@@ -1197,7 +1197,7 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
         break;
 
     case outputCc:
-        switch (channel) {
+        switch (config.routing[stat.screen.channel].cc) {
         case 0: setStr("Vel"); break;
         case 1: setStr("Mod"); break;
         case 2: setStr("PB"); break;

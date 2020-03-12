@@ -81,7 +81,7 @@ void controls::rotate(byte id, byte dir) {
 
 
         //case FrankData::midiSource :
-        case FrankData::outputCcEvaluated:
+        case FrankData::outputCc:
         case FrankData::outputChannel:
         case FrankData::outputSource:
         case FrankData::liveMod:
@@ -144,6 +144,14 @@ void controls::rotate(byte id, byte dir) {
             break;
 
 
+        case FrankData::displayBrightness:
+           if(dir){
+                DATAOBJ.change(mappedID, 5); 
+            }
+            else{
+                DATAOBJ.change(mappedID, -5); 
+            }
+            break;
 
 
 

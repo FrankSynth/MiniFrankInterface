@@ -30,11 +30,11 @@ FrankData::frankData mappingSeqCV[] = {CV, CV, CV, CV, CV, CV, CV, CV, SUBSCREEN
 FrankData::frankData mappingSeqCVPush[] = {GATE, GATE, GATE, GATE, GATE, GATE, GATE, GATE, MENU, PLAY};         // CV Mapping Push
 
 
-FrankData::frankData mappingLive[] = {FrankData::outputArp, FrankData::outputLiveMode, NONE, NONE, NONE, NONE, NONE, NONE, SUBSCREEN, STEP};       // Live Mapping
+FrankData::frankData mappingLive[] = {FrankData::outputArp, FrankData::outputLiveMode, NONE, NONE, NONE, NONE, NONE, NONE, NONE, STEP};       // Live Mapping
 FrankData::frankData mappingLivePush[] = {FrankData::outputArp, NONE, NONE, NONE, NONE, NONE, NONE, NONE, MENU, PLAY};       // Live Mapping
 
 
-FrankData::frankData mappingLiveArp[] = {FrankData::outputArp, FrankData::outputArpOctave, NONE, NONE, FrankData::outputArpRatchet, FrankData::outputClock, NONE, NONE, SUBSCREEN, STEP};       // Live Arp Mapping
+FrankData::frankData mappingLiveArp[] = {FrankData::outputArp, FrankData::outputArpOctave, NONE, NONE, FrankData::outputArpRatchet, FrankData::outputClock, NONE, NONE, NONE, STEP};       // Live Arp Mapping
 FrankData::frankData mappingLiveArpPush[] = {FrankData::outputArp, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, MENU, PLAY};       // Live Arp Mapping Push
 
 ////MENU////
@@ -45,7 +45,7 @@ FrankData::frankData mappingMenuPush[] = {NONE /*LOAD*/, NONE /*SAVE*/, FrankDat
 FrankData::frankData mappingMenuCal[] = {NONE, NONE, NONE, NONE, NONE, NONE, NONE, STEP}; // Routing Menu Mapping
 FrankData::frankData mappingMenuCalPush[] = {NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, MENU, PLAY}; // Routing Menu Mapping
 
-FrankData::frankData mappingMenuRouting[] = {FrankData::outputSource, FrankData::midiSource, FrankData::outputChannel, FrankData::outputCcEvaluated,FrankData::outputSource, FrankData::midiSource, FrankData::outputChannel, FrankData::outputCcEvaluated, SUBSCREEN, STEP}; // Routing Menu Mapping
+FrankData::frankData mappingMenuRouting[] = {FrankData::outputSource, FrankData::midiSource, FrankData::outputChannel, FrankData::outputCc,FrankData::outputSource, FrankData::midiSource, FrankData::outputChannel, FrankData::outputCc, SUBSCREEN, STEP}; // Routing Menu Mapping
 FrankData::frankData mappingMenuRoutingPush[] = {NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, MENU, PLAY}; // Routing Menu Mapping
 
 ////LIVE////
