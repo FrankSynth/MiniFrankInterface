@@ -746,7 +746,7 @@ byte FrankData::get(const frankData &frankDataType, const byte &array) {
     case stepArp: return stat.stepArp[array];
     case stepSeq: return stat.stepSeq[array];
     case stepSpeed: return config.routing[array].stepSpeed;
-    case activePage: return (byte)((float)stat.stepSeq[array] / (float)STEPSPERPAGE);
+    case activePage: return (stat.stepSeq[array] / STEPSPERPAGE);
     case stepOnPage: return (stat.stepSeq[array] - (get(activePage, array) * STEPSPERPAGE));
     case currentPageNumber: return getCurrentPageNumber(array);
 
@@ -1065,7 +1065,7 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
 
     case liveTriggered: setStr(toStr(get(frankDataType, stat.screen.channel))); break;
     case outputChannel:
-        if (outputChannel == 0) {
+        if (stat.screen.channel == 0) {
             setStr("All");
         }
         else {
