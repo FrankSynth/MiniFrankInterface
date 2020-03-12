@@ -2,276 +2,450 @@
 
 #include <Arduino.h>
 
-#define LENGTH 64
+#define LENGTH 64 // max Seq length
 #define PAGES 8
 #define NOTERANGE 88
-#define STEPPERPAGE 8
+#define STEPSPERPAGE 8
+#define OUTPUTS 2 // Number of output lanes
+#define MAXSTRINGSIZE 8
+#define ARPOCTAVECENTEROFFSET 3
+#define GATELENGTHOFFSET 100
+#define CALOFFSET 127
 
-#define OUTPUTS 2 // Number of outputs
+#define DATAOBJ FrankData::getDataObj()
 
 class OutputRouting {
-  byte out; // 0 = live, 1 = seq
-  byte channel; // 0 = all, 1 = channel 1, ...
-  byte seq; // 0 = seq0, 1 = seq1
-  byte arp; // 0 = off, 1 = on
-  byte cc;  // 0 = vel, 1 = mod, 2 = pitchbend, 3 = aftertouch, 4 = sustain
-public:
-  OutputRouting() {
-    this->out = 0;
-    this->channel = 0;
-    this->seq = 0;
-    this->arp = 0;
-    this->cc = 0;
-  }
+  public:
 
-  byte getOut();
-  byte getChannel();
-  byte getSeq();
-  byte getArp();
-  byte getCc();
+    byte outSource = 0;    // 0 = live, 1 = seq1, 2 = seq2, ...
+    byte channel = 0;      // 0 = all, 1 = channel 1, ...
+    byte arp = 1;          // 0 = off, 1 = on
+    byte arpMode = 0;      // 0 = up, 1 = down, 2 = updown, 3 = order, 4 = random
+    byte cc = 0;           // 0 = vel, 1 = mod, 2 = pitchbend, 3 = aftertouch, 4 = sustain
+    byte liveMidiMode = 0; // 0 = latest, 1 = lowest, 2 = highest
+    byte clockSpeed;       // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
+    byte arpRatchet = 0;   // repeats per step, 1 = 1 repeat (2 notes total), up to 3 repeats (ratchet = 2)
+    byte arpOctaves = 3;   // Octaves 0 = -3, 3 = 0, 6 = +3
+    byte stepSpeed = 2;    // ArpSeq Sync 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
+    byte nbPages = 8;      // nb Pages  1 -> 8
 
-  void setOut(byte data);
-  void setChannel(byte data);
-  void setSeq(byte data);
-  void setArp(byte data);
-  void setCc(byte data);
+    OutputRouting() {}
 
 };
 
-//Sequence struct holding all values for a sequence
-typedef struct{
-  byte note[LENGTH];
-  byte gate[LENGTH];
-  byte gateLength[LENGTH];
-  byte velocity[LENGTH];
-  byte tuning; // tuning offset
+typedef struct {
+    float noteCalibration[NOTERANGE];
+    float cvOffset;
+} structCalibration;
+
+// Sequence struct holding all values for a sequence, to save it
+typedef struct {
+    byte note[LENGTH];
+    byte cc[LENGTH];
+    byte gate[LENGTH];
+    byte gateLength[LENGTH];
+    byte velocity[LENGTH];
+    byte tuning;           // tuning offset
+    byte ratchet;          // repeats per step
+    byte gateLengthOffset; // 100 = no offset
 } structSequence;
 
-//Settings struct for all settings
-typedef struct{
-  byte midiSource = 1;              // active MidiDevice (usb -> 1, din -> 0)
-  byte nbPages = 4;                 // nb Pages  1 -> 8
-  byte direction = 0;               // 0 -> reverse ; 1 -> forward
-  byte displayBrightness = 150;     // 0-255;
-  OutputRouting routing[OUTPUTS];
-  byte clockOut0 = 0;               // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
-  byte clockOut1 = 1;               // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
+// Settings struct for all settings that need to be saved permanently
+typedef struct {
+    byte midiSource = 1; // active MidiDevice (usb -> 1, din -> 0)
+
+    byte direction = 1;             // 0 -> reverse ; 1 -> forward
+    byte displayBrightness = 200;   // 0-255;
+    OutputRouting routing[OUTPUTS]; // hold settings for that many outputs
+
 } structSettings;
 
-typedef struct{
-  byte activeSeq = 0;             //0 -> seq 1,  1 -> seq2
-  byte pane = 0;                  //active menu 0-> Note; 1->Gate; 2->Replay; 2->Settings
+// possible screen status
+typedef struct {
+    byte channel = 0;       // active channel, 0-> Channel 1, 1-> Channel 2
+    byte config = 0;        // display config, 0-> off, 1-> on
+    byte mainMenu = 0;      // display Main Menu, 0-> off, 1-> on
+    byte subscreen = 0;     // subscreen -> current displayed screen .. note, gate, cv (seq) ; live, appregiator (live)
+    byte calibration = 0;   // calibration screen
+    byte calibrateNote = 0; // Note calibration screen
+    byte routing = 0;       // routing screen
 
-  byte stepSeq = 0;                  //current Step
-  byte stepArp = 0;
+    const byte subScreenMaxSeq = 2;  // Number of subscreens for seq mode
+    const byte subScreenMaxLive = 0; // Number of subscreens for live mode
+} structScreen;
 
-  int bpm = 0;                    //current bpm
-  byte play = 0;                  //play stop
-  byte rec = 0;                   //Rec Active
-  byte error = 0;                 //ErrorFlag
+// all Settings that don't need to be saved permanently
+typedef struct {
+    structScreen screen; // screen status
 
-  byte bpmSync = 0;               //Sync Active
-  byte midiClockCount = 5;
-  byte bpm16thCount = 31;
-  uint16_t bpmPoti = 0;               //sync= 0 ? 0-1023 bpm log : divider /4, /2, 1, *2, *4 ; Range is 0-1023
+    byte loadSaveSlot = 1; // laod save 1-10
+
+    int bpm = 0;    // current bpm
+    byte play = 1;  // play stop
+    byte rec = 0;   // Rec Active
+    byte error = 0; // ErrorFlag
+
+    byte pulseLength = 20; // pulse length in ms
+
+    byte stepSeq[OUTPUTS] = {0, 0};
+    byte stepArp[OUTPUTS] = {0, 0};
+
+    byte bpmSync = 0; // Sync Active
+    byte midiClockCount = 5;
+    byte bpm16thCount = 31;
+    uint16_t bpmPoti = 0; // sync= 0 ? 0-1023 bpm log : divider /4, /2, 1, *2, *4 ; Range is 0-1023
 } structStatus;
 
+// Midi Key data
 typedef struct {
-  byte note = 0;
-  byte velocity = 0;
+    byte note = 0;
+    byte velocity = 0;
 } structKey;
-
 
 // pressed Notes
 class PressedNotesElement {
-public:
-  PressedNotesElement(byte note, byte velocity) {
-    this->note = note;
-    this->velocity = velocity;
-    this->next = NULL;
-  }
-  byte note;
-  byte velocity;
-  PressedNotesElement *next;
+  public:
+    PressedNotesElement(byte note, byte velocity) {
+        this->note = note;
+        this->velocity = velocity;
+        this->next = NULL;
+    }
+    byte note;
+    byte velocity;
+    PressedNotesElement *next;
 };
 
 class PressedNotesList {
-public:
-  PressedNotesElement *pressedNoteElement = NULL;
-  void appendKey(byte note, byte velocity);
-  void deleteKey(byte note);
-  void deleteAllKeys();
-  bool containsElements();
-  PressedNotesElement* getKeyHighest();
-  PressedNotesElement* getKeyLowest();
-  PressedNotesElement* getKeyLatest();
+  public:
+    PressedNotesElement *pressedNoteElement = NULL;
+    void appendKey(const byte &note, const byte &velocity);
+    void deleteKey(const byte &note);
+    void deleteAllKeys();
+    bool containsElements();
+    PressedNotesElement *getKeyHighest();
+    PressedNotesElement *getKeyLowest();
+    PressedNotesElement *getKeyLatest();
+
+    PressedNotesElement *getElement(const byte &element);
+
+    int size = 0;
 };
 
 // save live midi data
 class LiveMidi {
-  PressedNotesList noteList;
-  byte mod;
-  byte pitchbend;
-  byte aftertouch;
-  byte sustain;
-public:
-  LiveMidi() {
-    this->mod = 0;
-    this->pitchbend = 64;
-    this->aftertouch = 0;
-    this->sustain = 0;
-  }
-  void keyPressed(byte note, byte velocity);
-  void keyReleased(byte note);
+  public:
+    PressedNotesList noteList;
+    byte mod = 0;
+    byte pitchbend = 64;
+    byte aftertouch = 0;
+    byte sustain = 0;
+    byte triggered = 0;
+    byte arpDirection = 0;
+    byte arpRetrigger = 0;
+    structKey lastKey;
+    PressedNotesList arpList;
+    structKey arpArray[NOTERANGE];
 
-  bool keysPressed();
+    LiveMidi() {
+        keyPressed(0,0);
+        keyReleased(0);
+    }
 
-  void setMod(byte data);
-  void setPitchbend(byte data);
-  void setAftertouch(byte data);
-  void setSustain(byte data);
+    void keyPressed(const byte &note, const byte &velocity);
+    void keyReleased(const byte &note);
 
-  structKey getKeyHighest();
-  structKey getKeyLowest();
-  structKey getKeyLatest();
+    bool keysPressed();
 
-  byte getMod();
-  byte getPitchbend();
-  byte getAftertouch();
-  byte getSustain();
+    void updateArpArray(const byte &arpSettings);
 
-  void reset();
+    structKey getKeyHighest();
+    structKey getKeyLowest();
+    structKey getKeyLatest();
+
+    structKey getArpKey(const byte &step);
+
+    void reset();
+
+  private:
+    void sortList(const byte &order);
+    void copyArpListToArray();
+    void printArray();
 };
 
+// Sequence class
+class Seq {
+  public:
+    Seq() { init(); }
 
-//receive MIDI
-void receivedKeyPressed(byte channel, byte note, byte velocity);
-void receivedKeyReleased(byte channel, byte note);
-void receivedMod(byte channel, byte data);
-void receivedPitchbend(byte channel, byte data);
-void receivedAftertouch(byte channel, byte data);
-void receivedSustain(byte channel, byte data);
+    void init(const byte &note = 12, const byte &gate = 1, const byte &gateLength = 50, const byte &cc = 64, const byte &tuning = 0, const byte &ratchet = 0,
+              const byte &gateLengthOffset = 100); // init sequence to default values
 
-void receivedMidiClock();
-void receivedMidiSongPosition(unsigned int spp);
-void receivedStart();
-void receivedContinue();
-void receivedStop();
-void receivedReset();
+    // Note
+    void setNote(const byte &index, const byte &note); // set note value
+    void setNotes(const byte &note);                   // set all note values
+    void setCCs(const byte &cc);                   // set all note values
+    void setGates(const byte &gate);                   // set all note values
 
+    void increaseNote(const byte &index); // increase note value and return new note, function take care of tuning
+    void decreaseNote(const byte &index); // decrease note value and return new note, function take care of tuning
 
-//utility
-byte testByte(byte value, byte minimum, byte maximum);  //test byte range and return valid byte
-byte increaseByte(byte value, byte maximum);  //increase byte
-byte decreaseByte(byte value, byte minimum);  //decrease byte
-byte changeByte(byte value, int change ,byte minimum = 0, byte maximum = 255);  //change byte
-byte changeByte2(byte value, int change ,byte minimum = 0, byte maximum = 255);  //change byte (keeps original value if change not possible)
+    void changeNotes(const int &change); // change all note values
+    void octaveUp();                     // All notes one octave down (if possible)
+    void octaveDown();                   // All notes one octave down (if possible)
 
-// clock
-void increaseMidiClock();
-void increaseBpm16thCount();
-void setBpm16thCount(unsigned int spp);
-void resetClock();
+    // GateLength
+    void setGateLengths(const byte &gateLength); // set all gates at once
+    void changeGateLengths(const int &change);
 
-// status clas contains everything that does not need to be saved permanently
-//Status
-namespace settings {
-  void setSync(byte bpmSync);
-  byte getSync();
+    // Sequence
+    void setSequence(structSequence *copySeq); // set all sequence values at once
+    structSequence *getSequence();             // return the sequence struct pointer
 
-  void setRec(byte rec);
-  byte getRec();
+    int getSequenceSize(); // return the struct size
 
-  void setBPM(int bpm);
-  void calcBPM();
-  int getBPM();  //return MidiSource
-
-  byte getActiveSeq();
-  void setActiveSeq(byte activeSeq);
-
-  void setStep(byte stepSeq);
-  byte getStep();  //return MidiSource
-  void increaseStep();
-  void decreaseStep();
-
-  byte getActivePage();
-  byte getStepOnPage();
-
-  void setPlayStop(byte mode);
-  byte getPlayStop();
-
-  void setDirection(byte direction);
-  byte getDirection();
-
-  void setError(byte error);
-  byte getError();
-
-
-  //menu
-  void setPane(byte pane);
-  byte getActivePane();
-  byte getActiveMenu(); ///nochmal pane und menu auf eins bringen.....
-  void increasePane();  //switch menu max 3 menu pages
-  void decreasePane();  //switch menu max 3 menu pages;
-
-
-  //config
-  void setDisplayBrightness(byte brightness);
-  byte getDisplayBrightness();
-
-  void setMidiSource(byte midi);
-  byte getMidiSource();
-
-  void setNumberPages(byte nbPages);
-  byte getNumberPages();
-  byte getCurrentNumberPages();
-}
-
-
-//Sequence class
-class Seq
-{
-public:
-  void init(byte note = 12, byte gate = 1, byte gateLength = 50, byte tuning = 10); //init sequence to default values
-
-//Note
-  void setNote(byte index, byte note);  //set note value
-  void setNotes( byte note);            //set all note values
-  byte getNote(byte index);             //return note value
-
-  byte increaseNote(byte index);  //increase note value and return new note, function take care of tuning
-  byte decreaseNote(byte index);  //decrease note value and return new note, function take care of tuning
-
-  byte changeNote(byte index, int change);  //change note value and return new note
-  void changeNotes(int change);             //change all note values
-
-  void octaveUp();               //All notes one octave down (if possible)
-  void octaveDown();             //All notes one octave down (if possible)
-
-//TUNE
-  void setTuning(byte tuning);
-  byte getTuning();
-
-//Gate
-  void setGate(byte index, byte gate);  //set gate value
-  byte getGate(byte index);             //return gate value
-  byte toggleGate(byte index);          //toggle gate and return new status;
-
-//GateLength
-  void setGateLength(byte index, byte gateLength);  //set gate length
-  byte getGateLength(byte index);                   //return gate length
-  byte changeGateLength(byte index, int change);    //increase note value and return new note
-
-  void setGateLengths(byte gateLength);             //set all gates at once
-  void changeGateLengths(int change);               //increase note value and return new note
-
-//Sequence
-  void setSequence(structSequence *copySeq);   //set all sequence values at once
-  structSequence* getSequence();               //return the sequence struct pointer
-
-  int getSequenceSize();                        //return the struct size
-
-private:
-  //Sequence
-  structSequence sequence;
+    // Sequence
+    structSequence sequence;
 };
+
+// data class
+class FrankData {
+
+  public:
+    // storage enumerator
+    enum frankData : byte {
+        // frankData = 0 is referred to none, so if-statements will work as expected
+        none,
+
+        // Seq, needs value, array, step
+        seqNote,
+        seqGate,
+        seqGateLength,
+        seqCc,
+        seqCcEvaluated,
+        seqVelocity,
+        seqSize,
+
+        // calibration, needs value, array, step
+        noteCal,
+
+        // calibration, needs value, array
+        cvCal,
+
+        // Seq, needs value, array
+        seqTuning,
+        seqRatchet,
+        seqGateLengthOffset,
+        stepSpeed,
+        nbPages,
+        stepSeq,
+        stepArp,
+        activePage,
+        seqResetNotes,
+        seqResetGates,
+        stepOnPage,
+        currentPageNumber,
+
+        // general Settings, needs value
+        midiSource,
+        direction,
+        displayBrightness,
+
+        // Output Routing Settings, needs value, array
+        outputSource,
+        outputChannel,
+        outputArp,
+        outputArpMode,
+        outputArpRatchet,
+        outputArpOctave,
+        outputCc,
+        outputCcEvaluated,
+        outputLiveMode,
+        outputClock,
+
+        // Screen Settings, needs value
+        screenOutputChannel,
+        screenConfig,
+        screenMainMenu,
+        screenSubScreen,
+        screenCal,
+        screenCalNote,
+        screenRouting,
+
+        // structStatus, needs value
+
+        bpm,
+        play,
+        rec,
+        error,
+        bpmSync,
+        bpm16thCount,
+        bpmPoti,
+        load,
+        save,
+        pulseLength,
+
+        // liveMidi, needs value, array
+        liveMod,
+        livePitchbend,
+        liveAftertouch,
+        liveSustain,
+        liveTriggered,
+        liveKeyArpNoteEvaluated,
+        liveKeyArpVelEvaluated,
+        liveKeyNoteEvaluated,
+        liveKeyVelEvaluated,
+        liveLatestKey,
+        liveHighestKey,
+        liveLowestKey,
+        // liveKeysPressed,
+    };
+
+    // idea for further enumerators
+    enum subscreenStates : byte { screenNote, screenGate, screenCv, screenLive, screenArp };
+    enum midiSourceStates : byte { din, usb };
+    enum directionStates : byte { reverse, forward };
+    enum beatStates : byte { sixteenth, eighth, quarter, half, bar, doublebar };
+
+  private:
+    FrankData() {}
+
+    structStatus stat;
+    structSettings config;
+    structCalibration cal[OUTPUTS];
+
+    LiveMidi liveMidi[OUTPUTS];
+    Seq seq[OUTPUTS];
+    char str[MAXSTRINGSIZE + 1]; // MAXSTRINGSIZE + escape char
+
+  public:
+    const char *returnStr = str;
+
+    // receive MIDI
+    void receivedKeyPressed(const byte &channel, const byte &note, const byte &velocity);
+    void receivedKeyReleased(const byte &channel, const byte &note);
+    void receivedMidiClock();
+    void receivedMidiSongPosition(unsigned int spp);
+    void receivedStart();
+    void receivedContinue();
+    void receivedStop();
+    void receivedReset();
+
+    // internal helper functions
+  private:
+    void increaseMidiClock();
+    void increaseBpm16thCount();
+    void setBpm16thCount(unsigned int spp);
+    byte getBpm16thCount();
+    // inline void resetClock();
+    inline void calcBPM();
+    inline void increaseStepSeq(const byte &array);
+    inline void decreaseStepSeq(const byte &array);
+    inline byte getCurrentPageNumber(const byte &array);
+    inline const byte getSubscreenMax();
+    inline byte getLiveCcEvaluated(const byte &array);
+    inline byte getOutputLiveModeEvaluated(const byte &array);
+    inline byte getOutputClockEvaluated(const byte &array);
+    inline void setStr(const char *newStr);
+
+    void setNoteCal(const byte &data, const byte &array, const byte &note);
+    byte getNoteCal(const byte &array, const byte &step);
+    void setCvCal(const byte &data, const byte &array);
+    byte getCvCal(const byte &array);
+
+  public:
+    inline structKey getLiveKeyEvaluated(const byte &array);
+    inline structKey getKeyHighest(const byte &array);
+    inline structKey getKeyLowest(const byte &array);
+    inline structKey getKeyLatest(const byte &array);
+
+    structKey getArpKeyEvaluated(const byte &array);
+
+    void resetSubScreen(); // switch menu max 3 menu pages
+
+    void seqSetAllNotes(const byte &array, const byte &data);
+    void seqSetAllGates(const byte &array, const byte &data);
+    void seqSetAllCC(const byte &array, const byte &data);
+    void seqSetAllGateLengths(const byte &array, const byte &data);
+    void seqResetGateLengths(const byte &array);
+    void seqResetNote(const byte &array);
+    void seqResetGate(const byte &array);
+    void seqResetCC(const byte &array);
+    void seqOctaveUp(const byte &array);
+    void seqOctaveDown(const byte &array);
+    void seqCopy(const byte &source, const byte &destination);
+
+    void updateArp(const byte &array);
+
+    void resetAllStepCounter();
+
+    void reset();
+
+    // settings
+
+  public:
+    // get single type value
+    byte get(const frankData &frankDataType);
+    // get value that is part of an array, e.g. output, seq current step, ...
+    byte get(const frankData &frankDataType, const byte &array);
+    // get value for certain step
+    byte get(const frankData &frankDataType, const byte &array, const byte &step);
+
+    // set single type value
+    void set(const frankData &frankDataType, const int &data, const bool &clampChange = 0);
+    // set value prat of an array
+    void set(const frankData &frankDataType, const int &data, const byte &array, const bool &clampChange = 0);
+    // set value for certain step
+
+    void set(const frankData &frankDataType, const int &data, const byte &array, const byte &step, const bool &clampChange = 0);
+
+    // toggle what can be toggled
+    void toggle(const frankData &frankdataType);
+    void toggle(const frankData &frankdataType, const byte &array, const byte &step);
+
+    void change(const frankData &frankDataType, const int &amount, const bool &clampChange = 0);
+    void change(const frankData &frankDataType, const int &amount, const byte &array, const bool &clampChange = 0);
+    void change(const frankData &frankDataType, const int &amount, const byte &array, const byte &step, const bool &clampChange = 0);
+
+    void increase(const frankData &frankDataType, const bool &clampChange = 0);
+    void increase(const frankData &frankDataType, const byte &array, const bool &clampChange = 0);
+    void increase(const frankData &frankDataType, const byte &array, const byte &step, const bool &clampChange = 0);
+
+    void decrease(const frankData &frankDataType, const bool &clampChange = 0);
+    void decrease(const frankData &frankDataType, const byte &array, const bool &clampChange = 0);
+    void decrease(const frankData &frankDataType, const byte &array, const byte &step, const bool &clampChange = 0);
+
+    const char *getNameAsStr(const frankData &frankDataType);
+    const char *getValueAsStr(const frankData &frankDataType);
+    const char *getValueAsStr(const frankData &frankDataType, const byte &step);
+    const char *getValueAsStrChannel(const frankData &frankDataType, const byte channel );
+    const char *ValueToStr(const frankData frankDataType, const byte channel);
+
+
+
+
+
+
+    // singleton
+    static FrankData &getDataObj();
+
+  protected:
+    static FrankData *mainData;
+};
+
+// utility
+inline byte testByte(const int &value, const byte &minimum, const byte &maximum = 255,
+                     const bool &clampChange = 0);                // test byte range and return valid byte
+inline byte increaseByte(const byte &value, const byte &maximum); // increase byte
+inline byte decreaseByte(const byte &value, const byte &minimum); // decrease byte
+inline byte changeByte(const byte &value, const int &change, const byte &minimum = 0, const byte &maximum = 255,
+                       const bool &clampChange = 0); // change byte
+template <typename T> inline T toggleValue(const T &data);
+template <typename T> inline char *toStr(const T &data);
+
+char valueToNote(const byte &noteIn);
+char valueToOctave(const byte &noteIn);
+char valueToSharp(const byte &noteIn);
+const char *tuningToChar(const byte &tuning);
+
+int sort_desc(const void *cmp1, const void *cmp2);
+int sort_asc(const void *cmp1, const void *cmp2);
