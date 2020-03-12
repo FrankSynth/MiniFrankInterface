@@ -120,31 +120,24 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(SWREC), ISRSwitch, CHANGE);
 
     // Set timer interrupt (display refresh)
-    myTimer.begin(updateDisplay, 40000); // display refresh
+    // myTimer.begin(updateDisplay, 40000); // display refresh
 }
 
 void loop() {
 
     // GETDATAOBJ
     // NEW Midi Signal
-    updateMidi();
+    // updateMidi();
     //   Read uC UART Data
     while (Serial3.available()) {
         readSerial3();
     }
 
     // Temp Clock
-    static long timer = 0;
-    if (millis() - timer > 250) {
-        DATAOBJ.increase(FrankData::stepSeq);
-     //   PRINT("Step: ");
-      //  PRINTLN(DATAOBJ.get(FrankData::stepSeq));
-        timer = millis();
-    }
 
     // activate middleman
-    updateAllOutputs();
-    cntrl.readBPMSpeed();
+    // updateAllOutputs();
+    // cntrl.readBPMSpeed();
 }
 
 void ISRSwitch() {

@@ -1,10 +1,7 @@
 #include "interfaceDisplay.hpp"
 #include <string.h>
 
-
-
-// Debug logging
-#define DEBUG 1
+#define DEBUG 0
 
 #if DEBUG == 1
 #define PRINTLN(x) Serial.println(x)
@@ -16,6 +13,7 @@
 #define PRINTLN2(x, y)
 #define PRINT(x)
 #define PRINT2(x, y)
+#define DEBUGPRINTBEGIN
 #endif
 
 // GETDATAOBJ

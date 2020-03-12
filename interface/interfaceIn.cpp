@@ -36,7 +36,7 @@ void controls::rotate(byte id, byte dir) {
     PRINT("Direction: ");
     PRINTLN(dir);
     
-    DATAOBJ.change(mapping(id), DATAOBJ.get(FrankData::screenOutputChannel),); }
+    DATAOBJ.change(mapping(id), DATAOBJ.get(FrankData::screenOutputChannel)); }
 
 void controls::push(byte id, byte push) { // switch message
         PRINTLN(id);
