@@ -339,8 +339,10 @@ class FrankData {
     byte getBpm16thCount();
     // inline void resetClock();
     inline void calcBPM();
-    inline void increaseStepSeq(const byte &array);
-    inline void decreaseStepSeq(const byte &array);
+    inline void increaseSeqStep(const byte &array);
+    inline void decreaseSeqStep(const byte &array);
+    inline void increaseArpStep(const byte &array);
+    inline void decreaseArpStep(const byte &array);
     inline byte getCurrentPageNumber(const byte &array);
     inline const byte getSubscreenMax();
     inline byte getLiveCcEvaluated(const byte &array);
@@ -434,6 +436,8 @@ inline byte increaseByte(const byte &value, const byte &maximum); // increase by
 inline byte decreaseByte(const byte &value, const byte &minimum); // decrease byte
 inline byte changeByte(const byte &value, const int &change, const byte &minimum = 0, const byte &maximum = 255,
                        const bool &clampChange = 0); // change byte
+inline byte changeByteReverse(const byte &value, const int &change, const byte &minimum = 0, const byte &maximum = 255);
+inline int changeIntReverse(const int &value, const int &change, const int &minimum, const int &maximum);
 template <typename T> inline T toggleValue(const T &data);
 template <typename T> inline char *toStr(const T &data);
 
