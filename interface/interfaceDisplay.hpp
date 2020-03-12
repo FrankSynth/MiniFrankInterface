@@ -12,21 +12,6 @@
 #include <Fonts/FreeSansBold24pt7b.h>
 #include <Fonts/FreeSansBold9pt7b.h>
 
-#define DEBUG 1
-
-#if DEBUG == 1
-#define PRINTLN(x) Serial.println(x)
-#define PRINTLN2(x,y) Serial.println(x,y)
-#define PRINT(x) Serial.print(x)
-#define PRINT2(x,y) Serial.print(x,y)
-#else
-#define PRINTLN(x) 
-#define PRINTLN2(x,y) 
-#define PRINT(x)
-#define PRINT2(x,y)
-#define DEBUGPRINTBEGIN
-#endif
-
 #define LCD_CS 10
 #define LCD_RST 20
 #define LCD_DC 18
@@ -36,7 +21,9 @@
 #define WHITE ST77XX_WHITE
 #define RED ST77XX_RED
 //#define GREEN      ST77XX_GREEN
-//#define BLUE       ST77XX_BLUE
+
+// #define BLUE       ST77XX_BLUE
+
 #define CYAN ST77XX_CYAN
 #define MAGENTA ST77XX_MAGENTA
 #define YELLOW ST77XX_YELLOW
@@ -71,7 +58,6 @@ class Display {
         : w(w), h(h), rotation(rotation) {
         initLCD(w, h, rotation);
         initBuffer();
-        PRINTLN("Display contructor");
     }
 
     void refresh();                    // refresh display

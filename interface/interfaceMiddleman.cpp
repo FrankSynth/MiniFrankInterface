@@ -46,7 +46,7 @@ void updateNoteOut(byte output) {
             if (tempStep != previousOutputs[output].stepArp) {
                 previousOutputs[output].stepArp = tempStep;
 
-                byte tempNote = DATAOBJ.get(FrankData::liveKeyArpEvaluated, output);
+                byte tempNote = DATAOBJ.get(FrankData::liveKeyArpNoteEvaluated, output);
                 if (tempNote != previousOutputs[output].note) {
                     previousOutputs[output].note = tempNote;
                     // send new Note

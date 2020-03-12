@@ -2,6 +2,20 @@
 #include <string.h>
 
 
+#define DEBUG 0
+
+#if DEBUG == 1
+#define PRINTLN(x) Serial.println(x)
+#define PRINTLN2(x, y) Serial.println(x, y)
+#define PRINT(x) Serial.print(x)
+#define PRINT2(x, y) Serial.print(x, y)
+#else
+#define PRINTLN(x)
+#define PRINTLN2(x, y)
+#define PRINT(x)
+#define PRINT2(x, y)
+#define DEBUGPRINTBEGIN
+#endif
 
 
 // GETDATAOBJ
