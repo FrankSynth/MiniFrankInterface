@@ -1054,7 +1054,7 @@ void FrankData::toggle(const frankData &frankDataType) {
     case screenRouting:
         stat.screen.mainMenu = 0;
         stat.screen.config = 0;
-        stat.screen.routing = 1;
+        stat.screen.routing = !stat.screen.routing;
         stat.screen.calibration = 0;
         stat.screen.calibrateNote = 0;
         break;

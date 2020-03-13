@@ -93,19 +93,17 @@ FrankData::frankData mappingMenuCal[] = {NONE, NONE, NONE, NONE, NONE, NONE, NON
 FrankData::frankData mappingMenuCalPush[] = {NONE, NONE, NONE, NONE, NONE,
                                              NONE, NONE, NONE, MENU, PLAY}; // Routing Menu Mapping
 
-FrankData::frankData mappingMenuMidi[] = {
-                                             FrankData::midiSource,
-                                             FrankData::outputChannel,
-                                             FrankData::outputCc,
-                                             NONE,
-                                             FrankData::outputClock,
-                                             NONE,
-                                             NONE,
-                                             NONE,
-                                             SUBSCREEN,
-                                             STEP}; // Routing Menu Mapping
-FrankData::frankData mappingMenuMidiPush[] = {NONE, NONE, NONE, NONE, NONE,
-                                                 NONE, NONE, NONE, MENU, PLAY}; // Routing Menu Mapping
+FrankData::frankData mappingMenuMidi[] = {FrankData::midiSource,
+                                          FrankData::outputChannel,
+                                          FrankData::outputCc,
+                                          NONE,
+                                          FrankData::outputClock,
+                                          NONE,
+                                          NONE,
+                                          FrankData::screenRouting,
+                                           SUBSCREEN,
+                                          STEP}; // Routing Menu Mapping
+FrankData::frankData mappingMenuMidiPush[] = {NONE, NONE, NONE, NONE, NONE, NONE, NONE, FrankData::screenRouting, MENU, PLAY}; // Routing Menu Mapping
 
 FrankData::frankData mapping(byte input) {
 

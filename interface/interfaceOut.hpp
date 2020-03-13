@@ -11,6 +11,7 @@
 #define GATE2 3
 #define CLK1 1
 #define CLK2 0
+#define CLKLED 21
 
 void setVoltage(int dacpin, bool channel, bool gain, unsigned int mV); // channel 0, 1, Gain = 2 (default)
 void initOutput();
@@ -43,10 +44,17 @@ class Channel {
 class clock {
   public:
     clock(byte pin) : pin(pin) {}
-
     void setClock(byte state);
-
 
   private:
     byte pin;
+};
+
+class ClkLed {
+  public:
+    ClkLed(byte pin);
+    void setClkLed(byte state);
+
+  private:
+    byte clkLed;
 };

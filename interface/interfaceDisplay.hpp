@@ -29,14 +29,13 @@
 #define YELLOW ST77XX_YELLOW
 #define ORANGE ST77XX_ORANGE
 
-#define GREYWHITE 0x94B2  // Hell Blau
+#define GREYWHITE 0xC638 // Hell Blau
 #define GREY 0x39E7       
 #define GREEN 0x4208      // Grün
-#define DARKGREY 0x2965
-#define BACKGROUND 0x2945
+#define DARKGREY 0x2945   // linien
+#define BACKGROUND 0x3186
 
-#define COLORTHEME 0x230E
-
+#define COLORTHEME 0x1AAE
 
 ///  A 16-bit double buffer from the adafruit canvas
 class DispBuffer16 : public Adafruit_GFX {
@@ -103,4 +102,14 @@ class Display {
     void BodyTemplateArp();
 
     void updateDisplay();
+};
+
+
+class TLC5916{
+  public:
+    void init(byte pin);
+    void sendByte(byte send);
+
+  private:
+    byte pinTLC;
 };
