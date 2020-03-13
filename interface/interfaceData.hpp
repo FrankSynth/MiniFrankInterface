@@ -167,8 +167,7 @@ class LiveMidi {
     void reset();
 
   private:
-    void sortList(const byte &order);
-    void copyArpListToArray();
+    inline void copyArpListToArray();
     void printArray();
 };
 
@@ -452,5 +451,5 @@ const char *valueToOctave(const byte &noteIn);
 char valueToSharp(const byte &noteIn);
 const char *tuningToChar(const byte &tuning);
 
-int sort_desc(const void *cmp1, const void *cmp2);
-int sort_asc(const void *cmp1, const void *cmp2);
+inline int sort_desc(const void *cmp1, const void *cmp2);
+inline int sort_asc(const void *cmp1, const void *cmp2);

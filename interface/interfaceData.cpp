@@ -257,17 +257,11 @@ void LiveMidi::printArray() {
 void LiveMidi::updateArpArray(const byte &arpSettings) {
     copyArpListToArray();
 
-    switch (arpSettings) {
-    case 0:
-    case 2: sortList(1); break;
-    case 1: sortList(0); break;
-
-    default:;
-    }
+    if (arpSettings < 3) qsort(arpArray, arpList.size, sizeof(structKey), sort_asc);
     triggered = 1; // update outputs
 }
 
-void LiveMidi::copyArpListToArray() {
+inline void LiveMidi::copyArpListToArray() {
     for (int x = 0; x < arpList.size; x++) {
         PressedNotesElement *element = arpList.getElement(x);
         structKey key;
@@ -275,15 +269,6 @@ void LiveMidi::copyArpListToArray() {
         key.velocity = element->velocity;
         arpArray[x] = key;
     }
-}
-
-void LiveMidi::sortList(const byte &order) {
-    // if (order) {
-    qsort(arpArray, arpList.size, sizeof(structKey), sort_asc);
-    // }
-    // else {
-    //     qsort(arpArray, arpList.size, sizeof(structKey), sort_desc);
-    // }
 }
 
 structKey LiveMidi::getArpKey(const byte &step) {
@@ -603,8 +588,8 @@ inline void FrankData::increaseArpOct(const byte &array) {
             liveMidi[array].arpOctave = changeIntReverse(liveMidi[array].arpOctave, 1, newOctMin, newOctMax);
         }
     }
-        PRINT("increased internal Oct, new arpOctave ");
-        PRINTLN(liveMidi[array].arpOctave);
+    PRINT("increased internal Oct, new arpOctave ");
+    PRINTLN(liveMidi[array].arpOctave);
 }
 
 inline void FrankData::decreaseArpOct(const byte &array) {
@@ -633,8 +618,8 @@ inline void FrankData::decreaseArpOct(const byte &array) {
             liveMidi[array].arpOctave = changeIntReverse(liveMidi[array].arpOctave, -1, newOctMin, newOctMax);
         }
     }
-        PRINT("decrease internal Oct, new arpOctave ");
-        PRINTLN(liveMidi[array].arpOctave);
+    PRINT("decrease internal Oct, new arpOctave ");
+    PRINTLN(liveMidi[array].arpOctave);
 }
 
 inline void FrankData::nextArpStep(const byte &array) {
@@ -1042,6 +1027,13 @@ void FrankData::toggle(const frankData &frankDataType) {
     case screenMainMenu:
         if (stat.screen.mainMenu) {
             stat.screen.mainMenu = 0;
+        }
+        else if (stat.screen.config || stat.screen.routing || stat.screen.calibration || stat.screen.calibrateNote) {
+            stat.screen.mainMenu = 0;
+            stat.screen.config = 0;
+            stat.screen.routing = 0;
+            stat.screen.calibration = 0;
+            stat.screen.calibrateNote = 0;
         }
         else {
             stat.screen.mainMenu = 1;
@@ -1502,11 +1494,12 @@ inline byte decreaseByte(const byte &value, const byte &minimum) {
 // change byte value and check boundaries
 inline byte changeByte(const byte &value, const int &change, const byte &minimum, const byte &maximum, const bool &clampChange) {
 
-    if ((int)value + change >= maximum) { // test max
+    if ((int)value + change > maximum) { // test max
 
         return clampChange ? maximum : value;
     }
-    else if ((int)value + change <= minimum) { // test min  
+
+    else if ((int)value + change < minimum) { // test min
         return clampChange ? minimum : value;
     }
     else {
@@ -1516,11 +1509,11 @@ inline byte changeByte(const byte &value, const int &change, const byte &minimum
 
 inline int changeInt(const int &value, const int &change, const int &minimum, const int &maximum, const bool &clampChange) {
 
-    if (value + change >= maximum) { // test max
+    if (value + change > maximum) { // test max
 
         return clampChange ? maximum : value;
     }
-    else if (value + change <= minimum) { // test min
+    else if (value + change < minimum) { // test min
         return clampChange ? minimum : value;
     }
     else {
@@ -1640,21 +1633,17 @@ const char *tuningToChar(const byte &tuning) {
     }
 }
 
-int sort_desc(const void *cmp1, const void *cmp2) {
+inline int sort_desc(const void *cmp1, const void *cmp2) {
     // Need to cast the void * to int *
     byte a = ((structKey *)cmp1)->note;
     byte b = ((structKey *)cmp2)->note;
     // The comparison
     return a > b ? -1 : (a < b ? 1 : 0);
-    // A simpler, probably faster way:
-    // return b - a;
 }
-int sort_asc(const void *cmp1, const void *cmp2) {
+inline int sort_asc(const void *cmp1, const void *cmp2) {
     // Need to cast the void * to int *
     byte a = ((structKey *)cmp1)->note;
     byte b = ((structKey *)cmp2)->note;
     // The comparison
     return a > b ? 1 : (a < b ? -1 : 0);
-    // A simpler, probably faster way:
-    // return b - a;
 }
