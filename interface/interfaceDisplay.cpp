@@ -271,7 +271,7 @@ void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
                 bufferBody->setFont();                   // reset to default font
 
                 /////Name/////
-                const char *string = DATAOBJ.getNameAsStr(mapping(dataField)); // get name
+                const char *string = DATAOBJ.getValueAsStrChannel(mapping(dataField),DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel))); // get name
                 byte offset = strlen(string) * 3;         // get name length
 
                 bufferBody->setCursor(posX + 20 - offset, posY + 7 + y * 1); // set Cursor
@@ -291,7 +291,7 @@ void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
 
                           */
                 // char *data = toStr(mapping(dataField), index); // string buffer
-                const char *data = DATAOBJ.getValueAsStr(mapping(dataField)); // temporary removed index
+                const char *data = DATAOBJ.getValueAsStrChannel(mapping(dataField),DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel))); // temporary removed index
 
                 byte length = strlen(data); // string length
                 if((byte)data[0] == 64){
@@ -317,10 +317,6 @@ void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
                 }
                 bufferBody->print(data); // print value
                 }
-
-
-
-
                 }
             }
         }

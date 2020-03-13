@@ -1148,7 +1148,7 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
     case screenSubScreen: setStr("Sub"); break;
     case screenCal: setStr("Cal"); break;
     case screenCalNote: setStr("CalNt"); break;
-    case screenRouting: setStr("Route"); break;
+    case screenRouting: setStr("MIDI"); break;
 
     case stepSeq: setStr("Step"); break;
     case stepArp: setStr("Arp Step"); break;

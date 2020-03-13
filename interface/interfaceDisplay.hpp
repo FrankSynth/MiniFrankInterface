@@ -33,8 +33,7 @@
 #define GREY 0x39E7       
 #define GREEN 0x4208      // Grün
 #define DARKGREY 0x2965
-#define BACKGROUND 0x39E7
-
+#define BACKGROUND 0x2945
 
 #define COLORTHEME 0x230E
 
