@@ -47,6 +47,7 @@ void controls::rotate(byte id, byte dir) {
     Serial.println(mappedID);
     switch (mappedID) {
 
+
     // TYPE,Channel,Index;
     case NOTE:
     case CV:
@@ -167,7 +168,16 @@ void controls::push(byte id, byte push) { // switch message
     PRINTLN(id);
     PRINT("Mapping:");
     PRINTLN(mappedID);
+
+
     switch (mappedID) {
+
+
+        //funfction call:
+
+        case FrankData::load:   break;              //Load function
+        case FrankData::save:   break;              //Save funtcion
+
 
         // TYPE,Channel,index
     case GATE:
