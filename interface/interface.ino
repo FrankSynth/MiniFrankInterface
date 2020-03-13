@@ -151,14 +151,14 @@ void loop() {
     static long timer = 0;
     if (millis() - timer > 125) {
         DATAOBJ.increaseBpm16thCount();
+        PRINT("current 16th counter ");
+        PRINTLN(DATAOBJ.get(FrankData::bpm16thCount));
 
-        //   PRINT("Step: ");
-        //  PRINTLN(DATAOBJ.get(FrankData::stepSeq));
         timer = millis();
     }
 
     // activate middleman
-    // updateAllOutputs();
+    updateAllOutputs();
     cntrl.readBPMSpeed();
 }
 
