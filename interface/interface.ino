@@ -65,9 +65,9 @@ void updateTLC() { // update interrupt
     if (source) { // seq modus an?
         byte send = 0;
         for (int i = 0; i < 8; i++) {
-            if (DATAOBJ.get(FrankData::seqGate, source - 1 ,DATAOBJ.get(FrankData::activePage, source - 1) * 8 +i )) { // gate an?
-                    send = send | 1 << i;
-                }
+            if (DATAOBJ.get(FrankData::seqGate, source - 1, DATAOBJ.get(FrankData::activePage, source - 1) * 8 + i)) { // gate an?
+                send = send | 1 << i;
+            }
         }
         tlc.sendByte(send);
        }
@@ -152,15 +152,17 @@ void loop() {
     static long timer = 0;
     if (millis() - timer > 125) {
         DATAOBJ.increaseBpm16thCount();
-        PRINT("current 16th counter ");
         PRINTLN(DATAOBJ.get(FrankData::bpm16thCount));
 
         timer = millis();
     }
+    
+    cntrl.readBPMSpeed();
+    // count all clocks forward if not synced
+    updateClockCounter();
 
     // activate middleman
     updateAllOutputs();
-    cntrl.readBPMSpeed();
 }
 
 void ISRSwitch() {

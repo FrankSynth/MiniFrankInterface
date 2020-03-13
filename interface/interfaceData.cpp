@@ -504,7 +504,7 @@ void FrankData::increaseBpm16thCount() {
     }
 
     for (byte out = 0; out < OUTPUTS; out++) {
-        if (stat.bpm16thCount % (config.routing[out].stepSpeed+1)*(config.routing[out].stepSpeed+1) == 0) {
+        if (stat.bpm16thCount % (config.routing[out].stepSpeed + 1) * (config.routing[out].stepSpeed + 1) == 0) {
             nextArpStep(out);
             increaseSeqStep(out);
         }
@@ -516,10 +516,27 @@ void FrankData::setBpm16thCount(unsigned int spp) {
     stat.bpm16thCount = (spp % 16) - 1;
 }
 
+void FrankData::setBPMPoti(const unsigned int &bpm) {
+    stat.bpmPoti = bpm;
+}
+
+void FrankData::updateClockCounter() {
+
+    if (!stat.bpmSync) {
+    static long timer = 0;
+
+        if (millis() - timer > 512 - stat.bpmPoti) {
+            increaseBpm16thCount();
+            timer = millis();
+        }
+    }
+
+}
+
 inline void FrankData::calcBPM() {
     if (bpmSync) {
         static double bpm16thTimer = 0;
-        set(bpm, (int)((60000. / (millis() - bpm16thTimer)) * 4 + 0.5));
+        set(bpm, (int)((60000. / (millis() - bpm16thTimer)) / 4 + 0.5));
 
         bpm16thTimer = millis();
     }

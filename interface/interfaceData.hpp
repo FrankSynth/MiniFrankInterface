@@ -85,7 +85,7 @@ typedef struct {
     byte bpmSync = 0; // Sync Active
     byte midiClockCount = 5;
     byte bpm16thCount = 0;
-    uint16_t bpmPoti = 0; // sync= 0 ? 0-1023 bpm log : divider /4, /2, 1, *2, *4 ; Range is 0-1023
+    unsigned int bpmPoti = 0; // sync= 0 ? 0-1023 bpm log : divider /4, /2, 1, *2, *4 ; Range is 0-1023
 } structStatus;
 
 // Midi Key data
@@ -349,6 +349,7 @@ class FrankData {
     inline void increaseArpOct(const byte &array);
     inline void decreaseArpOct(const byte &array);
 
+
     inline byte getCurrentPageNumber(const byte &array);
     inline const byte getSubscreenMax();
     inline byte getLiveCcEvaluated(const byte &array);
@@ -361,6 +362,7 @@ class FrankData {
     const char *valueToStr(const frankData &frankDataType, const byte &channel);
 
   public:
+    void updateClockCounter();
     void increaseBpm16thCount();
     inline structKey getLiveKeyEvaluated(const byte &array);
     inline structKey getKeyHighest(const byte &array);
@@ -368,6 +370,8 @@ class FrankData {
     inline structKey getKeyLatest(const byte &array);
 
     structKey getArpKeyEvaluated(const byte &array);
+
+    void setBPMPoti(const unsigned int & bpm);
 
     void resetSubScreen(); // switch menu max 3 menu pages
 
