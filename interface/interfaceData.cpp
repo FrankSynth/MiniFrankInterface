@@ -548,8 +548,6 @@ inline byte FrankData::getCurrentPageNumber(const byte &array) { // number of pa
     return (stat.stepSeq[array] / 8 + 1);     // return current stepSeq page until the next page jump
 }
 
-// Seq *FrankData::getSeqObject() { return seq; }
-
 // Singleton
 FrankData *FrankData::mainData = nullptr;
 FrankData &FrankData::getDataObj() {
@@ -569,43 +567,25 @@ inline structKey FrankData::getLiveKeyEvaluated(const byte &array) {
 structKey FrankData::getArpKeyEvaluated(const byte &array) {
     byte step = stat.stepArp[array];
     structKey key;
-    static int octave = 0;
 
     if (config.routing[array].arpMode == 4) {
         step = random(0, liveMidi[array].arpList.size);
         key = liveMidi[array].getArpKey(step);
     }
-
     else {
         liveMidi[array].getArpKey(step);
     }
 
-    // change octave for next round
-    // no octaving
-    if (config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET == 0) {
-        octave = 0;
+    // lower octaves
+    if (config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET < 0) {
+        for (int x = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET; x < 0; x++) {
+            key.note = changeByte(key.note, -12, 0, NOTERANGE, 0);
+        }
     }
-    else {
-        // eval new min and max
-        int newOctMin;
-        int newOctMax;
-
-        if (config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET < 0) {
-            newOctMin = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET;
-            newOctMax = 0;
-        }
-        else {
-            newOctMin = 0;
-            newOctMax = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET;
-        }
-
-        // down
-        if (config.routing[array].arpMode == 2) {
-            octave = changeIntReverse(octave, -1, newOctMin, newOctMax);
-        }
-        // all others go up
-        else {
-            octave = changeIntReverse(octave, 1, newOctMin, newOctMax);
+    // raise octaves
+    else if (config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET > 0) {
+        for (int x = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET; x > 0; x--) {
+            key.note = changeByte(key.note, 12, 0, NOTERANGE, 0);
         }
     }
 
@@ -691,29 +671,13 @@ inline structKey FrankData::getKeyLatest(const byte &array) {
 
 inline byte FrankData::getLiveCcEvaluated(const byte &array) {
     switch (config.routing[array].cc) {
-    case 0: return getLiveKeyEvaluated(array).velocity;
+    case 0: return config.routing[array].arp ? getArpKeyEvaluated(array).velocity : getLiveKeyEvaluated(array).velocity;
     case 1: return liveMidi[array].mod;
     case 2: return liveMidi[array].pitchbend;
     case 3: return liveMidi[array].aftertouch;
     case 4: return liveMidi[array].sustain;
     default: PRINTLN("FrankData getLiveCcEvaluated, no case found"); return 0;
     }
-}
-
-inline byte FrankData::getOutputLiveModeEvaluated(const byte &array) {
-    switch (config.routing[array].liveMidiMode) {
-    case 0: return getLiveKeyEvaluated(array).velocity;
-    case 1: return liveMidi[array].mod;
-    case 2: return liveMidi[array].pitchbend;
-    case 3: return liveMidi[array].aftertouch;
-    case 4: return liveMidi[array].sustain;
-    default: PRINTLN("FrankData getOutputLiveModeEvaluated, no case found"); return 0;
-    }
-}
-
-// TO DO
-inline byte FrankData::getOutputClockEvaluated(const byte &array) {
-    return config.routing[array].clockSpeed + 1;
 }
 
 void FrankData::seqSetAllNotes(const byte &array, const byte &data) {
@@ -1184,7 +1148,6 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType) {
     case seqGateLengthOffset:
     case stepOnPage:
     case currentPageNumber:
-    case stepSpeed:
     case nbPages:
     case stepSeq:
     case activePage:

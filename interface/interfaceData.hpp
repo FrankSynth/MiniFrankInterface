@@ -8,9 +8,9 @@
 #define STEPSPERPAGE 8
 #define OUTPUTS 2 // Number of output lanes
 #define MAXSTRINGSIZE 8
-#define ARPOCTAVECENTEROFFSET 3
-#define GATELENGTHOFFSET 100
-#define CALOFFSET 127
+#define ARPOCTAVECENTEROFFSET (int)3
+#define GATELENGTHOFFSET (int)100
+#define CALOFFSET (int)127
 
 #define DATAOBJ FrankData::getDataObj()
 
@@ -251,6 +251,7 @@ class FrankData {
         midiSource,
         direction,
         displayBrightness,
+        resetStepCounters,
 
         // Output Routing Settings, needs value, array
         stepArp,
@@ -349,8 +350,6 @@ class FrankData {
     inline byte getCurrentPageNumber(const byte &array);
     inline const byte getSubscreenMax();
     inline byte getLiveCcEvaluated(const byte &array);
-    inline byte getOutputLiveModeEvaluated(const byte &array);
-    inline byte getOutputClockEvaluated(const byte &array);
     inline void setStr(const char *newStr);
 
     void setNoteCal(const byte &data, const byte &array, const byte &note);
