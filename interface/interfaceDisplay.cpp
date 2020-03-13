@@ -95,7 +95,7 @@ void Display::drawFoot() {
 void Display::BodyTemplateLive() { // has 1 dataFields + GateSignal
    for (int x = 0; x < 4; x++) {
         for (int y = 0; y < 2; y++) {
-            if(x < 1 || y != 0){
+            if(x < 2 || y != 0){
             byte dataField = x + y * 4;       // current DataField
             if (mapping(dataField) != NONE) { // not an empty field?
                 byte fieldWidth = 40;
@@ -123,25 +123,31 @@ void Display::BodyTemplateLive() { // has 1 dataFields + GateSignal
 
                 const char *data = DATAOBJ.getValueAsStr(mapping(dataField)); // temporary removed index
 
-                byte length = strlen(data); // string length
+                if ((byte)data[0] == 64) {
 
-                if (length == 4) { // 3 Digit
-                    bufferBody->setFont(&FreeSansBold9pt7b);
-                    bufferBody->setCursor(posX + 20 - 19, posY + 40 + y);
+                    bufferBody->fillCircle(posX + 20, posY + 35, 7, WHITE);
+
                 }
-                if (length == 3) { // 3 Digit
-                    bufferBody->setFont(&FreeSansBold9pt7b);
-                    bufferBody->setCursor(posX + 20 - 17, posY + 40 + y);
+                else{
+                    byte length = strlen(data); // string length
+                    if (length == 4) { // 3 Digit
+                        bufferBody->setFont(&FreeSansBold9pt7b);
+                        bufferBody->setCursor(posX + 20 - 19, posY + 40 + y);
+                    }
+                    if (length == 3) { // 3 Digit
+                        bufferBody->setFont(&FreeSansBold9pt7b);
+                        bufferBody->setCursor(posX + 20 - 17, posY + 40 + y);
+                    }
+                    else if (length == 2) { // 2 Digit
+                        bufferBody->setFont(&FreeSansBold9pt7b);
+                        bufferBody->setCursor(posX + 20 - 12, posY + 40 + y);
+                    }
+                    else if (length == 1) { // 1 Digit
+                        bufferBody->setFont(&FreeSansBold9pt7b);
+                        bufferBody->setCursor(posX + 20 - 6, posY + 40 + y);
+                    }
+                    bufferBody->print(data); // print value
                 }
-                else if (length == 2) { // 2 Digit
-                    bufferBody->setFont(&FreeSansBold9pt7b);
-                    bufferBody->setCursor(posX + 20 - 12, posY + 40 + y);
-                }
-                else if (length == 1) { // 1 Digit
-                    bufferBody->setFont(&FreeSansBold9pt7b);
-                    bufferBody->setCursor(posX + 20 - 6, posY + 40 + y);
-                }
-                bufferBody->print(data); // print value
             }
             }
         }
@@ -154,11 +160,11 @@ void Display::BodyTemplateLive() { // has 1 dataFields + GateSignal
                 else note = DATAOBJ.get(FrankData::liveKeyNoteEvaluated, DATAOBJ.get(FrankData::screenOutputChannel));
 
                 bufferBody->setFont(&FreeSansBold18pt7b);
-                bufferBody->setCursor(95, 46);
+                bufferBody->setCursor(95, 38);
                 bufferBody->print(valueToNote(note));
 
                 bufferBody->setFont(&FreeSansBold12pt7b);
-                bufferBody->setCursor(135, 50);
+                bufferBody->setCursor(135, 45);
                 bufferBody->print(valueToSharp(note));
 
                 bufferBody->setFont(&FreeSansBold9pt7b);
