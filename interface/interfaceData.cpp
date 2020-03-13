@@ -525,7 +525,7 @@ void FrankData::updateClockCounter() {
     if (!stat.bpmSync) {
     static long timer = 0;
 
-        if (millis() - timer > 512 - stat.bpmPoti) {
+        if (millis() - timer > stat.bpmPoti) {
             increaseBpm16thCount();
             timer = millis();
         }
