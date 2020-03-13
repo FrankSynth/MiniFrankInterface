@@ -77,3 +77,11 @@ void setVoltage(int dacpin, bool channel, bool gain, unsigned int mV) // channel
         digitalWrite(pin, state);
     }
 
+    ClkLed::ClkLed(byte pin) {
+        clkLed = pin;
+        pinMode(clkLed, OUTPUT);
+    }
+
+    void ClkLed::setClkLed(byte state) {
+        pinMode(clkLed, state);
+    }

@@ -114,7 +114,7 @@ void Display::BodyTemplateLive() { // has 1 dataFields + GateSignal
                 const char *string = DATAOBJ.getNameAsStr(mapping(dataField)); // get name
                 byte offset = strlen(string) * 3;         // get name length
 
-                bufferBody->setCursor(posX + 20 - offset, posY + 9 + y * 1); // set Cursor
+                bufferBody->setCursor(posX + 20 - offset, posY + 7 + y * 1); // set Cursor
                 bufferBody->print(string);                                   // print value to display
 
                 /////Data/////
@@ -345,17 +345,18 @@ void Display::drawHead() {
     // CLK
     bufferHead->setCursor(55, 4);
     bufferHead->print("CLK: ");
+    bufferHead->setCursor(79, 4);
 
     bufferHead->print(DATAOBJ.getValueAsStrChannel(FrankData::outputClock, 0));
-    bufferHead->setCursor(120, 4);
+    bufferHead->setCursor(108, 4);
 
     bufferHead->print(DATAOBJ.getValueAsStrChannel(FrankData::outputClock, 1));
 
     if (DATAOBJ.get(FrankData::rec)) {
 
-        bufferHead->setCursor(135, 4);
-        bufferFoot->setTextColor(RED, COLORTHEME);
-        
+        bufferHead->setCursor(139, 4);
+        bufferHead->setTextColor(0xF800, COLORTHEME);
+
         bufferHead->print("REC");
     }
 }
@@ -527,3 +528,17 @@ void DispBuffer16::byteSwap(void) {
             buffer[i] = __builtin_bswap16(buffer[i]);
     }
 }
+
+void TLC5916::sendByte(byte send){
+    SPI.beginTransaction(SPISettings(20000000, MSBFIRST, SPI_MODE0));
+    digitalWrite(pinTLC, LOW);
+    SPI.transfer(send);
+    digitalWrite(pinTLC, HIGH);
+    SPI.endTransaction();   
+}
+
+
+void TLC5916::init(byte pin){
+    pinTLC = pin;
+    sendByte(0); //set to Black
+}   
