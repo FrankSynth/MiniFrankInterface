@@ -22,7 +22,7 @@ clock outputClock[OUTPUTS] = {clock(CLK1), clock(CLK2)};
 
 PreviousState previousState;
 PreviousOutputs previousOutputs[OUTPUTS];
-ClkLed clkLed = ClkLed(CLKLED);
+ClkLed clkLed = ClkLed();
 
 
 void initMiddleman() {

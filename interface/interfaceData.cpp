@@ -490,7 +490,7 @@ void FrankData::increaseMidiClock() {
 
 void FrankData::increaseBpm16thCount() {
     stat.bpm16thCount++;
-    if (stat.bpm16thCount == 31) {
+    if (stat.bpm16thCount == 32) {
         stat.bpm16thCount = 0;
     }
     calcBPM();
