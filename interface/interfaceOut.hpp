@@ -52,7 +52,7 @@ class clock {
 
 class ClkLed {
   public:
-    ClkLed(byte pin);
+    void init(byte pin);
     void setClkLed(byte state);
 
   private:

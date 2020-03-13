@@ -22,12 +22,12 @@ clock outputClock[OUTPUTS] = {clock(CLK1), clock(CLK2)};
 
 PreviousState previousState;
 PreviousOutputs previousOutputs[OUTPUTS];
-ClkLed clkLed = ClkLed();
+ClkLed clkLed;
 
 
 void initMiddleman() {
     initOutput(); // init Outputs
-    clkLed.init();
+    clkLed.init(CLKLED);
 }
 void updateAllOutputs() {
     for (byte output = 0; output < OUTPUTS; output++) {
