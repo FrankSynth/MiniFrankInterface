@@ -581,7 +581,7 @@ inline void FrankData::increaseArpOct(const byte &array) {
         }
 
         if (config.routing[array].arpMode == 2) {
-            liveMidi[array].arpOctave = changeInt(liveMidi[array].arpOctave, 1, newOctMin, newOctMax);
+            liveMidi[array].arpOctave = changeInt(liveMidi[array].arpOctave, 1, newOctMin, newOctMax, true);
             if (liveMidi[array].arpOctave == newOctMax) liveMidi[array].arpOctaveDirection = 0;
         }
         else {
@@ -611,7 +611,7 @@ inline void FrankData::decreaseArpOct(const byte &array) {
             newOctMax = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET;
         }
         if (config.routing[array].arpMode == 2) {
-            liveMidi[array].arpOctave = changeInt(liveMidi[array].arpOctave, -1, newOctMin, newOctMax);
+            liveMidi[array].arpOctave = changeInt(liveMidi[array].arpOctave, -1, newOctMin, newOctMax, true);
             if (liveMidi[array].arpOctave == newOctMin) {
                 liveMidi[array].arpOctaveDirection = 1;}
 
@@ -650,10 +650,6 @@ inline void FrankData::nextArpStep(const byte &array) {
                 PRINTLN("switch dir to 0");
 
                 liveMidi[array].arpDirection = 0;
-                if (liveMidi[array].arpOctaveDirection == 0) {
-                    decreaseArpOct(array);
-                    PRINTLN("decrease UpDown Octave");
-                }
             }
         }
         // going down
@@ -666,6 +662,9 @@ inline void FrankData::nextArpStep(const byte &array) {
                 if (liveMidi[array].arpOctaveDirection == 1) {
                     increaseArpOct(array);
                     PRINTLN("increase UpDown Octave");
+                } else {
+                    decreaseArpOct(array);
+                    PRINTLN("decrease UpDown Octave");
                 }
             }
         }
