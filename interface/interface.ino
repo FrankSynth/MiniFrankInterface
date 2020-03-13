@@ -155,10 +155,10 @@ void loop() {
 
         timer = millis();
     }
-    
+
     cntrl.readBPMSpeed();
     // count all clocks forward if not synced
-    updateClockCounter();
+    DATAOBJ.updateClockCounter();
 
     // activate middleman
     updateAllOutputs();
