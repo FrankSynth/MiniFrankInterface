@@ -22,10 +22,12 @@ clock outputClock[OUTPUTS] = {clock(CLK1), clock(CLK2)};
 
 PreviousState previousState;
 PreviousOutputs previousOutputs[OUTPUTS];
+ClkLed clkLed = ClkLed(CLKLED);
 
 
 void initMiddleman() {
     initOutput(); // init Outputs
+    clkLed.init();
 }
 void updateAllOutputs() {
     for (byte output = 0; output < OUTPUTS; output++) {
@@ -72,7 +74,6 @@ void updateNoteOut(byte output) {
 void updateCustomCVOut(byte output) {}
 void updateGateOut(byte output) {}
 void updateClockOut(byte output) {
-    static ClkLed clkLed = ClkLed(CLKLED);
     byte currentClock = DATAOBJ.get(FrankData::bpm16thCount);
 
     if (currentClock % 4 < 2) {
