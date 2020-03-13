@@ -87,22 +87,15 @@ FrankData::frankData mappingMenuCal[] = {NONE, NONE, NONE, NONE, NONE, NONE, NON
 FrankData::frankData mappingMenuCalPush[] = {NONE, NONE, NONE, NONE, NONE,
                                              NONE, NONE, NONE, MENU, PLAY}; // Routing Menu Mapping
 
-FrankData::frankData mappingMenuRouting[] = {FrankData::outputSource,
-                                             FrankData::midiSource,
-                                             FrankData::outputChannel,
-                                             FrankData::outputCc,
-                                             FrankData::outputClock,
-                                             NONE,
-                                             NONE,
-                                             NONE,
-                                             SUBSCREEN,
-                                             STEP}; // Routing Menu Mapping
-FrankData::frankData mappingMenuRoutingPush[] = {NONE, NONE, NONE, NONE, NONE,
+FrankData::frankData mappingMenuMidi[] = {
+    NONE, FrankData::midiSource, FrankData::outputChannel, FrankData::outputCc, FrankData::outputClock, NONE, NONE, NONE, SUBSCREEN,
+    STEP}; // Routing Menu Mapping
+FrankData::frankData mappingMenuMidiPush[] = {NONE, NONE, NONE, NONE, NONE,
                                                  NONE, NONE, NONE, MENU, PLAY}; // Routing Menu Mapping
 
 ////LIVE////
-FrankData::frankData *mappingLiveConfig = mappingMenuRouting;         // Live Mapping
-FrankData::frankData *mappingLiveConfigPush = mappingMenuRoutingPush; // Live Mapping,
+FrankData::frankData *mappingLiveConfig = mappingMenuMidi;         // Live Mapping
+FrankData::frankData *mappingLiveConfigPush = mappingMenuMidiPush; // Live Mapping,
 
 FrankData::frankData mapping(byte input) {
 
@@ -115,7 +108,7 @@ FrankData::frankData mapping(byte input) {
         // Live Mode
     }
     else if (DATAOBJ.get(FrankData::screenRouting) == 1) {
-        return mappingMenuRouting[input];
+        return mappingMenuMidi[input];
     }
     else if (DATAOBJ.get(FrankData::screenCal) == 1) {
         return mappingMenuCal[input];
@@ -164,7 +157,7 @@ FrankData::frankData mappingPush(byte input) {
         // Live Mode
     }
     else if (DATAOBJ.get(FrankData::screenRouting) == 1) {
-        return mappingMenuRoutingPush[input];
+        return mappingMenuMidiPush[input];
     }
     else if (DATAOBJ.get(FrankData::screenCal) == 1) {
         return mappingMenuCalPush[input];
