@@ -31,7 +31,7 @@
 // status settings;   //init status object;
 // mfMidi midi0; //create midi object
 
-controls cntrl;
+inputControls cntrl;
 
 Display lcd = Display(160, 128, 3); // create display object, (width, heigh, rotation)
 TLC5916 tlc;
@@ -57,12 +57,12 @@ void readSerial3() {
 
 void updateDisplay() { // update interrupt
     lcd.refresh();
-    //updateTLC();
+
+    updateTLC();
 }
 
 void updateTLC() { // update interrupt
     byte source = DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel));
-
     if (source) { // seq modus an?
         byte send = 0;
         for (int i = 0; i < 8; i++) {
@@ -99,6 +99,7 @@ void setup() {
     initMidi();
     initMiddleman();
     tlc.init(7);
+    cntrl.init();
 
     ////////////////////////
     // Start Devices
@@ -158,12 +159,12 @@ void loop() {
     //    timer = millis();
    // }
     
-    cntrl.readBPMSpeed();
     // count all clocks forward if not synced
     DATAOBJ.updateClockCounter();
 
     // activate middleman
-    updateAllOutputs();
+   updateAllOutputs();
+    cntrl.readBPMSpeed();
 }
 
 void ISRSwitch() {

@@ -15,7 +15,7 @@
 #define PRINT2(x, y)
 #endif
 
-void controls::encode(byte message) {
+void inputControls::encode(byte message) {
 
     byte id = (byte)(B00001111 & message); // extract Message from ID
 
@@ -32,7 +32,7 @@ void controls::encode(byte message) {
 }
 
 // rotate message
-void controls::rotate(byte id, byte dir) {
+void inputControls::rotate(byte id, byte dir) {
     PRINTLN(id);
     PRINT("Direction: ");
     PRINTLN(dir);
@@ -160,7 +160,7 @@ void controls::rotate(byte id, byte dir) {
         }
     }
 }
-void controls::push(byte id, byte push) { // switch message
+void inputControls::push(byte id, byte push) { // switch message
 
     FrankData::frankData mappedID = mappingPush(id);
     id = id + DATAOBJ.get(FrankData::activePage, DATAOBJ.get(FrankData::screenOutputChannel)) * 8;
@@ -189,33 +189,44 @@ void controls::push(byte id, byte push) { // switch message
     }
 }
 
-void controls::readSwitches() {
+void inputControls::readSwitches() {
 
     PRINT("INPUT: SYNC set: ");
-    PRINTLN(digitalRead(SWSYNC));
+    PRINTLN(!digitalRead(SWSYNC));
     PRINT("INPUT: SEQ set: ");
     PRINTLN(digitalRead(SWSEQ));
     PRINT("INPUT: REC set: ");
-    PRINTLN(digitalRead(SWREC));
+    PRINTLN(!digitalRead(SWREC));
 
-    DATAOBJ.set(FrankData::bpmSync,! digitalRead(SWREC));
-    DATAOBJ.set(FrankData::screenOutputChannel,digitalRead(SWSEQ));
-    DATAOBJ.set(FrankData::rec,! digitalRead(SWREC));
+    DATAOBJ.set(FrankData::bpmSync, !digitalRead(SWSYNC));
+    DATAOBJ.set(FrankData::screenOutputChannel, digitalRead(SWSEQ));
+    DATAOBJ.set(FrankData::rec, !digitalRead(SWREC));
 }
 
-void controls::readSync() {
+void inputControls::readSync() {
     DATAOBJ.set(FrankData::bpmSync, digitalRead(SWSYNC));
 }
-void controls::readRec() {
+void inputControls::readRec() {
     DATAOBJ.set(FrankData::rec, digitalRead(SWREC));
 }
 
-void controls::readSeq() {
+void inputControls::readSeq() {
     DATAOBJ.set(FrankData::screenOutputChannel, digitalRead(SWSEQ));
 }
 
-void controls::readBPMSpeed() {
+void inputControls::readBPMSpeed() {
+    DATAOBJ.setBPMPoti(1024-analogRead(BPMPOT));
 
-    // PRINTLN("Speed:");
-    DATAOBJ.setBPMPoti(analogRead(BPMPOT)/2);
+
+
+}
+
+void inputControls::init(){
+        pinMode(SWSYNC, INPUT_PULLUP);
+        pinMode(SWSEQ, INPUT_PULLUP);
+        pinMode(SWREC, INPUT_PULLUP);
+        pinMode(BPMPOT, INPUT);
+        readBPMSpeed();
+        delay(10);
+        readSwitches();
 }

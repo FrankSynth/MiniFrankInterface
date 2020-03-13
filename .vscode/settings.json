@@ -31,7 +31,8 @@
         "*.tpp": "cpp",
         "chrono": "cpp",
         "condition_variable": "cpp",
-        "ctime": "cpp"
+        "ctime": "cpp",
+        "mutex": "cpp"
     },
     "C_Cpp.intelliSenseEngineFallback": "Disabled",
     "C_Cpp.errorSquiggles": "Disabled",

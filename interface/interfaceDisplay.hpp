@@ -109,7 +109,6 @@ class TLC5916{
   public:
     void init(byte pin);
     void sendByte(byte send);
-
   private:
     byte pinTLC;
 };

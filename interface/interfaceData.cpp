@@ -495,7 +495,7 @@ void FrankData::increaseBpm16thCount() {
     }
     calcBPM();
     for (byte out = 0; out < OUTPUTS; out++) {
-        if (liveMidi[out].channel16thCount == (config.routing[out].nbPages * STEPSPERPAGE - 1 * 16)) {
+        if ((int)liveMidi[out].channel16thCount == ((int)config.routing[out].nbPages * STEPSPERPAGE * 16) - 1) {
             liveMidi[out].channel16thCount = 0;
         }
         else {
@@ -504,9 +504,14 @@ void FrankData::increaseBpm16thCount() {
     }
 
     for (byte out = 0; out < OUTPUTS; out++) {
-        if (stat.bpm16thCount % (config.routing[out].stepSpeed + 1) * (config.routing[out].stepSpeed + 1) == 0) {
+        if ((int)stat.bpm16thCount % (int)pow(2, (int)(config.routing[out].stepSpeed)) == 0) {
             nextArpStep(out);
-            increaseSeqStep(out);
+            if (config.direction) {
+                increaseSeqStep(out);
+            }
+            else {
+                decreaseSeqStep(out);
+            }
         }
     }
 }
@@ -516,27 +521,27 @@ void FrankData::setBpm16thCount(unsigned int spp) {
     stat.bpm16thCount = (spp % 16) - 1;
 }
 
-void FrankData::setBPMPoti(const unsigned int &bpm) {
-    stat.bpmPoti = bpm;
+void FrankData::setBPMPoti(const unsigned &bpmPot) {
+    stat.bpmPot = bpmPot;
+    stat.bpm = testByte(bpmPot / 4);
 }
 
 void FrankData::updateClockCounter() {
 
     if (!stat.bpmSync) {
-    static long timer = 0;
-
-        if (millis() - timer > (stat.bpmPoti+50)) {
+        static long timer = 0;
+        if (stat.bpmPot == 0) stat.bpmPot = 1;
+        if (millis() - timer > 60000 / stat.bpmPot) {
             increaseBpm16thCount();
             timer = millis();
         }
     }
-
 }
 
 inline void FrankData::calcBPM() {
-    if (bpmSync) {
+    if (stat.bpmSync) {
         static double bpm16thTimer = 0;
-        set(bpm, (int)((60000. / (millis() - bpm16thTimer)) / 4 + 0.5));
+        set(bpm, (int)(((60000 / (millis() - bpm16thTimer)) / 4 + 0.5)));
 
         bpm16thTimer = millis();
     }
@@ -560,7 +565,7 @@ inline void FrankData::decreaseSeqStep(const byte &array) {
     if (liveMidi[array].stepSeq == 0) {                                             // we jump to the last page?
         liveMidi[array].stepSeq = config.routing[array].nbPages * STEPSPERPAGE - 1; // set to max stepSeq[array]
     }
-    else if ((!liveMidi[array].stepSeq % STEPSPERPAGE)) {                               // we make a pageJump?
+    else if (!liveMidi[array].stepSeq % STEPSPERPAGE) {                               // we make a pageJump?
         if (config.routing[array].nbPages > (liveMidi[array].stepSeq / STEPSPERPAGE)) { // newPage above number of pages
             liveMidi[array].stepSeq = config.routing[array].nbPages * STEPSPERPAGE - 1; // set jump to last stepSeq[array]
         }
@@ -869,7 +874,7 @@ byte FrankData::get(const frankData &frankDataType) {
     case rec: return stat.rec;
     case error: return stat.error;
     case bpmSync: return stat.bpmSync;
-    case bpmPoti: return stat.bpmPoti;
+    case bpmPoti: return stat.bpmPot;
     case bpm16thCount: return stat.bpm16thCount;
     case save:
     case load: return stat.loadSaveSlot;
@@ -963,7 +968,7 @@ void FrankData::set(const frankData &frankDataType, const int &data, const bool 
     case rec: stat.rec = testByte(data, 0, 1, clampChange); break;
     case error: stat.error = testByte(data, 0, 1, clampChange); break;
     case bpmSync: stat.bpmSync = testByte(data, 0, 1, clampChange); break;
-    case bpmPoti: stat.bpmPoti = testByte(data, 0, 255, clampChange); break;
+    case bpmPoti: stat.bpmPot = testByte(data, 0, 255, clampChange); break;
     case load:
     case save: stat.loadSaveSlot = testByte(data, 1, 10, clampChange); break;
     case pulseLength: stat.pulseLength = testByte(data, 0, 255, clampChange); break;
