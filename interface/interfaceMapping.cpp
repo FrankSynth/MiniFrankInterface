@@ -73,9 +73,9 @@ FrankData::frankData mappingMenu[] = {FrankData::load ,
                                       FrankData::outputSource,
                                       FrankData::screenCal /*CalibrationMenu*/,
                                       FrankData::save ,
+                                      NONE,
                                       FrankData::pulseLength /*CLKLength*/,
                                       FrankData::displayBrightness,
-                                      NONE,
                                       NONE,
                                       STEP}; // Menu Mapping
 FrankData::frankData mappingMenuPush[] = {FrankData::load ,
@@ -93,10 +93,11 @@ FrankData::frankData mappingMenuCal[] = {NONE, NONE, NONE, NONE, NONE, NONE, NON
 FrankData::frankData mappingMenuCalPush[] = {NONE, NONE, NONE, NONE, NONE,
                                              NONE, NONE, NONE, MENU, PLAY}; // Routing Menu Mapping
 
-FrankData::frankData mappingMenuMidi[] = {NONE,
+FrankData::frankData mappingMenuMidi[] = {
                                              FrankData::midiSource,
                                              FrankData::outputChannel,
                                              FrankData::outputCc,
+                                             NONE,
                                              FrankData::outputClock,
                                              NONE,
                                              NONE,
@@ -105,10 +106,6 @@ FrankData::frankData mappingMenuMidi[] = {NONE,
                                              STEP}; // Routing Menu Mapping
 FrankData::frankData mappingMenuMidiPush[] = {NONE, NONE, NONE, NONE, NONE,
                                                  NONE, NONE, NONE, MENU, PLAY}; // Routing Menu Mapping
-
-////LIVE////
-FrankData::frankData *mappingLiveConfig = mappingMenuMidi;         // Live Mapping
-FrankData::frankData *mappingLiveConfigPush = mappingMenuMidiPush; // Live Mapping,
 
 FrankData::frankData mapping(byte input) {
 

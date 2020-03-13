@@ -343,14 +343,21 @@ void Display::drawHead() {
     bufferHead->print(DATAOBJ.get(FrankData::bpm));
 
     // CLK
-    bufferHead->setCursor(58, 4);
+    bufferHead->setCursor(55, 4);
     bufferHead->print("CLK: ");
 
     bufferHead->print(DATAOBJ.getValueAsStrChannel(FrankData::outputClock, 0));
-    bufferHead->setCursor(130, 4);
+    bufferHead->setCursor(120, 4);
 
     bufferHead->print(DATAOBJ.getValueAsStrChannel(FrankData::outputClock, 1));
 
+    if (DATAOBJ.get(FrankData::rec)) {
+
+        bufferHead->setCursor(135, 4);
+        bufferFoot->setTextColor(RED, COLORTHEME);
+        
+        bufferHead->print("REC");
+    }
 }
 
 
