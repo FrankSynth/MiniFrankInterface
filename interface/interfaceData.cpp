@@ -582,7 +582,7 @@ inline void FrankData::increaseArpOct(const byte &array) {
 
         if (config.routing[array].arpMode == 2) {
             liveMidi[array].arpOctave = changeInt(liveMidi[array].arpOctave, 1, newOctMin, newOctMax);
-            if (liveMidi[array].arpOctave == newOctMax) liveMidi[array].arpDirection = 0;
+            if (liveMidi[array].arpOctave == newOctMax) liveMidi[array].arpOctaveDirection = 0;
         }
         else {
             liveMidi[array].arpOctave = changeIntReverse(liveMidi[array].arpOctave, 1, newOctMin, newOctMax);
@@ -612,7 +612,9 @@ inline void FrankData::decreaseArpOct(const byte &array) {
         }
         if (config.routing[array].arpMode == 2) {
             liveMidi[array].arpOctave = changeInt(liveMidi[array].arpOctave, -1, newOctMin, newOctMax);
-            if (liveMidi[array].arpOctave == newOctMin) liveMidi[array].arpDirection = 1;
+            if (liveMidi[array].arpOctave == newOctMin) {
+                liveMidi[array].arpOctaveDirection = 1;}
+
         }
         else {
             liveMidi[array].arpOctave = changeIntReverse(liveMidi[array].arpOctave, -1, newOctMin, newOctMax);
@@ -648,7 +650,10 @@ inline void FrankData::nextArpStep(const byte &array) {
                 PRINTLN("switch dir to 0");
 
                 liveMidi[array].arpDirection = 0;
-                if (liveMidi[array].arpOctaveDirection == 0) decreaseArpOct(array);
+                if (liveMidi[array].arpOctaveDirection == 0) {
+                    decreaseArpOct(array);
+                    PRINTLN("decrease UpDown Octave");
+                }
             }
         }
         // going down
@@ -658,7 +663,10 @@ inline void FrankData::nextArpStep(const byte &array) {
             if (stat.stepArp[array] == 0) {
                 liveMidi[array].arpDirection = 1;
                 PRINTLN("switch dir to 1");
-                if (liveMidi[array].arpOctaveDirection == 1) increaseArpOct(array);
+                if (liveMidi[array].arpOctaveDirection == 1) {
+                    increaseArpOct(array);
+                    PRINTLN("increase UpDown Octave");
+                }
             }
         }
         break;
