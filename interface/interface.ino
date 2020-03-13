@@ -69,7 +69,8 @@ void updateTLC() { // update interrupt
                 send = send | 1 << i;
             }
         }
-    }
+        tlc.sendByte(send);
+       }
     else {
         tlc.sendByte(0);
     }
@@ -134,7 +135,7 @@ void setup() {
 
     // Set timer interrupt (display refresh)
     myTimerLCD.begin(updateDisplay, 40000); // display refresh
-    myTimerLED.begin(updateTLC, 10000);     // display refresh
+    myTimerLED.begin(updateTLC, 100000);     // display refresh
 }
 
 void loop() {

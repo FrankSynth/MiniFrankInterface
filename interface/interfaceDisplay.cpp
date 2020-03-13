@@ -530,9 +530,10 @@ void DispBuffer16::byteSwap(void) {
 }
 
 void TLC5916::sendByte(byte send){
-    SPI.beginTransaction(SPISettings(20000000, MSBFIRST, SPI_MODE0));
+
+    SPI.beginTransaction(SPISettings(30000000, MSBFIRST, SPI_MODE0));
     digitalWrite(pinTLC, LOW);
-    SPI.transfer(send);
+     SPI.transfer(send);
     digitalWrite(pinTLC, HIGH);
     SPI.endTransaction();   
 }
@@ -540,5 +541,8 @@ void TLC5916::sendByte(byte send){
 
 void TLC5916::init(byte pin){
     pinTLC = pin;
+    pinMode(pin, OUTPUT);
+    digitalWrite(pin, HIGH);
+
     sendByte(0); //set to Black
 }   
