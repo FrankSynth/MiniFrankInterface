@@ -93,8 +93,9 @@ void Display::drawFoot() {
 }
 
 void Display::BodyTemplateLive() { // has 1 dataFields + GateSignal
-   for (int x = 0; x < 2; x++) {
+   for (int x = 0; x < 4; x++) {
         for (int y = 0; y < 2; y++) {
+            if(x < 1 || y != 0){
             byte dataField = x + y * 4;       // current DataField
             if (mapping(dataField) != NONE) { // not an empty field?
                 byte fieldWidth = 40;
@@ -142,6 +143,7 @@ void Display::BodyTemplateLive() { // has 1 dataFields + GateSignal
                 }
                 bufferBody->print(data); // print value
             }
+            }
         }
     }
                 bufferBody->setTextColor(WHITE,0x230E); // font Color
@@ -151,16 +153,16 @@ void Display::BodyTemplateLive() { // has 1 dataFields + GateSignal
                 if (DATAOBJ.get(FrankData::outputArp, DATAOBJ.get(FrankData::screenOutputChannel))) note = DATAOBJ.get(FrankData::liveKeyArpNoteEvaluated, DATAOBJ.get(FrankData::screenOutputChannel));
                 else note = DATAOBJ.get(FrankData::liveKeyNoteEvaluated, DATAOBJ.get(FrankData::screenOutputChannel));
 
-                bufferBody->setFont(&FreeSansBold24pt7b);
-                bufferBody->setCursor(95, 70);
+                bufferBody->setFont(&FreeSansBold18pt7b);
+                bufferBody->setCursor(95, 46);
                 bufferBody->print(valueToNote(note));
 
                 bufferBody->setFont(&FreeSansBold12pt7b);
-                bufferBody->setCursor(135, 70);
+                bufferBody->setCursor(135, 50);
                 bufferBody->print(valueToSharp(note));
 
                 bufferBody->setFont(&FreeSansBold9pt7b);
-                bufferBody->setCursor(136, 45);
+                bufferBody->setCursor(136, 20);
                 bufferBody->print(valueToOctave(note));
     
 
@@ -271,7 +273,7 @@ void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
                 bufferBody->setFont();                   // reset to default font
 
                 /////Name/////
-                const char *string = DATAOBJ.getValueAsStrChannel(mapping(dataField),DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel))); // get name
+                const char *string = DATAOBJ.getNameAsStr(mapping(dataField)); // get name
                 byte offset = strlen(string) * 3;         // get name length
 
                 bufferBody->setCursor(posX + 20 - offset, posY + 7 + y * 1); // set Cursor
