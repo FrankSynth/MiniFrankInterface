@@ -82,12 +82,9 @@ typedef struct {
 
     byte pulseLength = 20; // pulse length in ms
 
-    byte stepSeq[OUTPUTS] = {0, 0};
-    byte stepArp[OUTPUTS] = {0, 0};
-
     byte bpmSync = 0; // Sync Active
     byte midiClockCount = 5;
-    byte bpm16thCount = 31;
+    byte bpm16thCount = 0;
     uint16_t bpmPoti = 0; // sync= 0 ? 0-1023 bpm log : divider /4, /2, 1, *2, *4 ; Range is 0-1023
 } structStatus;
 
@@ -124,7 +121,7 @@ class PressedNotesList {
     PressedNotesElement *getKeyLowest();
     PressedNotesElement *getKeyLatest();
 
-    PressedNotesElement *getElement(const byte &eleme2nt);
+    PressedNotesElement *getElement(const byte &element);
 };
 
 // save live midi data
@@ -145,8 +142,13 @@ class LiveMidi {
     PressedNotesList arpList;
     structKey arpArray[NOTERANGE];
 
+    byte stepArp = 0;
+    byte stepSeq = 0;
+
+    int channel16thCount = 0;
+
     LiveMidi() {
-        // initialiye with a default key
+        // initialize with a default key
         keyPressed(24, 0);
         keyReleased(24);
     }
@@ -337,7 +339,6 @@ class FrankData {
     // internal helper functions
   private:
     void increaseMidiClock();
-    void increaseBpm16thCount();
     void setBpm16thCount(unsigned int spp);
     byte getBpm16thCount();
     // inline void resetClock();
@@ -360,6 +361,7 @@ class FrankData {
     const char *valueToStr(const frankData &frankDataType, const byte &channel);
 
   public:
+    void increaseBpm16thCount();
     inline structKey getLiveKeyEvaluated(const byte &array);
     inline structKey getKeyHighest(const byte &array);
     inline structKey getKeyLowest(const byte &array);

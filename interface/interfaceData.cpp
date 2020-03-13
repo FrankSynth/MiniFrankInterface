@@ -446,6 +446,10 @@ void FrankData::receivedMidiSongPosition(unsigned int spp) {
 void FrankData::receivedStart() {
     stat.midiClockCount = 5;
     stat.bpm16thCount = 31;
+    for (byte out = 0; out < OUTPUTS; out++) {
+        liveMidi[out].stepSeq = config.routing[out].nbPages * STEPSPERPAGE - 1;
+        liveMidi[out].channel16thCount = liveMidi[out].stepSeq * 16 - 1;
+    }
     set(play, 1);
 }
 void FrankData::receivedContinue() {
@@ -461,13 +465,18 @@ void FrankData::reset() {
     stat.midiClockCount = 5;
     stat.bpm16thCount = 31;
 
+    for (byte out = 0; out < OUTPUTS; out++) {
+        liveMidi[out].stepSeq = config.routing[out].nbPages * STEPSPERPAGE - 1;
+        liveMidi[out].channel16thCount = liveMidi[out].stepSeq * 16 - 1;
+    }
+
     set(play, 0);
 
     for (byte x = 0; x < OUTPUTS; x++) {
         liveMidi[x].reset();
         liveMidi[x].updateArpArray(config.routing[x].arpMode);
-        stat.stepArp[x] = 0;
-        stat.stepSeq[x] = 0;
+        liveMidi[x].stepArp = 0;
+        liveMidi[x].stepSeq = 0;
     }
 }
 
@@ -481,15 +490,30 @@ void FrankData::increaseMidiClock() {
 
 void FrankData::increaseBpm16thCount() {
     stat.bpm16thCount++;
-    if (stat.bpm16thCount == 32) {
+    if (stat.bpm16thCount == 31) {
         stat.bpm16thCount = 0;
     }
     calcBPM();
+    for (byte out = 0; out < OUTPUTS; out++) {
+        if (liveMidi[out].channel16thCount == (config.routing[out].nbPages * STEPSPERPAGE - 1 * 16)) {
+            liveMidi[out].channel16thCount = 0;
+        }
+        else {
+            liveMidi[out].channel16thCount++;
+        }
+    }
+
+    for (byte out = 0; out < OUTPUTS; out++) {
+        if (stat.bpm16thCount % (config.routing[out].stepSpeed+1)*(config.routing[out].stepSpeed+1) == 0) {
+            nextArpStep(out);
+            increaseSeqStep(out);
+        }
+    }
 }
 
 void FrankData::setBpm16thCount(unsigned int spp) {
     stat.midiClockCount = 5;
-    stat.bpm16thCount = spp - 1;
+    stat.bpm16thCount = (spp % 16) - 1;
 }
 
 inline void FrankData::calcBPM() {
@@ -502,40 +526,40 @@ inline void FrankData::calcBPM() {
 }
 
 inline void FrankData::increaseSeqStep(const byte &array) {
-    if (!((stat.stepSeq[array] + 1) % STEPSPERPAGE)) {                                     // if we make a pageJump
-        if (config.routing[array].nbPages <= ((stat.stepSeq[array] + 1) / STEPSPERPAGE)) { // newPage above number of pages
-            stat.stepSeq[array] = 0;                                                       // set stepSeq[array] 0
+    if (!((liveMidi[array].stepSeq + 1) % STEPSPERPAGE)) {                                     // if we make a pageJump
+        if (config.routing[array].nbPages <= ((liveMidi[array].stepSeq + 1) / STEPSPERPAGE)) { // newPage above number of pages
+            liveMidi[array].stepSeq = 0;                                                       // set stepSeq[array] 0
         }
-        else {                     // new page is valid.
-            stat.stepSeq[array]++; // increase Step
+        else {                         // new page is valid.
+            liveMidi[array].stepSeq++; // increase Step
         }
     }
     else {
-        stat.stepSeq[array]++; // increase Step
+        liveMidi[array].stepSeq++; // increase Step
     }
 }
 
 inline void FrankData::decreaseSeqStep(const byte &array) {
-    if (stat.stepSeq[array] == 0) {                                             // we jump to the last page?
-        stat.stepSeq[array] = config.routing[array].nbPages * STEPSPERPAGE - 1; // set to max stepSeq[array]
+    if (liveMidi[array].stepSeq == 0) {                                             // we jump to the last page?
+        liveMidi[array].stepSeq = config.routing[array].nbPages * STEPSPERPAGE - 1; // set to max stepSeq[array]
     }
-    else if ((!stat.stepSeq[array] % STEPSPERPAGE)) {                               // we make a pageJump?
-        if (config.routing[array].nbPages > (stat.stepSeq[array] / STEPSPERPAGE)) { // newPage above number of pages
-            stat.stepSeq[array] = config.routing[array].nbPages * STEPSPERPAGE - 1; // set jump to last stepSeq[array]
+    else if ((!liveMidi[array].stepSeq % STEPSPERPAGE)) {                               // we make a pageJump?
+        if (config.routing[array].nbPages > (liveMidi[array].stepSeq / STEPSPERPAGE)) { // newPage above number of pages
+            liveMidi[array].stepSeq = config.routing[array].nbPages * STEPSPERPAGE - 1; // set jump to last stepSeq[array]
         }
-        else {                     // new page is valid.
-            stat.stepSeq[array]--; // decrease Step
+        else {                         // new page is valid.
+            liveMidi[array].stepSeq--; // decrease Step
         }
     }
     else {
-        stat.stepSeq[array]--; // decrease Step
+        liveMidi[array].stepSeq--; // decrease Step
     }
 }
 
 inline byte FrankData::getCurrentPageNumber(const byte &array) { // number of pages, takes care if page number has changed
-    if (config.routing[array].nbPages > (stat.stepSeq[array] / 8))
+    if (config.routing[array].nbPages > (liveMidi[array].stepSeq / 8))
         return config.routing[array].nbPages; // is our stepSeq above the current number of pages?
-    return (stat.stepSeq[array] / 8 + 1);     // return current stepSeq page until the next page jump
+    return (liveMidi[array].stepSeq / 8 + 1); // return current stepSeq page until the next page jump
 }
 
 // Singleton
@@ -580,7 +604,7 @@ inline void FrankData::increaseArpOct(const byte &array) {
             newOctMax = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET;
         }
 
-        if (config.routing[array].arpMode == 2 || config.routing[array].arpMode == 3 ) {
+        if (config.routing[array].arpMode == 2 || config.routing[array].arpMode == 3) {
             liveMidi[array].arpOctave = changeInt(liveMidi[array].arpOctave, 1, newOctMin, newOctMax, true);
             if (liveMidi[array].arpOctave == newOctMax) liveMidi[array].arpOctaveDirection = 0;
         }
@@ -611,8 +635,8 @@ inline void FrankData::decreaseArpOct(const byte &array) {
         if (config.routing[array].arpMode == 2 || config.routing[array].arpMode == 3) {
             liveMidi[array].arpOctave = changeInt(liveMidi[array].arpOctave, -1, newOctMin, newOctMax, true);
             if (liveMidi[array].arpOctave == newOctMin) {
-                liveMidi[array].arpOctaveDirection = 1;}
-
+                liveMidi[array].arpOctaveDirection = 1;
+            }
         }
         else {
             liveMidi[array].arpOctave = changeIntReverse(liveMidi[array].arpOctave, -1, newOctMin, newOctMax);
@@ -624,68 +648,69 @@ inline void FrankData::nextArpStep(const byte &array) {
 
     switch (config.routing[array].arpMode) {
     case 1:
-        if (stat.stepArp[array] == 0) {
+        if (liveMidi[array].stepArp == 0) {
             decreaseArpOct(array);
         }
-        stat.stepArp[array] = changeByteReverse(stat.stepArp[array], -1, 0, liveMidi[array].arpList.size - 1);
+        liveMidi[array].stepArp = changeByteReverse(liveMidi[array].stepArp, -1, 0, liveMidi[array].arpList.size - 1);
         break;
     case 0:
     case 4:
     case 5:
-        if (stat.stepArp[array] == liveMidi[array].arpList.size - 1) {
+        if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
             increaseArpOct(array);
         }
-        stat.stepArp[array] = changeByteReverse(stat.stepArp[array], 1, 0, liveMidi[array].arpList.size - 1);
+        liveMidi[array].stepArp = changeByteReverse(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1);
         break;
     case 2:
         // going up
         if (liveMidi[array].arpDirection) {
-            stat.stepArp[array] = changeByte(stat.stepArp[array], 1, 0, liveMidi[array].arpList.size - 1);
-            if (stat.stepArp[array] == liveMidi[array].arpList.size - 1) {
+            liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1);
+            if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
 
                 liveMidi[array].arpDirection = 0;
             }
         }
         // going down
         else {
-            stat.stepArp[array] = changeByte(stat.stepArp[array], -1, 0, liveMidi[array].arpList.size - 1);
-            if (stat.stepArp[array] == 0) {
+            liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, -1, 0, liveMidi[array].arpList.size - 1);
+            if (liveMidi[array].stepArp == 0) {
                 liveMidi[array].arpDirection = 1;
                 if (liveMidi[array].arpOctaveDirection == 1) {
                     increaseArpOct(array);
-                } else {
+                }
+                else {
                     decreaseArpOct(array);
                 }
             }
         }
         break;
-        case 3:
+    case 3:
         // going up
         if (liveMidi[array].arpDirection) {
-            stat.stepArp[array] = changeByte(stat.stepArp[array], 1, 0, liveMidi[array].arpList.size - 1);
-            if (stat.stepArp[array] == liveMidi[array].arpList.size - 1) {
+            liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1);
+            if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
 
                 liveMidi[array].arpDirection = 0;
                 if (liveMidi[array].arpOctaveDirection == 1) {
                     increaseArpOct(array);
-                } else {
+                }
+                else {
                     decreaseArpOct(array);
                 }
             }
         }
         // going down
         else {
-            stat.stepArp[array] = changeByte(stat.stepArp[array], -1, 0, liveMidi[array].arpList.size - 1);
-            if (stat.stepArp[array] == 0) {
+            liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, -1, 0, liveMidi[array].arpList.size - 1);
+            if (liveMidi[array].stepArp == 0) {
                 liveMidi[array].arpDirection = 1;
-                
             }
         }
         break;
     default:;
     }
 
-    byte step = stat.stepArp[array];
+    byte step = liveMidi[array].stepArp;
     structKey key;
 
     if (config.routing[array].arpMode == 5) {
@@ -771,15 +796,16 @@ void FrankData::seqCopy(const byte &source, const byte &destination) {
 }
 
 void FrankData::resetAllStepCounter() {
-    for (byte i = 1; i < OUTPUTS; i++) {
-        stat.stepSeq[i] = 0;
+    for (byte out = 0; out < OUTPUTS; out++) {
+        liveMidi[out].stepSeq = config.routing[out].nbPages * STEPSPERPAGE - 1;
+        liveMidi[out].channel16thCount = liveMidi[out].stepSeq * 16 - 1;
     }
 }
 
 void FrankData::updateArp(const byte &array) {
     if (config.routing[array].outSource == 0 && config.routing[array].arp) {
         liveMidi[array].updateArpArray(config.routing[array].arpMode);
-        stat.stepArp[array] = testByte(stat.stepArp[array], 0, liveMidi[array].arpList.size, true);
+        liveMidi[array].stepArp = testByte(liveMidi[array].stepArp, 0, liveMidi[array].arpList.size, true);
     }
 }
 
@@ -866,11 +892,11 @@ byte FrankData::get(const frankData &frankDataType, const byte &array) {
     case liveHighestKey: return liveMidi[array].getKeyHighest().note;
 
     case nbPages: return config.routing[array].nbPages;
-    case stepArp: return stat.stepArp[array];
-    case stepSeq: return stat.stepSeq[array];
+    case stepArp: return liveMidi[array].stepArp;
+    case stepSeq: return liveMidi[array].stepSeq;
     case stepSpeed: return config.routing[array].stepSpeed;
-    case activePage: return (stat.stepSeq[array] / STEPSPERPAGE);
-    case stepOnPage: return (stat.stepSeq[array] - (get(activePage, array) * STEPSPERPAGE));
+    case activePage: return (liveMidi[array].stepSeq / STEPSPERPAGE);
+    case stepOnPage: return (liveMidi[array].stepSeq - (get(activePage, array) * STEPSPERPAGE));
     case currentPageNumber: return getCurrentPageNumber(array);
 
     case seqTuning: return seq[array].sequence.tuning;
@@ -956,8 +982,8 @@ void FrankData::set(const frankData &frankDataType, const int &data, const byte 
     case liveSustain: liveMidi[array].sustain = testByte(data, 0, 127, clampChange); break;
     case liveTriggered: liveMidi[array].triggered = testByte(data, 0, 1, clampChange); break;
 
-    case stepArp: stat.stepArp[array] = testByte(data, 0, NOTERANGE, clampChange); break;
-    case stepSeq: stat.stepSeq[array] = testByte(data, 0, STEPSPERPAGE * config.routing[array].nbPages - 1, clampChange); break;
+    case stepArp: liveMidi[array].stepArp = testByte(data, 0, NOTERANGE, clampChange); break;
+    case stepSeq: liveMidi[array].stepSeq = testByte(data, 0, STEPSPERPAGE * config.routing[array].nbPages - 1, clampChange); break;
     case stepSpeed: config.routing[array].stepSpeed = testByte(data, 0, 5, clampChange); break;
     case nbPages: config.routing[array].nbPages = testByte(data, 1, PAGES, clampChange); break;
 
