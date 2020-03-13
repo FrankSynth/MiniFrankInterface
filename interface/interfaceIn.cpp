@@ -72,17 +72,28 @@ void controls::rotate(byte id, byte dir) {
         break;
 
     // Type, Channel;
-
-    // case FrankData::midiSource :
-    case FrankData::outputCc:
-    case FrankData::outputChannel:
-    case FrankData::outputSource:
-    case FrankData::liveMod:
-    case FrankData::nbPages:
-    case FrankData::stepSpeed:
     case FrankData::outputArpOctave:
     case FrankData::outputClock:
     case FrankData::outputArpRatchet:
+
+    // case FrankData::midiSource :
+    case FrankData::liveMod:
+    
+    case FrankData::stepSpeed:
+    case FrankData::outputCc:
+    case FrankData::outputChannel:
+    case FrankData::outputSource:
+
+        if (dir) {
+            DATAOBJ.increase(mappedID, DATAOBJ.get(FrankData::screenOutputChannel));
+        }
+        else {
+            DATAOBJ.decrease(mappedID, DATAOBJ.get(FrankData::screenOutputChannel));
+        }
+
+        break;
+
+    case FrankData::nbPages:
     case FrankData::seqTuning:
 
             if (dir) {
@@ -176,7 +187,7 @@ void controls::readSwitches() {
     PRINTLN(digitalRead(SWREC));
 
     DATAOBJ.set(FrankData::bpmSync,! digitalRead(SWREC));
-    DATAOBJ.set(FrankData::screenOutputChannel,! digitalRead(SWSEQ));
+    DATAOBJ.set(FrankData::screenOutputChannel,digitalRead(SWSEQ));
     DATAOBJ.set(FrankData::rec,! digitalRead(SWREC));
 }
 

@@ -77,7 +77,7 @@ void Display::drawBody() {
     else if (DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) == 0) { //Live Mode
             BodyTemplateLive();
     } 
-    else if (DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1)== 1) { //Seq Mode
+    else if (DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) > 0) { //Seq Mode
             BodyTemplateSeq();
     }
 }

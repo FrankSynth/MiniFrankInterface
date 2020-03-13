@@ -32,10 +32,12 @@
 #define GREYWHITE 0x94B2  // Hell Blau
 #define GREY 0x39E7       
 #define GREEN 0x4208      // Grün
-#define COLORTHEME 0x230E
 #define DARKGREY 0x2965
-
 #define BACKGROUND 0x39E7
+
+
+#define COLORTHEME 0x230E
+
 
 ///  A 16-bit double buffer from the adafruit canvas
 class DispBuffer16 : public Adafruit_GFX {

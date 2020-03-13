@@ -5,8 +5,8 @@
 #include <Arduino.h>
 
 #define SWSYNC 9
-#define SWSEQ 31
-#define SWREC 23
+#define SWSEQ 23
+#define SWREC 31
 #define BPMPOT 22 
 
 //#define DEBUG
