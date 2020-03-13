@@ -506,11 +506,14 @@ void FrankData::increaseBpm16thCount() {
     for (byte out = 0; out < OUTPUTS; out++) {
         if ((int)stat.bpm16thCount % (int)pow(2, (int)(config.routing[out].stepSpeed)) == 0) {
             nextArpStep(out);
-            if (config.direction) {
-                increaseSeqStep(out);
-            }
-            else {
-                decreaseSeqStep(out);
+            
+            if (stat.play) {
+                if (config.direction) {
+                    increaseSeqStep(out);
+                }
+                else {
+                    decreaseSeqStep(out);
+                }
             }
         }
     }
@@ -565,7 +568,7 @@ inline void FrankData::decreaseSeqStep(const byte &array) {
     if (liveMidi[array].stepSeq == 0) {                                             // we jump to the last page?
         liveMidi[array].stepSeq = config.routing[array].nbPages * STEPSPERPAGE - 1; // set to max stepSeq[array]
     }
-    else if (!liveMidi[array].stepSeq % STEPSPERPAGE) {                               // we make a pageJump?
+    else if (!liveMidi[array].stepSeq % STEPSPERPAGE) {                                 // we make a pageJump?
         if (config.routing[array].nbPages > (liveMidi[array].stepSeq / STEPSPERPAGE)) { // newPage above number of pages
             liveMidi[array].stepSeq = config.routing[array].nbPages * STEPSPERPAGE - 1; // set jump to last stepSeq[array]
         }
