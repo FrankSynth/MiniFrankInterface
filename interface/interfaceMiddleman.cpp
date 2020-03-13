@@ -1,7 +1,7 @@
 #include "interfaceMiddleman.hpp"
 
 // Debug logging
-#define DEBUG 1
+#define DEBUG 0
 
 #if DEBUG == 1
 #define PRINTLN(x) Serial.println(x)
@@ -23,7 +23,6 @@ clock outputClock[OUTPUTS] = {clock(CLK1), clock(CLK2)};
 PreviousState previousState;
 PreviousOutputs previousOutputs[OUTPUTS];
 
-ClkLed clkLed = ClkLed(CLKLED);
 
 void initMiddleman() {
     initOutput(); // init Outputs
@@ -73,20 +72,19 @@ void updateNoteOut(byte output) {
 void updateCustomCVOut(byte output) {}
 void updateGateOut(byte output) {}
 void updateClockOut(byte output) {
+    static ClkLed clkLed = ClkLed(CLKLED);
     byte currentClock = DATAOBJ.get(FrankData::bpm16thCount);
 
     if (currentClock % 4 < 2) {
         if (!previousState.clockLED) {
             clkLed.setClkLed(1);
             previousState.clockLED = 1;
-            PRINTLN("Clock LED ON");
         }
     }
     else {
         if (previousState.clockLED) {
             clkLed.setClkLed(0);
             previousState.clockLED = 0;
-            PRINTLN("Clock LED OFF");
         }
     }
 }
