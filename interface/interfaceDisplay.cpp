@@ -160,15 +160,15 @@ void Display::BodyTemplateLive() { // has 1 dataFields + GateSignal
                 else note = DATAOBJ.get(FrankData::liveKeyNoteEvaluated, DATAOBJ.get(FrankData::screenOutputChannel));
 
                 bufferBody->setFont(&FreeSansBold18pt7b);
-                bufferBody->setCursor(95, 38);
+                bufferBody->setCursor(100, 38);
                 bufferBody->print(valueToNote(note));
 
                 bufferBody->setFont(&FreeSansBold12pt7b);
-                bufferBody->setCursor(135, 45);
+                bufferBody->setCursor(132, 45);
                 bufferBody->print(valueToSharp(note));
 
                 bufferBody->setFont(&FreeSansBold9pt7b);
-                bufferBody->setCursor(136, 20);
+                bufferBody->setCursor(132, 20);
                 bufferBody->print(valueToOctave(note));
     
 
@@ -299,7 +299,7 @@ void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
 
                           */
                 // char *data = toStr(mapping(dataField), index); // string buffer
-                const char *data = DATAOBJ.getValueAsStrChannel(mapping(dataField),DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel))); // temporary removed index
+                const char *data = DATAOBJ.getValueAsStrChannel(mapping(dataField),DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)-1));
 
                 byte length = strlen(data); // string length
                 if((byte)data[0] == 64){
