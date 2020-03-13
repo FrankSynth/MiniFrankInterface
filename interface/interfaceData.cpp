@@ -580,7 +580,7 @@ inline void FrankData::increaseArpOct(const byte &array) {
             newOctMax = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET;
         }
 
-        if (config.routing[array].arpMode == 2) {
+        if (config.routing[array].arpMode == 2 || config.routing[array].arpMode == 3 ) {
             liveMidi[array].arpOctave = changeInt(liveMidi[array].arpOctave, 1, newOctMin, newOctMax, true);
             if (liveMidi[array].arpOctave == newOctMax) liveMidi[array].arpOctaveDirection = 0;
         }
@@ -588,8 +588,6 @@ inline void FrankData::increaseArpOct(const byte &array) {
             liveMidi[array].arpOctave = changeIntReverse(liveMidi[array].arpOctave, 1, newOctMin, newOctMax);
         }
     }
-    PRINT("increased internal Oct, new arpOctave ");
-    PRINTLN(liveMidi[array].arpOctave);
 }
 
 inline void FrankData::decreaseArpOct(const byte &array) {
@@ -610,7 +608,7 @@ inline void FrankData::decreaseArpOct(const byte &array) {
             newOctMin = 0;
             newOctMax = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET;
         }
-        if (config.routing[array].arpMode == 2) {
+        if (config.routing[array].arpMode == 2 || config.routing[array].arpMode == 3) {
             liveMidi[array].arpOctave = changeInt(liveMidi[array].arpOctave, -1, newOctMin, newOctMax, true);
             if (liveMidi[array].arpOctave == newOctMin) {
                 liveMidi[array].arpOctaveDirection = 1;}
@@ -620,8 +618,6 @@ inline void FrankData::decreaseArpOct(const byte &array) {
             liveMidi[array].arpOctave = changeIntReverse(liveMidi[array].arpOctave, -1, newOctMin, newOctMax);
         }
     }
-    PRINT("decrease internal Oct, new arpOctave ");
-    PRINTLN(liveMidi[array].arpOctave);
 }
 
 inline void FrankData::nextArpStep(const byte &array) {
@@ -634,8 +630,8 @@ inline void FrankData::nextArpStep(const byte &array) {
         stat.stepArp[array] = changeByteReverse(stat.stepArp[array], -1, 0, liveMidi[array].arpList.size - 1);
         break;
     case 0:
-    case 3:
     case 4:
+    case 5:
         if (stat.stepArp[array] == liveMidi[array].arpList.size - 1) {
             increaseArpOct(array);
         }
@@ -644,40 +640,55 @@ inline void FrankData::nextArpStep(const byte &array) {
     case 2:
         // going up
         if (liveMidi[array].arpDirection) {
-            PRINTLN("up");
             stat.stepArp[array] = changeByte(stat.stepArp[array], 1, 0, liveMidi[array].arpList.size - 1);
             if (stat.stepArp[array] == liveMidi[array].arpList.size - 1) {
-                PRINTLN("switch dir to 0");
 
                 liveMidi[array].arpDirection = 0;
             }
         }
         // going down
         else {
-            PRINTLN("down");
             stat.stepArp[array] = changeByte(stat.stepArp[array], -1, 0, liveMidi[array].arpList.size - 1);
             if (stat.stepArp[array] == 0) {
                 liveMidi[array].arpDirection = 1;
-                PRINTLN("switch dir to 1");
                 if (liveMidi[array].arpOctaveDirection == 1) {
                     increaseArpOct(array);
-                    PRINTLN("increase UpDown Octave");
                 } else {
                     decreaseArpOct(array);
-                    PRINTLN("decrease UpDown Octave");
                 }
+            }
+        }
+        break;
+        case 3:
+        // going up
+        if (liveMidi[array].arpDirection) {
+            stat.stepArp[array] = changeByte(stat.stepArp[array], 1, 0, liveMidi[array].arpList.size - 1);
+            if (stat.stepArp[array] == liveMidi[array].arpList.size - 1) {
+
+                liveMidi[array].arpDirection = 0;
+                if (liveMidi[array].arpOctaveDirection == 1) {
+                    increaseArpOct(array);
+                } else {
+                    decreaseArpOct(array);
+                }
+            }
+        }
+        // going down
+        else {
+            stat.stepArp[array] = changeByte(stat.stepArp[array], -1, 0, liveMidi[array].arpList.size - 1);
+            if (stat.stepArp[array] == 0) {
+                liveMidi[array].arpDirection = 1;
+                
             }
         }
         break;
     default:;
     }
-    PRINT("Next Arp Step: ");
-    PRINTLN(stat.stepArp[array]);
 
     byte step = stat.stepArp[array];
     structKey key;
 
-    if (config.routing[array].arpMode == 4) {
+    if (config.routing[array].arpMode == 5) {
         step = random(0, liveMidi[array].arpList.size);
         key = liveMidi[array].getArpKey(step);
     }
@@ -688,14 +699,12 @@ inline void FrankData::nextArpStep(const byte &array) {
     // lower octaves
     if (liveMidi[array].arpOctave < 0) {
         for (int x = liveMidi[array].arpOctave; x < 0; x++) {
-            PRINTLN("Key apply octave down ");
             key.note = changeByte(key.note, -12, 0, NOTERANGE, 0);
         }
     }
     // raise octaves
     else if (liveMidi[array].arpOctave > 0) {
         for (int x = liveMidi[array].arpOctave; x > 0; x--) {
-            PRINTLN("Key apply octave up ");
             key.note = changeByte(key.note, 12, 0, NOTERANGE, 0);
         }
     }
@@ -935,7 +944,7 @@ void FrankData::set(const frankData &frankDataType, const int &data, const byte 
     case outputArpRatchet: config.routing[array].arpRatchet = testByte(data, 0, 2, clampChange); break;
     case outputArpOctave: config.routing[array].arpOctaves = testByte(data, 0, 6, clampChange); break;
     case outputArpMode:
-        config.routing[array].arpMode = testByte(data, 0, 4, clampChange);
+        config.routing[array].arpMode = testByte(data, 0, 5, clampChange);
         updateArp(array);
         break;
 
@@ -1299,10 +1308,11 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
     case outputArpMode:
         switch (config.routing[channel].arpMode) {
         case 0: setStr("up"); break;
-        case 1: setStr("down"); break;
-        case 2: setStr("updn"); break;
-        case 3: setStr("ordr"); break;
-        case 4: setStr("rnd"); break;
+        case 1: setStr("dn"); break;
+        case 2: setStr("UD"); break;
+        case 3: setStr("DU"); break;
+        case 4: setStr("ordr"); break;
+        case 5: setStr("rnd"); break;
         default: setStr("ERR");
         }
         break;
