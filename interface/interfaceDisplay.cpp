@@ -146,7 +146,11 @@ void Display::BodyTemplateLive() { // has 1 dataFields + GateSignal
     }
                 bufferBody->setTextColor(WHITE,0x230E); // font Color
                 //byte note = 1;
-                byte note = 1;
+                byte note;
+                
+                if (DATAOBJ.get(FrankData::outputArp, DATAOBJ.get(FrankData::screenOutputChannel))) note = DATAOBJ.get(FrankData::liveKeyArpNoteEvaluated, DATAOBJ.get(FrankData::screenOutputChannel));
+                else note = DATAOBJ.get(FrankData::liveKeyNoteEvaluated, DATAOBJ.get(FrankData::screenOutputChannel));
+
                 bufferBody->setFont(&FreeSansBold24pt7b);
                 bufferBody->setCursor(95, 70);
                 bufferBody->print(valueToNote(note));

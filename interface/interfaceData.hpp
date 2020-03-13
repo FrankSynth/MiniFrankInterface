@@ -136,10 +136,12 @@ class LiveMidi {
     byte aftertouch = 0;
     byte sustain = 0;
     byte triggered = 0;
-    byte arpDirection = 0;
-    byte arpRetrigger = 0;
-    byte arpOctave = 0;
+    byte arpDirection = 1;
+    byte arpOctaveDirection = 1;
+    byte arpRetrigger = 1;
+    int arpOctave = 0;
     structKey lastKey;
+    structKey arpKey;
     PressedNotesList arpList;
     structKey arpArray[NOTERANGE];
 
@@ -346,7 +348,7 @@ class FrankData {
     inline void nextArpStep(const byte &array);
     inline void increaseArpOct(const byte &array);
     inline void decreaseArpOct(const byte &array);
-    
+
     inline byte getCurrentPageNumber(const byte &array);
     inline const byte getSubscreenMax();
     inline byte getLiveCcEvaluated(const byte &array);
@@ -438,13 +440,15 @@ inline byte increaseByte(const byte &value, const byte &maximum); // increase by
 inline byte decreaseByte(const byte &value, const byte &minimum); // decrease byte
 inline byte changeByte(const byte &value, const int &change, const byte &minimum = 0, const byte &maximum = 255,
                        const bool &clampChange = 0); // change byte
+inline int changeInt(const int &value, const int &change, const int &minimum, const int &maximum,
+                       const bool &clampChange = 0); // change byte
 inline byte changeByteReverse(const byte &value, const int &change, const byte &minimum = 0, const byte &maximum = 255);
 inline int changeIntReverse(const int &value, const int &change, const int &minimum, const int &maximum);
 template <typename T> inline T toggleValue(const T &data);
 template <typename T> inline char *toStr(const T &data);
 
 char valueToNote(const byte &noteIn);
-char valueToOctave(const byte &noteIn);
+const char *valueToOctave(const byte &noteIn);
 char valueToSharp(const byte &noteIn);
 const char *tuningToChar(const byte &tuning);
 

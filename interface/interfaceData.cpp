@@ -162,8 +162,11 @@ PressedNotesElement *PressedNotesList::getElement(const byte &element) {
 // class LiveMidi for all real time midi data for a single midi input
 void LiveMidi::keyPressed(const byte &note, const byte &velocity) {
     noteList.appendKey(note, velocity);
-    if (arpRetrigger) {
+    if (arpRetrigger && sustain < 64) {
         arpList.deleteAllKeys();
+        arpRetrigger = 0;
+    }
+    else {
         arpRetrigger = 0;
     }
 
@@ -180,7 +183,7 @@ void LiveMidi::keyReleased(const byte &note) {
     }
 
     noteList.deleteKey(note);
-    if (noteList.size == 0 && sustain < 64) {
+    if (noteList.size == 0) {
         arpRetrigger = 1;
     }
     triggered = 1;
@@ -267,18 +270,20 @@ void LiveMidi::updateArpArray(const byte &arpSettings) {
 void LiveMidi::copyArpListToArray() {
     for (int x = 0; x < arpList.size; x++) {
         PressedNotesElement *element = arpList.getElement(x);
-        structKey key = {element->note, element->velocity};
+        structKey key;
+        key.note = element->note;
+        key.velocity = element->velocity;
         arpArray[x] = key;
     }
 }
 
 void LiveMidi::sortList(const byte &order) {
-    if (order) {
-        qsort(arpArray, arpList.size, sizeof(structKey), sort_asc);
-    }
-    else {
-        qsort(arpArray, arpList.size, sizeof(structKey), sort_desc);
-    }
+    // if (order) {
+    qsort(arpArray, arpList.size, sizeof(structKey), sort_asc);
+    // }
+    // else {
+    //     qsort(arpArray, arpList.size, sizeof(structKey), sort_desc);
+    // }
 }
 
 structKey LiveMidi::getArpKey(const byte &step) {
@@ -565,31 +570,8 @@ inline structKey FrankData::getLiveKeyEvaluated(const byte &array) {
 }
 
 structKey FrankData::getArpKeyEvaluated(const byte &array) {
-    byte step = stat.stepArp[array];
-    structKey key;
 
-    if (config.routing[array].arpMode == 4) {
-        step = random(0, liveMidi[array].arpList.size);
-        key = liveMidi[array].getArpKey(step);
-    }
-    else {
-        liveMidi[array].getArpKey(step);
-    }
-
-    // lower octaves
-    if (config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET < 0) {
-        for (int x = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET; x < 0; x++) {
-            key.note = changeByte(key.note, -12, 0, NOTERANGE, 0);
-        }
-    }
-    // raise octaves
-    else if (config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET > 0) {
-        for (int x = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET; x > 0; x--) {
-            key.note = changeByte(key.note, 12, 0, NOTERANGE, 0);
-        }
-    }
-
-    return key;
+    return liveMidi[array].arpKey;
 }
 
 inline void FrankData::increaseArpOct(const byte &array) {
@@ -599,6 +581,7 @@ inline void FrankData::increaseArpOct(const byte &array) {
         liveMidi[array].arpOctave = 0;
     }
     else {
+
         // eval new min and max
         int newOctMin;
         int newOctMax;
@@ -612,9 +595,16 @@ inline void FrankData::increaseArpOct(const byte &array) {
             newOctMax = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET;
         }
 
-        // down
-        liveMidi[array].arpOctave = changeIntReverse(liveMidi[array].arpOctave, -1, newOctMin, newOctMax);
+        if (config.routing[array].arpMode == 2) {
+            liveMidi[array].arpOctave = changeInt(liveMidi[array].arpOctave, 1, newOctMin, newOctMax);
+            if (liveMidi[array].arpOctave == newOctMax) liveMidi[array].arpDirection = 0;
+        }
+        else {
+            liveMidi[array].arpOctave = changeIntReverse(liveMidi[array].arpOctave, 1, newOctMin, newOctMax);
+        }
     }
+        PRINT("increased internal Oct, new arpOctave ");
+        PRINTLN(liveMidi[array].arpOctave);
 }
 
 inline void FrankData::decreaseArpOct(const byte &array) {
@@ -635,28 +625,90 @@ inline void FrankData::decreaseArpOct(const byte &array) {
             newOctMin = 0;
             newOctMax = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET;
         }
-
-        // up
-        liveMidi[array].arpOctave = changeIntReverse(liveMidi[array].arpOctave, 1, newOctMin, newOctMax);
+        if (config.routing[array].arpMode == 2) {
+            liveMidi[array].arpOctave = changeInt(liveMidi[array].arpOctave, -1, newOctMin, newOctMax);
+            if (liveMidi[array].arpOctave == newOctMin) liveMidi[array].arpDirection = 1;
+        }
+        else {
+            liveMidi[array].arpOctave = changeIntReverse(liveMidi[array].arpOctave, -1, newOctMin, newOctMax);
+        }
     }
+        PRINT("decrease internal Oct, new arpOctave ");
+        PRINTLN(liveMidi[array].arpOctave);
 }
 
 inline void FrankData::nextArpStep(const byte &array) {
 
     switch (config.routing[array].arpMode) {
     case 1:
-        if (stat.stepArp[array] == 0) decreaseArpOct(array);
-        stat.stepArp[array] = changeByteReverse(stat.stepArp[array], -1, 0, liveMidi[array].arpList.size);
+        if (stat.stepArp[array] == 0) {
+            decreaseArpOct(array);
+        }
+        stat.stepArp[array] = changeByteReverse(stat.stepArp[array], -1, 0, liveMidi[array].arpList.size - 1);
         break;
     case 0:
     case 3:
     case 4:
-        if (stat.stepArp[array] == liveMidi[array].arpList.size) increaseArpOct(array);
-        stat.stepArp[array] = changeByteReverse(stat.stepArp[array], 1, 0, liveMidi[array].arpList.size);
+        if (stat.stepArp[array] == liveMidi[array].arpList.size - 1) {
+            increaseArpOct(array);
+        }
+        stat.stepArp[array] = changeByteReverse(stat.stepArp[array], 1, 0, liveMidi[array].arpList.size - 1);
         break;
     case 2:
+        // going up
+        if (liveMidi[array].arpDirection) {
+            PRINTLN("up");
+            stat.stepArp[array] = changeByte(stat.stepArp[array], 1, 0, liveMidi[array].arpList.size - 1);
+            if (stat.stepArp[array] == liveMidi[array].arpList.size - 1) {
+                PRINTLN("switch dir to 0");
+
+                liveMidi[array].arpDirection = 0;
+                if (liveMidi[array].arpOctaveDirection == 0) decreaseArpOct(array);
+            }
+        }
+        // going down
+        else {
+            PRINTLN("down");
+            stat.stepArp[array] = changeByte(stat.stepArp[array], -1, 0, liveMidi[array].arpList.size - 1);
+            if (stat.stepArp[array] == 0) {
+                liveMidi[array].arpDirection = 1;
+                PRINTLN("switch dir to 1");
+                if (liveMidi[array].arpOctaveDirection == 1) increaseArpOct(array);
+            }
+        }
+        break;
     default:;
     }
+    PRINT("Next Arp Step: ");
+    PRINTLN(stat.stepArp[array]);
+
+    byte step = stat.stepArp[array];
+    structKey key;
+
+    if (config.routing[array].arpMode == 4) {
+        step = random(0, liveMidi[array].arpList.size);
+        key = liveMidi[array].getArpKey(step);
+    }
+    else {
+        key = liveMidi[array].getArpKey(step);
+    }
+
+    // lower octaves
+    if (liveMidi[array].arpOctave < 0) {
+        for (int x = liveMidi[array].arpOctave; x < 0; x++) {
+            PRINTLN("Key apply octave down ");
+            key.note = changeByte(key.note, -12, 0, NOTERANGE, 0);
+        }
+    }
+    // raise octaves
+    else if (liveMidi[array].arpOctave > 0) {
+        for (int x = liveMidi[array].arpOctave; x > 0; x--) {
+            PRINTLN("Key apply octave up ");
+            key.note = changeByte(key.note, 12, 0, NOTERANGE, 0);
+        }
+    }
+
+    liveMidi[array].arpKey = key;
 }
 
 inline structKey FrankData::getKeyHighest(const byte &array) {
@@ -948,6 +1000,7 @@ void FrankData::increase(const frankData &frankDataType, const bool &clampChange
 }
 void FrankData::increase(const frankData &frankDataType, const byte &array, const bool &clampChange) {
     switch (frankDataType) {
+    case stepArp: nextArpStep(array); break;
     case stepSeq: increaseSeqStep(array); break;
     default: change(frankDataType, 1, array, clampChange);
     }
@@ -964,6 +1017,7 @@ void FrankData::decrease(const frankData &frankDataType, const bool &clampChange
 }
 void FrankData::decrease(const frankData &frankDataType, const byte &array, const bool &clampChange) {
     switch (frankDataType) {
+    case stepArp: nextArpStep(array); break;
     case stepSeq: decreaseSeqStep(array); break;
     default: change(frankDataType, -1, array, clampChange);
     }
@@ -1026,6 +1080,8 @@ void FrankData::toggle(const frankData &frankDataType) {
     case seqResetCC: seqResetAllCC(config.routing[stat.screen.config].outSource - 1); break;
     case seqOctaveUp: seqAllOctaveUp(config.routing[stat.screen.config].outSource - 1); break;
     case seqOctaveDown: seqAllOctaveDown(config.routing[stat.screen.config].outSource - 1); break;
+
+    case resetStepCounters: resetAllStepCounter(); break;
 
     case none: break;
     default: PRINTLN("FrankData toggle(frankData frankDataType), no case found");
@@ -1122,6 +1178,8 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
     case noteCal: setStr("NCal"); break;
     case cvCal: setStr("CvCal"); break;
 
+    case resetStepCounters: setStr("RsStep"); break;
+
     case none: setStr(""); break;
 
     default: PRINTLN("FrankData getNameAsStr(frankData frankDataType), no case found"); setStr("ERR");
@@ -1192,6 +1250,7 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
     case seqGateLengthOffset: setStr(toStr(((int)get(frankDataType, channel)) - GATELENGTHOFFSET)); break;
     case seqTuning: setStr(tuningToChar(seq[channel].sequence.tuning)); break;
 
+    case resetStepCounters:
     case screenRouting:
     case screenCal:
     case screenCalNote:
@@ -1447,11 +1506,25 @@ inline byte changeByte(const byte &value, const int &change, const byte &minimum
 
         return clampChange ? maximum : value;
     }
-    else if ((int)value + change <= minimum) { // test min
+    else if ((int)value + change <= minimum) { // test min  
         return clampChange ? minimum : value;
     }
     else {
         return (byte)((int)value + change); // return new value
+    }
+}
+
+inline int changeInt(const int &value, const int &change, const int &minimum, const int &maximum, const bool &clampChange) {
+
+    if (value + change >= maximum) { // test max
+
+        return clampChange ? maximum : value;
+    }
+    else if (value + change <= minimum) { // test min
+        return clampChange ? minimum : value;
+    }
+    else {
+        return (value + change); // return new value
     }
 }
 
@@ -1516,22 +1589,22 @@ char valueToNote(const byte &noteIn) {
     return '\0';
 }
 
-char valueToOctave(const byte &noteIn) {
+const char *valueToOctave(const byte &noteIn) {
 
     byte octave;
     octave = (noteIn + 9) / 12;
 
     switch (octave) {
-    case 0: return '0';
-    case 1: return '1';
-    case 2: return '2';
-    case 3: return '3';
-    case 4: return '4';
-    case 5: return '5';
-    case 6: return '6';
-    case 7: return '7';
-    case 8: return '8';
-    case 9: return '9';
+    case 0: return "-1";
+    case 1: return "0";
+    case 2: return "1";
+    case 3: return "2";
+    case 4: return "3";
+    case 5: return "4";
+    case 6: return "5";
+    case 7: return "6";
+    case 8: return "7";
+    case 9: return "8";
     }
     return '\0';
 }

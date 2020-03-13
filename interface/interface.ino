@@ -135,9 +135,10 @@ void loop() {
 
     // Temp Clock
     static long timer = 0;
-    if (millis() - timer > 250) {
+    if (millis() - timer > 500) {
         DATAOBJ.increase(FrankData::stepSeq, (byte)0);
         DATAOBJ.increase(FrankData::stepSeq, (byte)1);
+        DATAOBJ.increase(FrankData::stepArp, (byte)0);
 
      //   PRINT("Step: ");
       //  PRINTLN(DATAOBJ.get(FrankData::stepSeq));

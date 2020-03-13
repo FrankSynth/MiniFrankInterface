@@ -75,9 +75,11 @@ void controls::rotate(byte id, byte dir) {
     case FrankData::outputArpOctave:
     case FrankData::outputClock:
     case FrankData::outputArpRatchet:
+    case FrankData::outputArpMode:
+    case FrankData::outputArp:
 
     // case FrankData::midiSource :
-    case FrankData::liveMod:
+    case FrankData::outputLiveMode:
     
     case FrankData::stepSpeed:
     case FrankData::outputCc:

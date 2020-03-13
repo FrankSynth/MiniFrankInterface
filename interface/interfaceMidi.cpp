@@ -190,13 +190,14 @@ void updateMidi() {
 // Midi actions
 
 void midiNoteOn(const byte &channel, const byte &note, const byte &velocity) {
-    PRINTLN("Key pressed");
-    DATAOBJ.receivedKeyPressed(channel, note, velocity);
+    PRINT("Midi Key pressed");
+    PRINTLN(note - 21);
+    if (note > 20) DATAOBJ.receivedKeyPressed(channel, note-21, velocity);
 }
 
 void midiNoteOff(const byte &channel, const byte &note, const byte &velocity) {
-    PRINTLN("Key released");
-    DATAOBJ.receivedKeyReleased(channel, note);
+    PRINTLN("Midi Key released");
+    if (note > 20) DATAOBJ.receivedKeyReleased(channel, note-21);
 }
 
 void midiCC(const byte &channel, const byte &cc, const byte &midiData) {
