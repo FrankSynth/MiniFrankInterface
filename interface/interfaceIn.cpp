@@ -207,7 +207,7 @@ void controls::readSync() {
     DATAOBJ.set(FrankData::bpmSync, digitalRead(SWSYNC));
 }
 void controls::readRec() {
-    DATAOBJ.set(FrankData::bpmSync, digitalRead(SWREC));
+    DATAOBJ.set(FrankData::rec, digitalRead(SWREC));
 }
 
 void controls::readSeq() {
@@ -217,5 +217,5 @@ void controls::readSeq() {
 void controls::readBPMSpeed() {
 
     // PRINTLN("Speed:");
-    // PRINTLN(analogRead(BPMPOT));
+    DATAOBJ.setBPMPoti(analogRead(BPMPOT)/2);
 }

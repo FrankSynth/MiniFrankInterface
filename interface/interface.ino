@@ -57,6 +57,7 @@ void readSerial3() {
 
 void updateDisplay() { // update interrupt
     lcd.refresh();
+    //updateTLC();
 }
 
 void updateTLC() { // update interrupt
@@ -135,7 +136,7 @@ void setup() {
 
     // Set timer interrupt (display refresh)
     myTimerLCD.begin(updateDisplay, 40000); // display refresh
-    myTimerLED.begin(updateTLC, 100000);     // display refresh
+    //myTimerLED.begin(updateTLC, 100000);     // display refresh
 }
 
 void loop() {
@@ -149,17 +150,17 @@ void loop() {
     }
 
     // Temp Clock
-    static long timer = 0;
-    if (millis() - timer > 125) {
-        DATAOBJ.increaseBpm16thCount();
-        PRINTLN(DATAOBJ.get(FrankData::bpm16thCount));
+    //static long timer = 0;
+    //if (millis() - timer > 125) {
+    //    DATAOBJ.increaseBpm16thCount();
+       // PRINTLN(DATAOBJ.get(FrankData::bpm16thCount));
 
-        timer = millis();
-    }
+    //    timer = millis();
+   // }
     
     cntrl.readBPMSpeed();
     // count all clocks forward if not synced
-    updateClockCounter();
+    DATAOBJ.updateClockCounter();
 
     // activate middleman
     updateAllOutputs();
