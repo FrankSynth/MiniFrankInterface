@@ -299,7 +299,7 @@ void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
 
                           */
                 // char *data = toStr(mapping(dataField), index); // string buffer
-                const char *data = DATAOBJ.getValueAsStrChannel(mapping(dataField),DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)-1));
+                const char *data = DATAOBJ.getValueAsStrChannel(mapping(dataField),DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel))-1);
 
                 byte length = strlen(data); // string length
                 if((byte)data[0] == 64){

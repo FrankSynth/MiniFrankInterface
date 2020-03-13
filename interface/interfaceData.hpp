@@ -75,7 +75,7 @@ typedef struct {
 
     byte loadSaveSlot = 1; // laod save 1-10
 
-    int bpm = 0;    // current bpm
+    byte bpm = 120;    // current bpm
     byte play = 1;  // play stop
     byte rec = 0;   // Rec Active
     byte error = 0; // ErrorFlag
@@ -85,7 +85,7 @@ typedef struct {
     byte bpmSync = 0; // Sync Active
     byte midiClockCount = 5;
     byte bpm16thCount = 0;
-    unsigned int bpmPoti = 0; // sync= 0 ? 0-1023 bpm log : divider /4, /2, 1, *2, *4 ; Range is 0-1023
+    unsigned int bpmPot = 120; // sync= 0 ? 0-1023 bpm log : divider /4, /2, 1, *2, *4 ; Range is 0-1023
 } structStatus;
 
 // Midi Key data
@@ -145,7 +145,7 @@ class LiveMidi {
     byte stepArp = 0;
     byte stepSeq = 0;
 
-    int channel16thCount = 0;
+    unsigned int channel16thCount = 0;
 
     LiveMidi() {
         // initialize with a default key
@@ -439,7 +439,7 @@ class FrankData {
 };
 
 // utility
-inline byte testByte(const int &value, const byte &minimum, const byte &maximum = 255,
+inline byte testByte(const int &value, const byte &minimum = 0, const byte &maximum = 255,
                      const bool &clampChange = 0);                // test byte range and return valid byte
 inline byte increaseByte(const byte &value, const byte &maximum); // increase byte
 inline byte decreaseByte(const byte &value, const byte &minimum); // decrease byte

@@ -12,17 +12,8 @@
 //#define DEBUG
 
 // Controls object for the incoming UART messages
-class controls {
+class inputControls {
   public:
-    controls() { // SWITCHES init
-        pinMode(SWSYNC, INPUT_PULLUP);
-        pinMode(SWSEQ, INPUT_PULLUP);
-        pinMode(SWREC, INPUT_PULLUP);
-        pinMode(BPMPOT, INPUT);
-        readBPMSpeed();
-        readSwitches();
-    }
-
     void encode(byte message);      // encode message
     void rotate(byte id, byte dir); // is a rotate message
     void push(byte id, byte push);  // is a switch message
