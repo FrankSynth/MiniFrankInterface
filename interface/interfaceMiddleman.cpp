@@ -75,11 +75,9 @@ void updateGateOut(byte output) {}
 void updateClockOut(byte output) {
     static double timer = 0;
 
-    byte currentClock = DATAOBJ.get(FrankData::bpm16thCount);
-
     if (!(DATAOBJ.get(FrankData::bpm16thCount) == previousState.old16thClockCount)) {
 
-        if (currentClock % 4 < 2) {
+        if (DATAOBJ.get(FrankData::bpm16thCount) % 4 < 2) {
             if (!previousState.clockLED) {
                 clkLed.setClkLed(1);
                 previousState.clockLED = 1;
