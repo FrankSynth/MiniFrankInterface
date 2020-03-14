@@ -992,7 +992,7 @@ void FrankData::set(const frankData &frankDataType, const int &data, const byte 
     case outputCc: config.routing[array].cc = testByte(data, 0, 4, clampChange); break;
     case outputLiveMode: config.routing[array].liveMidiMode = testByte(data, 0, 2, clampChange); break;
     case outputClock: config.routing[array].clockSpeed = testByte(data, 0, 5, clampChange); break;
-    case outputArpRatchet: config.routing[array].arpRatchet = testByte(data, 0, 2, clampChange); break;
+    case outputArpRatchet: config.routing[array].arpRatchet = testByte(data, 0, 3, clampChange); break;
     case outputArpOctave: config.routing[array].arpOctaves = testByte(data, 0, 6, clampChange); break;
     case outputArpMode:
         config.routing[array].arpMode = testByte(data, 0, 5, clampChange);
@@ -1013,7 +1013,7 @@ void FrankData::set(const frankData &frankDataType, const int &data, const byte 
     case nbPages: config.routing[array].nbPages = testByte(data, 1, PAGES, clampChange); break;
 
     case seqTuning: seq[array].sequence.tuning = testByte(data, 0, 13, clampChange); break;
-    case seqRatchet: seq[array].sequence.ratchet = testByte(data, 0, 2, clampChange); break;
+    case seqRatchet: seq[array].sequence.ratchet = testByte(data, 0, 3, clampChange); break;
     case seqGateLengthOffset: seq[array].sequence.gateLengthOffset = testByte(data, 0, 200, clampChange); break;
     case none: break;
     default: PRINTLN("FrankData set(frankData frankDataType, byte data, byte array, bool clampChange), no case found");
