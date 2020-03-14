@@ -29,13 +29,12 @@ void initMiddleman() {
     clkLed.init(CLKLED);
 }
 void updateAllOutputs() {
-    for (byte output = 0; output < OUTPUTS; output++) {
-        updateNoteOut(output);
-        updateCustomCVOut(output);
-        updateGateOut(output);
-        updateClockOut(output);
-        updateTriggerOut(output);
-    }
+
+    updateNoteOut();
+    updateCustomCVOut();
+    updateGateOut();
+    updateClockOut();
+    updateTriggerOut();
 }
 
 void updateNoteOut(byte output) {
@@ -73,7 +72,7 @@ void updateNoteOut(byte output) {
 void updateCustomCVOut(byte output) {}
 void updateGateOut(byte output) {}
 void updateClockOut(byte output) {
-    static double timer = 0;
+    static double timer[2] = {0};
 
     if (!(DATAOBJ.get(FrankData::bpm16thCount) == previousState.old16thClockCount)) {
         previousState.old16thClockCount = DATAOBJ.get(FrankData::bpm16thCount);
@@ -91,21 +90,26 @@ void updateClockOut(byte output) {
             }
         }
 
-        if (!previousOutputs[output].clockPulseActivated) {
+        for (byte output = 0; output < OUTPUTS; output++) {
 
-            if ((int)(DATAOBJ.get(FrankData::bpm16thCount)) % (int)pow(2, (int)DATAOBJ.get(FrankData::outputClock, output)) == 0) {
-                outputClock[output].setClock(1);
-                previousOutputs[output].clockPulseActivated = 1; 
-                timer = millis();
+            if (!previousOutputs[output].clockPulseActivated) {
+
+                if ((int)(DATAOBJ.get(FrankData::bpm16thCount)) % (int)pow(2, (int)DATAOBJ.get(FrankData::outputClock, output)) == 0) {
+                    outputClock[output].setClock(1);
+                    previousOutputs[output].clockPulseActivated = 1;
+                    timer[output] = millis();
+                }
             }
         }
     }
 
-    if (previousOutputs[output].clockPulseActivated) {
+    for (byte output = 0; output < OUTPUTS; output++) {
+        if (previousOutputs[output].clockPulseActivated) {
 
-        if (millis() - timer > DATAOBJ.get(FrankData::pulseLength)) {
-            outputClock[output].setClock(0);
-            previousOutputs[output].clockPulseActivated = 0;
+            if (millis() - timer[output] > DATAOBJ.get(FrankData::pulseLength)) {
+                outputClock[output].setClock(0);
+                previousOutputs[output].clockPulseActivated = 0;
+            }
         }
     }
 }
