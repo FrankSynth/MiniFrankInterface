@@ -37,7 +37,7 @@ void updateAllOutputs() {
     updateTriggerOut();
 }
 
-void updateNoteOut(byte output) {
+void updateNoteOut() {
     // Live
     // if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
 
@@ -69,9 +69,9 @@ void updateNoteOut(byte output) {
     // else {
     // }
 }
-void updateCustomCVOut(byte output) {}
-void updateGateOut(byte output) {}
-void updateClockOut(byte output) {
+void updateCustomCVOut() {}
+void updateGateOut() {}
+void updateClockOut() {
     static double timer[2] = {0};
 
     if (!(DATAOBJ.get(FrankData::bpm16thCount) == previousState.old16thClockCount)) {
@@ -114,9 +114,9 @@ void updateClockOut(byte output) {
     }
 }
 
-void updateTriggerOut(byte output) {}
+void updateTriggerOut() {}
 
-void updateArp(byte output) {
+void updateArp() {
     // if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
     //     if (DATAOBJ.get(FrankData::outputArp, output)) {
     //         if (previousOutputs[output].sustain > DATAOBJ.get(FrankData::liveSustain) && DATAOBJ.get(FrankData::liveSustain) < 64) {

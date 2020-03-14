@@ -52,12 +52,12 @@ void initMiddleman();
 void updateAllOutputs();
 
 // Middleman helper functions
-void updateNoteOut(byte output);
-void updateCustomCVOut(byte output);
-void updateGateOut(byte output);
-void updateClockOut(byte output);
-void updateTriggerOut(byte output);
-void updateArp(byte output);
+void updateNoteOut();
+void updateCustomCVOut();
+void updateGateOut();
+void updateClockOut();
+void updateTriggerOut();
+void updateArp();
 
     // advanced helper functions
     byte getArpeggiatedNote();
