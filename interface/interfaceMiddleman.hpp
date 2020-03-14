@@ -21,7 +21,8 @@ class PreviousOutputs {
     byte stepSeq = 0;
     byte stepArp = 0;
     long gateTimeSet = 0;
-    byte clock = 0;
+    byte clockPulseActivated = 0;
+    byte clockPulseDeactivated = 0;
     long clockTimeSet = 0;
     byte trigger = 0;
     long triggerTimeSet = 0;
