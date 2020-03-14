@@ -57,23 +57,37 @@ void readSerial3() {
 
 void updateDisplay() { // update interrupt
     lcd.refresh();
-
-    updateTLC();
 }
 
 void updateTLC() { // update interrupt
+static byte sendOld = 0;
     byte source = DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel));
     if (source) { // seq modus an?
         byte send = 0;
-        for (int i = 0; i < 8; i++) {
-            if (DATAOBJ.get(FrankData::seqGate, source - 1, DATAOBJ.get(FrankData::activePage, source - 1) * 8 + i)) { // gate an?
-                send = send | 1 << i;
+        for (int x = 0; x < 2; x++) {
+
+            for (int i = 0; i < 4; i++) {
+                if (DATAOBJ.get(FrankData::seqGate, source - 1, DATAOBJ.get(FrankData::activePage, source - 1) * 8 + i+4*x)) { // gate an?,
+                    if (x == 0) {
+                        send = send | 1 << i;
+                    }
+                    else {
+                        send = send | 1 << (7 - i);
+                    }
+                }
             }
         }
-        tlc.sendByte(send);
-       }
+        if (send != sendOld){
+            Serial.println("update");
+            tlc.sendByte(send);
+            sendOld = send;
+        }
+    }
     else {
-        tlc.sendByte(0);
+        if (sendOld) {
+            tlc.sendByte(0);
+            sendOld = 0;
+        }
     }
 }
 
@@ -137,7 +151,7 @@ void setup() {
 
     // Set timer interrupt (display refresh)
     myTimerLCD.begin(updateDisplay, 40000); // display refresh
-    //myTimerLED.begin(updateTLC, 100000);     // display refresh
+    myTimerLED.begin(updateTLC, 40000);     // display refresh
 }
 
 void loop() {
@@ -151,19 +165,19 @@ void loop() {
     }
 
     // Temp Clock
-    //static long timer = 0;
-    //if (millis() - timer > 125) {
+    // static long timer = 0;
+    // if (millis() - timer > 125) {
     //    DATAOBJ.increaseBpm16thCount();
-       // PRINTLN(DATAOBJ.get(FrankData::bpm16thCount));
+    // PRINTLN(DATAOBJ.get(FrankData::bpm16thCount));
 
     //    timer = millis();
-   // }
-    
+    // }
+
     // count all clocks forward if not synced
     DATAOBJ.updateClockCounter();
 
     // activate middleman
-   updateAllOutputs();
+    updateAllOutputs();
     cntrl.readBPMSpeed();
 }
 

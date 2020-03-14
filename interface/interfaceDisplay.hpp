@@ -64,9 +64,9 @@ class Display {
 
     void refresh();                    // refresh display
     void displayBrightness(byte brigthness); // set display display brightness
+    Adafruit_ST7735 lcd = Adafruit_ST7735(LCD_CS, LCD_DC, LCD_RST); // initialize LCD
 
   private:
-    Adafruit_ST7735 lcd = Adafruit_ST7735(LCD_CS, LCD_DC, LCD_RST); // initialize LCD
 
     // Build display buffers
     DispBuffer16 *bufferHead;

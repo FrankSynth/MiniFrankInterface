@@ -535,6 +535,8 @@ void TLC5916::sendByte(byte send){
     digitalWrite(pinTLC, LOW);
      SPI.transfer(send);
     digitalWrite(pinTLC, HIGH);
+    digitalWrite(pinTLC, LOW);
+
     SPI.endTransaction();   
 }
 
@@ -542,7 +544,7 @@ void TLC5916::sendByte(byte send){
 void TLC5916::init(byte pin){
     pinTLC = pin;
     pinMode(pin, OUTPUT);
-    digitalWrite(pin, HIGH);
+    digitalWrite(pin, LOW);
 
     sendByte(0); //set to Black
 }   
