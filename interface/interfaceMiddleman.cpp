@@ -77,29 +77,31 @@ void updateClockOut(byte output) {
 
     byte currentClock = DATAOBJ.get(FrankData::bpm16thCount);
 
-    if (currentClock % 4 < 2) {
-        if (!previousState.clockLED) {
-            clkLed.setClkLed(1);
-            previousState.clockLED = 1;
+    if (!(DATAOBJ.get(FrankData::bpm16thCount) == previousState.old16thClockCount)) {
+
+        if (currentClock % 4 < 2) {
+            if (!previousState.clockLED) {
+                clkLed.setClkLed(1);
+                previousState.clockLED = 1;
+            }
+        }
+        else {
+            if (previousState.clockLED) {
+                clkLed.setClkLed(0);
+                previousState.clockLED = 0;
+            }
+        }
+
+        if (!previousOutputs[output].clockPulseActivated) {
+
+            if ((int)(DATAOBJ.get(FrankData::bpm16thCount)) % (int)pow(2, (int)DATAOBJ.get(FrankData::outputClock, output)) == 0) {
+                outputClock[output].setClock(1);
+                previousOutputs[output].clockPulseActivated = 1;
+                previousState.old16thClockCount = DATAOBJ.get(FrankData::bpm16thCount);
+                timer = millis();
+            }
         }
     }
-    else {
-        if (previousState.clockLED) {
-            clkLed.setClkLed(0);
-            previousState.clockLED = 0;
-        }
-    }
-
-    if (!previousOutputs[output].clockPulseActivated && !(DATAOBJ.get(FrankData::bpm16thCount) == previousState.old16thClockCount)) {
-
-        if ((int)(DATAOBJ.get(FrankData::bpm16thCount)) % (int)pow(2, (int)DATAOBJ.get(FrankData::outputClock, output)) == 0) {
-            outputClock[output].setClock(1);
-            previousOutputs[output].clockPulseActivated = 1;
-            previousState.old16thClockCount = DATAOBJ.get(FrankData::bpm16thCount);
-            timer = millis();
-        }
-    }
-
 
     if (previousOutputs[output].clockPulseActivated) {
 
