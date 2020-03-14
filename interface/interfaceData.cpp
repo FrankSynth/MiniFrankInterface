@@ -434,7 +434,7 @@ void FrankData::receivedKeyPressed(const byte &channel, const byte &note, const 
                     set(frankData::seqCc, velocity, x, liveMidi[x].stepSeq);
                 }
                 else {
-                    set(frankData::seqCc, getLiveCcEvaluated(), x, liveMidi[x].stepSeq);
+                    set(frankData::seqCc, getLiveCcEvaluated(x), x, liveMidi[x].stepSeq);
                 }
 
                 if (stat.play) increaseStepCounters(x);
@@ -602,7 +602,7 @@ void FrankData::setBPMPoti(const unsigned &bpmPot) {
 void FrankData::updateClockCounter(const bool newMillis) {
 
     if (!stat.bpmSync) {
-        static long timer = millis();
+        static unsigned long timer = millis();
         if (newMillis) {
             timer = millis();
         }
