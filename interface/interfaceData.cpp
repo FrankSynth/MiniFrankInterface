@@ -503,16 +503,60 @@ void FrankData::increaseBpm16thCount() {
         }
     }
 
-    for (byte out = 0; out < OUTPUTS; out++) {
-        if ((int)stat.bpm16thCount % (int)pow(2, (int)(config.routing[out].stepSpeed)) == 0) {
-            nextArpStep(out);
-            
-            if (stat.play) {
-                if (config.direction) {
-                    increaseSeqStep(out);
-                }
-                else {
-                    decreaseSeqStep(out);
+}
+
+void FrankData::increaseStepCounters(const byte &channel) {
+
+    byte amount = config.routing[channel].stepSpeed;
+
+    for (byte count = 0; count < amount; count++) {
+
+        stat.bpm16thCount++;
+        if (stat.bpm16thCount == 32) {
+            stat.bpm16thCount = 0;
+        }
+        for (byte out = 0; out < OUTPUTS; out++) {
+            if ((int)liveMidi[out].channel16thCount == 0) {
+                liveMidi[out].channel16thCount = (int)config.routing[out].nbPages * STEPSPERPAGE * 16) - 1;
+            }
+            else {
+                liveMidi[out].channel16thCount--;
+            }
+        }
+    }
+}
+
+void FrankData::decreaseStepCounters(const byte &channel) {
+
+    byte amount = config.routing[channel].stepSpeed;
+
+    for (byte count = 0; count < amount; count++) {
+
+        if (stat.bpm16thCount == 0) {
+            stat.bpm16thCount = 32;
+        }
+        stat.bpm16thCount--;
+
+        for (byte out = 0; out < OUTPUTS; out++) {
+            if ((int)liveMidi[out].channel16thCount == ((int)config.routing[out].nbPages * STEPSPERPAGE * 16) - 1) {
+                liveMidi[out].channel16thCount = 0;
+            }
+            else {
+                liveMidi[out].channel16thCount++;
+            }
+        }
+
+        for (byte out = 0; out < OUTPUTS; out++) {
+            if ((int)stat.bpm16thCount % (int)pow(2, (int)(config.routing[out].stepSpeed)) == 0) {
+                nextArpStep(out);
+
+                if (stat.play) {
+                    if (config.direction) {
+                        increaseSeqStep(out);
+                    }
+                    else {
+                        decreaseSeqStep(out);
+                    }
                 }
             }
         }
@@ -1366,8 +1410,9 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
         case 3: setStr("DU"); break;
         case 4: setStr("ordr"); break;
         case 5: setStr("rnd"); break;
-        default: setStr("ERR");
-        PRINT("outputArpMode, received ");
+        default:
+            setStr("ERR");
+            PRINT("outputArpMode, received ");
             PRINTLN(config.routing[channel].arpMode);
         }
         break;
@@ -1376,8 +1421,9 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
         switch (config.midiSource) {
         case 0: setStr("DIN"); break;
         case 1: setStr("USB"); break;
-        default: setStr("ERR");
-        PRINT("midiSource, received ");
+        default:
+            setStr("ERR");
+            PRINT("midiSource, received ");
             PRINTLN(config.midiSource);
         }
         break;

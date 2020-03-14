@@ -343,6 +343,8 @@ class FrankData {
     byte getBpm16thCount();
     // inline void resetClock();
     inline void calcBPM();
+    inline void increaseSeqStep(const byte &array);
+    inline void decreaseSeqStep(const byte &array);
     inline void nextArpStep(const byte &array);
     inline void increaseArpOct(const byte &array);
     inline void decreaseArpOct(const byte &array);
@@ -360,9 +362,10 @@ class FrankData {
     const char *valueToStr(const frankData &frankDataType, const byte &channel);
 
   public:
-    inline void increaseSeqStep(const byte &array);
-    inline void decreaseSeqStep(const byte &array);
     void updateClockCounter();
+    void increaseStepCounters(const byte &channel);
+    void decreaseStepCounters(const byte &channel);
+
     void increaseBpm16thCount();
     inline structKey getLiveKeyEvaluated(const byte &array);
     inline structKey getKeyHighest(const byte &array);
