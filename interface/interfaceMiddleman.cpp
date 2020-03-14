@@ -76,6 +76,7 @@ void updateClockOut(byte output) {
     static double timer = 0;
 
     if (!(DATAOBJ.get(FrankData::bpm16thCount) == previousState.old16thClockCount)) {
+        previousState.old16thClockCount = DATAOBJ.get(FrankData::bpm16thCount);
 
         if (DATAOBJ.get(FrankData::bpm16thCount) % 4 < 2) {
             if (!previousState.clockLED) {
@@ -94,8 +95,7 @@ void updateClockOut(byte output) {
 
             if ((int)(DATAOBJ.get(FrankData::bpm16thCount)) % (int)pow(2, (int)DATAOBJ.get(FrankData::outputClock, output)) == 0) {
                 outputClock[output].setClock(1);
-                previousOutputs[output].clockPulseActivated = 1;
-                previousState.old16thClockCount = DATAOBJ.get(FrankData::bpm16thCount);
+                previousOutputs[output].clockPulseActivated = 1; 
                 timer = millis();
             }
         }
