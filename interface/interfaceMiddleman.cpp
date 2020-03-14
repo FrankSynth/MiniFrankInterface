@@ -90,13 +90,23 @@ void updateClockOut(byte output) {
         }
     }
 
-    if ((int)(DATAOBJ.get(FrankData::bpm16thCount)) % (int)pow(2, (int)DATAOBJ.get(FrankData::stepSpeed, output)) == 0) {
-        outputClock[output].setClock(1);
-        timer = millis();
+    if (!previousOutputs[output].clockPulseActivated && !(DATAOBJ.get(FrankData::bpm16thCount) == previousState.old16thClockCount)) {
+
+        if ((int)(DATAOBJ.get(FrankData::bpm16thCount)) % (int)pow(2, (int)DATAOBJ.get(FrankData::outputClock, output)) == 0) {
+            outputClock[output].setClock(1);
+            previousOutputs[output].clockPulseActivated = 1;
+            previousState.old16thClockCount = DATAOBJ.get(FrankData::bpm16thCount);
+            timer = millis();
+        }
     }
 
-    if (millis() - timer > DATAOBJ.get(FrankData::pulseLength)) {
-        outputClock[output].setClock(0);
+
+    if (previousOutputs[output].clockPulseActivated) {
+
+        if (millis() - timer > DATAOBJ.get(FrankData::pulseLength)) {
+            outputClock[output].setClock(0);
+            previousOutputs[output].clockPulseActivated = 0;
+        }
     }
 }
 
