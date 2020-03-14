@@ -503,6 +503,20 @@ void FrankData::increaseBpm16thCount() {
         }
     }
 
+    for (byte out = 0; out < OUTPUTS; out++) {
+        if ((int)stat.bpm16thCount % (int)pow(2, (int)(config.routing[out].stepSpeed)) == 0) {
+            nextArpStep(out);
+
+            if (stat.play) {
+                if (config.direction) {
+                    increaseSeqStep(out);
+                }
+                else {
+                    decreaseSeqStep(out);
+                }
+            }
+        }
+    }
 }
 
 void FrankData::increaseStepCounters(const byte &channel) {
@@ -517,10 +531,17 @@ void FrankData::increaseStepCounters(const byte &channel) {
         }
         for (byte out = 0; out < OUTPUTS; out++) {
             if ((int)liveMidi[out].channel16thCount == 0) {
+                liveMidi[out].channel16thCount = 0;
                 liveMidi[out].channel16thCount = (int)config.routing[out].nbPages * STEPSPERPAGE * 16) - 1;
             }
             else {
                 liveMidi[out].channel16thCount--;
+            }
+        }
+        for (byte out = 0; out < OUTPUTS; out++) {
+            if ((int)stat.bpm16thCount % (int)pow(2, (int)(config.routing[out].stepSpeed)) == 0) {
+
+                increaseSeqStep(out);
             }
         }
     }
@@ -545,19 +566,10 @@ void FrankData::decreaseStepCounters(const byte &channel) {
                 liveMidi[out].channel16thCount++;
             }
         }
-
         for (byte out = 0; out < OUTPUTS; out++) {
             if ((int)stat.bpm16thCount % (int)pow(2, (int)(config.routing[out].stepSpeed)) == 0) {
-                nextArpStep(out);
 
-                if (stat.play) {
-                    if (config.direction) {
-                        increaseSeqStep(out);
-                    }
-                    else {
-                        decreaseSeqStep(out);
-                    }
-                }
+                decreaseSeqStep(out);
             }
         }
     }
