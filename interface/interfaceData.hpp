@@ -223,7 +223,7 @@ class FrankData {
         seqGate,
         seqGateLength,
         seqCc,
-        seqCcEvaluated,
+        // seqCcEvaluated,
         seqVelocity,
         seqSize,
 
@@ -235,7 +235,7 @@ class FrankData {
 
         // Seq, needs value, array
         seqTuning,
-        seqRatchet,
+        // seqRatchet,
         seqGateLengthOffset,
         stepSpeed,
         nbPages,
@@ -262,7 +262,7 @@ class FrankData {
         outputChannel,
         outputArp,
         outputArpMode,
-        outputArpRatchet,
+        outputRatchet,
         outputArpOctave,
         outputCc,
         outputCcEvaluated,
@@ -371,8 +371,6 @@ class FrankData {
     inline structKey getKeyHighest(const byte &array);
     inline structKey getKeyLowest(const byte &array);
     inline structKey getKeyLatest(const byte &array);
-
-    structKey getArpKeyEvaluated(const byte &array);
 
     void setBPMPoti(const unsigned int & bpm);
 

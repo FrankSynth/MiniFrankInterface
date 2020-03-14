@@ -425,6 +425,20 @@ void FrankData::receivedKeyPressed(const byte &channel, const byte &note, const 
         if (config.routing[x].channel == 0 || config.routing[x].channel == channel) {
             liveMidi[x].keyPressed(note, velocity);
             updateArp(x);
+
+            if (stat.rec && x == stat.screen.channel) {
+                set(FrankData::seqNote, note, x, liveMidi[x].stepSeq);
+
+                // if output cc is velocity, take newest velocity
+                if (config.routing[x].cc == 0) {
+                    set(frankData::seqCc, velocity, x, liveMidi[x].stepSeq);
+                }
+                else {
+                    set(frankData::seqCc, getLiveCcEvaluated(), x, liveMidi[x].stepSeq);
+                }
+
+                if (stat.play) increaseStepCounters(x);
+            }
         }
     }
 }
@@ -587,9 +601,8 @@ void FrankData::setBPMPoti(const unsigned &bpmPot) {
 
 void FrankData::updateClockCounter(const bool newMillis) {
 
-
     if (!stat.bpmSync) {
-    static long timer = millis();
+        static long timer = millis();
         if (newMillis) {
             timer = millis();
         }
@@ -625,6 +638,7 @@ inline void FrankData::increaseSeqStep(const byte &array) {
     else {
         liveMidi[array].stepSeq++; // increase Step
     }
+    liveMidi[array].triggered = 1;
 }
 
 inline void FrankData::decreaseSeqStep(const byte &array) {
@@ -642,6 +656,7 @@ inline void FrankData::decreaseSeqStep(const byte &array) {
     else {
         liveMidi[array].stepSeq--; // decrease Step
     }
+    liveMidi[array].triggered = 1;
 }
 
 inline byte FrankData::getCurrentPageNumber(const byte &array) { // number of pages, takes care if page number has changed
@@ -664,11 +679,6 @@ inline structKey FrankData::getLiveKeyEvaluated(const byte &array) {
     case 2: return liveMidi[array].getKeyHighest();
     default: PRINTLN("FrankData getLiveKeyEvaluated, no case found"); return liveMidi[array].lastKey;
     }
-}
-
-structKey FrankData::getArpKeyEvaluated(const byte &array) {
-
-    return liveMidi[array].arpKey;
 }
 
 inline void FrankData::increaseArpOct(const byte &array) {
@@ -823,6 +833,7 @@ inline void FrankData::nextArpStep(const byte &array) {
     }
 
     liveMidi[array].arpKey = key;
+    liveMidi[array].triggered = 1;
 }
 
 inline structKey FrankData::getKeyHighest(const byte &array) {
@@ -837,7 +848,7 @@ inline structKey FrankData::getKeyLatest(const byte &array) {
 
 inline byte FrankData::getLiveCcEvaluated(const byte &array) {
     switch (config.routing[array].cc) {
-    case 0: return config.routing[array].arp ? getArpKeyEvaluated(array).velocity : getLiveKeyEvaluated(array).velocity;
+    case 0: return config.routing[array].arp ? liveMidi[array].arpKey.velocity : getLiveKeyEvaluated(array).velocity;
     case 1: return liveMidi[array].mod;
     case 2: return liveMidi[array].pitchbend;
     case 3: return liveMidi[array].aftertouch;
@@ -960,7 +971,7 @@ byte FrankData::get(const frankData &frankDataType, const byte &array) {
     case outputCcEvaluated: return getLiveCcEvaluated(array);
     case outputLiveMode: return config.routing[array].liveMidiMode;
     case outputClock: return config.routing[array].clockSpeed;
-    case outputArpRatchet: return config.routing[array].arpRatchet;
+    case outputRatchet: return config.routing[array].arpRatchet;
     case outputArpOctave: return config.routing[array].arpOctaves;
     case outputArpMode: return config.routing[array].arpMode;
 
@@ -973,8 +984,8 @@ byte FrankData::get(const frankData &frankDataType, const byte &array) {
     case liveTriggered: return liveMidi[array].triggered;
     case liveKeyNoteEvaluated: return getLiveKeyEvaluated(array).note;
     case liveKeyVelEvaluated: return getLiveKeyEvaluated(array).velocity;
-    case liveKeyArpNoteEvaluated: return getArpKeyEvaluated(array).note;
-    case liveKeyArpVelEvaluated: return getArpKeyEvaluated(array).velocity;
+    case liveKeyArpNoteEvaluated: return liveMidi[array].arpKey.note;
+    case liveKeyArpVelEvaluated: return liveMidi[array].arpKey.velocity;
     case liveLatestKey: return liveMidi[array].getKeyLatest().note;
     case liveLowestKey: return liveMidi[array].getKeyLowest().note;
     case liveHighestKey: return liveMidi[array].getKeyHighest().note;
@@ -988,7 +999,7 @@ byte FrankData::get(const frankData &frankDataType, const byte &array) {
     case currentPageNumber: return getCurrentPageNumber(array);
 
     case seqTuning: return seq[array].sequence.tuning;
-    case seqRatchet: return seq[array].sequence.ratchet;
+    // case seqRatchet: return seq[array].sequence.ratchet;
     case seqGateLengthOffset: return seq[array].sequence.gateLengthOffset;
 
     case none: return (byte)0;
@@ -1003,7 +1014,9 @@ byte FrankData::get(const frankData &frankDataType, const byte &array, const byt
     case seqGate: return seq[array].sequence.gate[step];
     case seqGateLength: return seq[array].sequence.gateLength[step];
     case seqCc: return seq[array].sequence.cc[step];
-    case seqVelocity: return seq[array].sequence.velocity[step];
+    case seqVelocity:
+        return seq[array].sequence.velocity[step];
+        // case seqCcEvaluated: return getSeqCCEvaluated(array, step);
 
     case noteCal: return getNoteCal(array, step);
 
@@ -1033,7 +1046,10 @@ void FrankData::set(const frankData &frankDataType, const int &data, const bool 
     case play: stat.play = testByte(data, 0, 1, clampChange); break;
     case rec: stat.rec = testByte(data, 0, 1, clampChange); break;
     case error: stat.error = testByte(data, 0, 1, clampChange); break;
-    case bpmSync: stat.bpmSync = testByte(data, 0, 1, clampChange); updateClockCounter(true); break;
+    case bpmSync:
+        stat.bpmSync = testByte(data, 0, 1, clampChange);
+        updateClockCounter(true);
+        break;
     case bpmPoti: stat.bpmPot = testByte(data, 0, 255, clampChange); break;
     case load:
     case save: stat.loadSaveSlot = testByte(data, 1, 10, clampChange); break;
@@ -1055,7 +1071,7 @@ void FrankData::set(const frankData &frankDataType, const int &data, const byte 
     case outputCc: config.routing[array].cc = testByte(data, 0, 4, clampChange); break;
     case outputLiveMode: config.routing[array].liveMidiMode = testByte(data, 0, 2, clampChange); break;
     case outputClock: config.routing[array].clockSpeed = testByte(data, 0, 5, clampChange); break;
-    case outputArpRatchet: config.routing[array].arpRatchet = testByte(data, 0, 3, clampChange); break;
+    case outputRatchet: config.routing[array].arpRatchet = testByte(data, 0, 3, clampChange); break;
     case outputArpOctave: config.routing[array].arpOctaves = testByte(data, 0, 6, clampChange); break;
     case outputArpMode:
         config.routing[array].arpMode = testByte(data, 0, 5, clampChange);
@@ -1076,7 +1092,7 @@ void FrankData::set(const frankData &frankDataType, const int &data, const byte 
     case nbPages: config.routing[array].nbPages = testByte(data, 1, PAGES, clampChange); break;
 
     case seqTuning: seq[array].sequence.tuning = testByte(data, 0, 13, clampChange); break;
-    case seqRatchet: seq[array].sequence.ratchet = testByte(data, 0, 3, clampChange); break;
+    // case seqRatchet: seq[array].sequence.ratchet = testByte(data, 0, 3, clampChange); break;
     case seqGateLengthOffset: seq[array].sequence.gateLengthOffset = testByte(data, 0, 200, clampChange); break;
     case none: break;
     default: PRINTLN("FrankData set(frankData frankDataType, byte data, byte array, bool clampChange), no case found");
@@ -1149,7 +1165,10 @@ void FrankData::toggle(const frankData &frankDataType) {
     case direction: config.direction = toggleValue(config.direction); break;
     case play: stat.play = toggleValue(stat.play); break;
     case rec: stat.rec = toggleValue(stat.rec); break;
-    case bpmSync: stat.bpmSync = toggleValue(stat.bpmSync);updateClockCounter(true); break;
+    case bpmSync:
+        stat.bpmSync = toggleValue(stat.bpmSync);
+        updateClockCounter(true);
+        break;
     case outputArp:
         config.routing[stat.screen.channel].arp = toggleValue(config.routing[stat.screen.channel].arp);
         updateArp(stat.screen.channel);
@@ -1227,7 +1246,7 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
     case seqVelocity: setStr("Vel"); break;
     case seqTuning: setStr("Tune"); break;
     case seqSize: setStr("Seq"); break;
-    case seqRatchet: setStr("Reps"); break;
+    // case seqRatchet: setStr("Reps"); break;
     case seqGateLengthOffset: setStr("GL-OF"); break;
     case stepSpeed: setStr("Speed"); break;
     case seqResetNotes: setStr("Rs Nt"); break;
@@ -1257,7 +1276,7 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
         default: setStr("ERR"); break;
         }
         break;
-    case outputArpRatchet: setStr("Reps"); break;
+    case outputRatchet: setStr("Reps"); break;
     case outputArpOctave: setStr("Oct"); break;
 
     case outputLiveMode: setStr("Key"); break;
@@ -1322,9 +1341,9 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType) {
     case seqGate:
     case seqGateLength:
     case seqCc:
-    case seqCcEvaluated:
+    // case seqCcEvaluated:
     case seqSize:
-    case seqRatchet:
+    // case seqRatchet:
     case seqGateLengthOffset:
     case stepOnPage:
     case currentPageNumber:
@@ -1351,8 +1370,8 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
     case stepArp:
     case nbPages:
 
-    case outputArpRatchet:
-    case seqRatchet:
+    case outputRatchet:
+        // case seqRatchet:
 
     case liveMod:
     case livePitchbend:
@@ -1509,7 +1528,7 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
         break;
     case liveKeyArpNoteEvaluated:
         if (liveMidi[channel].keysPressed()) {
-            setStr(toStr(getArpKeyEvaluated(channel).note));
+            setStr(toStr(liveMidi[channel].arpKey.note));
         }
         else {
             setStr("-");
@@ -1517,7 +1536,7 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
         break;
     case liveKeyArpVelEvaluated:
         if (liveMidi[channel].keysPressed()) {
-            setStr(toStr(getArpKeyEvaluated(channel).velocity));
+            setStr(toStr(liveMidi[channel].arpKey.velocity));
         }
         else {
             setStr("-");

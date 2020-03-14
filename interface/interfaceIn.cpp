@@ -84,7 +84,7 @@ case STEP:
     // Type, Channel;
     case FrankData::outputArpOctave:
     case FrankData::outputClock:
-    case FrankData::outputArpRatchet:
+    case FrankData::outputRatchet:
     case FrankData::outputArpMode:
     case FrankData::outputArp:
 

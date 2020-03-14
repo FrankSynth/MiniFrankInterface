@@ -20,7 +20,7 @@ FrankData::frankData mappingSeqConfig[] = {FrankData::stepSpeed,
                                            FrankData::nbPages,
                                            FrankData::seqResetNotes,
                                            FrankData::seqResetGates,
-                                           NONE,
+                                           FrankData::outputRatchet,
                                            FrankData::direction,
                                            FrankData::seqTuning,
                                            FrankData::seqGateLengthOffset,
@@ -54,7 +54,7 @@ FrankData::frankData mappingLivePush[] = {
 
 FrankData::frankData mappingLiveArp[] = {
     FrankData::outputArp,        FrankData::outputArpOctave, NONE, NONE, FrankData::outputArpMode, FrankData::stepSpeed,
-    FrankData::outputArpRatchet, FrankData::screenRouting,   NONE, NONE}; // Live Arp Mapping
+    FrankData::outputRatchet, FrankData::screenRouting,   NONE, NONE}; // Live Arp Mapping
 FrankData::frankData mappingLiveArpPush[] = {FrankData::outputArp,     NONE, NONE, NONE, NONE, NONE, NONE,
                                              FrankData::screenRouting, MENU, PLAY}; // Live Arp Mapping
                                                                                     // Push
