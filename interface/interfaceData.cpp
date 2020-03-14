@@ -1353,6 +1353,8 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
         }
         else {
             setStr("ERR");
+            PRINT("outputSource, received ");
+            PRINTLN(config.routing[channel].outSource);
         }
         break;
 
@@ -1365,6 +1367,8 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
         case 4: setStr("ordr"); break;
         case 5: setStr("rnd"); break;
         default: setStr("ERR");
+        PRINT("outputArpMode, received ");
+            PRINTLN(config.routing[channel].arpMode);
         }
         break;
 
@@ -1373,6 +1377,8 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
         case 0: setStr("DIN"); break;
         case 1: setStr("USB"); break;
         default: setStr("ERR");
+        PRINT("midiSource, received ");
+            PRINTLN(config.midiSource);
         }
         break;
 

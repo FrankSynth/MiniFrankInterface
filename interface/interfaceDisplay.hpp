@@ -3,7 +3,7 @@
 #include "interfaceData.hpp"
 #include "interfaceMapping.hpp"
 #include <Adafruit_GFX.h>    // Core graphics library
-#include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
+#include <Adafruit_ST7735.h> // Hardware-specific library for ST7735 - CHANGE SPI SPEED
 #include <SPI.h>
 
 // Include extra Fonts
