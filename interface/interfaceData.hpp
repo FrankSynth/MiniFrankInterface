@@ -22,7 +22,7 @@ typedef struct {
     byte cc = 0;           // 0 = vel, 1 = mod, 2 = pitchbend, 3 = aftertouch, 4 = sustain
     byte liveMidiMode = 0; // 0 = latest, 1 = lowest, 2 = highest
     byte clockSpeed;       // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
-    byte arpRatchet = 0;   // repeats per step, 1 = 1 repeat (2 notes total), up to 3 repeats (ratchet = 2)
+    byte arpRatchet = 0;   // repeats per step, 1 = 1 repeat (2 notes total), up to 3 repeats
     byte arpOctaves = 3;   // Octaves 0 = -3, 3 = 0, 6 = +3
     byte stepSpeed = 2;    // ArpSeq Sync 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
     byte nbPages = 8;      // nb Pages  1 -> 8
@@ -343,8 +343,6 @@ class FrankData {
     byte getBpm16thCount();
     // inline void resetClock();
     inline void calcBPM();
-    inline void increaseSeqStep(const byte &array);
-    inline void decreaseSeqStep(const byte &array);
     inline void nextArpStep(const byte &array);
     inline void increaseArpOct(const byte &array);
     inline void decreaseArpOct(const byte &array);
@@ -362,6 +360,8 @@ class FrankData {
     const char *valueToStr(const frankData &frankDataType, const byte &channel);
 
   public:
+    inline void increaseSeqStep(const byte &array);
+    inline void decreaseSeqStep(const byte &array);
     void updateClockCounter();
     void increaseBpm16thCount();
     inline structKey getLiveKeyEvaluated(const byte &array);

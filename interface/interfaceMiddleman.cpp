@@ -24,7 +24,6 @@ PreviousState previousState;
 PreviousOutputs previousOutputs[OUTPUTS];
 ClkLed clkLed;
 
-
 void initMiddleman() {
     initOutput(); // init Outputs
     clkLed.init(CLKLED);
@@ -74,6 +73,8 @@ void updateNoteOut(byte output) {
 void updateCustomCVOut(byte output) {}
 void updateGateOut(byte output) {}
 void updateClockOut(byte output) {
+    static double timer = 0;
+
     byte currentClock = DATAOBJ.get(FrankData::bpm16thCount);
 
     if (currentClock % 4 < 2) {
@@ -88,7 +89,17 @@ void updateClockOut(byte output) {
             previousState.clockLED = 0;
         }
     }
+
+    if ((int)(DATAOBJ.get(FrankData::bpm16thCount)) % (int)pow(2, (int)DATAOBJ.get(FrankData::stepSpeed, output)) == 0) {
+        outputClock[output].setClock(1);
+        timer = millis();
+    }
+
+    if (millis() - timer > DATAOBJ.get(FrankData::pulseLength)) {
+        outputClock[output].setClock(0);
+    }
 }
+
 void updateTriggerOut(byte output) {}
 
 void updateArp(byte output) {
