@@ -48,20 +48,13 @@ FrankData::frankData mappingSeqCVPush[] = {GATE, GATE, GATE, GATE, GATE,
                                            GATE, GATE, GATE, MENU, PLAY}; // CV Mapping Push
 
 FrankData::frankData mappingLive[] = {
-    FrankData::outputArp, FrankData::outputLiveMode, NONE, NONE, NONE, NONE, NONE, NONE, NONE, STEP}; // Live Mapping
+    FrankData::outputArp, FrankData::outputLiveMode, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE}; // Live Mapping
 FrankData::frankData mappingLivePush[] = {
     FrankData::outputArp, NONE, NONE, NONE, NONE, NONE, NONE, NONE, MENU, PLAY}; // Live Mapping
 
-FrankData::frankData mappingLiveArp[] = {FrankData::outputArp,
-                                         FrankData::outputArpOctave,
-                                         NONE,
-                                         NONE,
-                                         FrankData::outputArpMode,
-                                         FrankData::stepSpeed,
-                                         FrankData::outputArpRatchet,
-                                         FrankData::screenRouting,
-                                         NONE,
-                                         STEP}; // Live Arp Mapping
+FrankData::frankData mappingLiveArp[] = {
+    FrankData::outputArp,        FrankData::outputArpOctave, NONE, NONE, FrankData::outputArpMode, FrankData::stepSpeed,
+    FrankData::outputArpRatchet, FrankData::screenRouting,   NONE, NONE}; // Live Arp Mapping
 FrankData::frankData mappingLiveArpPush[] = {FrankData::outputArp,     NONE, NONE, NONE, NONE, NONE, NONE,
                                              FrankData::screenRouting, MENU, PLAY}; // Live Arp Mapping
                                                                                     // Push
@@ -77,7 +70,7 @@ FrankData::frankData mappingMenu[] = {FrankData::load,
                                       FrankData::displayBrightness,
                                       FrankData::screenRouting,
                                       NONE,
-                                      STEP}; // Menu Mapping
+                                      NONE}; // Menu Mapping
 FrankData::frankData mappingMenuPush[] = {FrankData::load,
                                           NONE,
                                           NONE,
@@ -89,7 +82,7 @@ FrankData::frankData mappingMenuPush[] = {FrankData::load,
                                           MENU,
                                           PLAY}; // Menu Mapping
 
-FrankData::frankData mappingMenuCal[] = {NONE, NONE, NONE, NONE, NONE, NONE, NONE, STEP}; // Routing Menu Mapping
+FrankData::frankData mappingMenuCal[] = {NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE}; // Routing Menu Mapping
 FrankData::frankData mappingMenuCalPush[] = {NONE, NONE, NONE, NONE, NONE,
                                              NONE, NONE, NONE, MENU, PLAY}; // Routing Menu Mapping
 
@@ -101,8 +94,8 @@ FrankData::frankData mappingMenuMidi[] = {FrankData::midiSource,
                                           NONE,
                                           NONE,
                                           FrankData::screenRouting,
-                                           SUBSCREEN,
-                                          STEP}; // Routing Menu Mapping
+                                          NONE,
+                                          NONE};                                                                               // Routing Menu Mapping
 FrankData::frankData mappingMenuMidiPush[] = {NONE, NONE, NONE, NONE, NONE, NONE, NONE, FrankData::screenRouting, MENU, PLAY}; // Routing Menu Mapping
 
 FrankData::frankData mapping(byte input) {

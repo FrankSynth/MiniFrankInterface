@@ -532,7 +532,7 @@ void FrankData::increaseStepCounters(const byte &channel) {
         for (byte out = 0; out < OUTPUTS; out++) {
             if ((int)liveMidi[out].channel16thCount == 0) {
                 liveMidi[out].channel16thCount = 0;
-                liveMidi[out].channel16thCount = (int)config.routing[out].nbPages * STEPSPERPAGE * 16) - 1;
+                liveMidi[out].channel16thCount = ((int)config.routing[out].nbPages * STEPSPERPAGE * 16) - 1;
             }
             else {
                 liveMidi[out].channel16thCount--;

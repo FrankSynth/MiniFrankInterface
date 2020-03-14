@@ -47,6 +47,15 @@ void inputControls::rotate(byte id, byte dir) {
     Serial.println(mappedID);
     switch (mappedID) {
 
+case STEP:
+
+    if (dir) {
+        DATAOBJ.increaseStepCounters(DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1);
+    }
+    else {
+        DATAOBJ.decreaseStepCounters(DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1);
+    }
+    break;
 
     // TYPE,Channel,Index;
     case NOTE:
