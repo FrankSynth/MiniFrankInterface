@@ -184,13 +184,13 @@ void Display::BodyTemplateSeq() { // has 2x4 dataField
         for (int y = 0; y < 2; y++) {
             byte dataField = x + y * 4; // current DataField
 
-            byte dataFieldIndex = x + y * 4 + DATAOBJ.get(FrankData::activePage, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1) * 8; // current index
+            byte dataFieldIndex = x + y * 4 + DATAOBJ.get(FrankData::activePage, (DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1)) * 8; // current index
 
             /////Draw the squares/////
             bufferBody->drawRect(x * 40, y * 36 - 1 + y, 40, 38, DARKGREY); //
 
             /////Draw red bar for the ActiveDataField (STEP) /////
-            if (DATAOBJ.get(FrankData::stepOnPage, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1) == (x + y * 4)) {
+            if (DATAOBJ.get(FrankData::stepOnPage, DATAOBJ.get(FrankData::screenOutputChannel)) == (x + y * 4)) {
                 bufferBody->fillRect(x * 40 + 1, y * 35 + 32 +y, 38, 4, RED); // red bar for active Step
             }
 
@@ -247,14 +247,14 @@ void Display::BodyTemplateSeq() { // has 2x4 dataField
     }
 
     ///// PageBlocks /////
-    byte width = 160 / DATAOBJ.get(FrankData::currentPageNumber, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1);                // block width
-    byte offset = (160 - DATAOBJ.get(FrankData::currentPageNumber, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1) * width) / 2; // center blocks
+    byte width = 160 / DATAOBJ.get(FrankData::currentPageNumber, DATAOBJ.get(FrankData::screenOutputChannel));                // block width
+    byte offset = (160 - DATAOBJ.get(FrankData::currentPageNumber,DATAOBJ.get(FrankData::screenOutputChannel)) * width) / 2; // center blocks
 
-    for (int x = 0; x < DATAOBJ.get(FrankData::currentPageNumber, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1); x++) {
+    for (int x = 0; x < DATAOBJ.get(FrankData::currentPageNumber, DATAOBJ.get(FrankData::screenOutputChannel)); x++) {
         bufferBody->drawRect(x * width + offset, 73, width, 25, DARKGREY);          // dark Rectangle
         bufferBody->fillRect(x * width + 1 + offset, 73 + 1, width - 2, 23, GREEN); // grey box
 
-        if (x == DATAOBJ.get(FrankData::activePage, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1)) {
+        if (x == DATAOBJ.get(FrankData::activePage, DATAOBJ.get(FrankData::screenOutputChannel))) {
             bufferBody->fillRect(x * width + 1 + offset, 73 + 1, width - 2, 23, RED); // Red Block (active)
         }
     }

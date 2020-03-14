@@ -27,7 +27,7 @@ ClkLed clkLed;
 void initMiddleman() {
     initOutput(); // init Outputs
     clkLed.init(CLKLED);
-}
+}   
 void updateAllOutputs() {
 
     updateNoteOut();
