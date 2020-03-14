@@ -68,24 +68,24 @@ FrankData::frankData mappingLiveArpPush[] = {FrankData::outputArp,     NONE, NON
 
 ////MENU////
 
-FrankData::frankData mappingMenu[] = {FrankData::load ,
+FrankData::frankData mappingMenu[] = {FrankData::load,
                                       NONE,
                                       FrankData::outputSource,
                                       FrankData::screenCal /*CalibrationMenu*/,
-                                      FrankData::save ,
-                                      NONE,
+                                      FrankData::save,
                                       FrankData::pulseLength /*CLKLength*/,
                                       FrankData::displayBrightness,
+                                      FrankData::screenRouting,
                                       NONE,
                                       STEP}; // Menu Mapping
-FrankData::frankData mappingMenuPush[] = {FrankData::load ,
+FrankData::frankData mappingMenuPush[] = {FrankData::load,
                                           NONE,
                                           NONE,
                                           FrankData::screenCal /*CalibrationMenu*/,
-                                          FrankData::save ,
-                                          NONE ,
+                                          FrankData::save,
                                           NONE,
                                           NONE,
+                                          FrankData::screenRouting,
                                           MENU,
                                           PLAY}; // Menu Mapping
 

@@ -1,8 +1,7 @@
 #include "interfaceDisplay.hpp"
 #include <string.h>
 
-
-#define DEBUG 0
+#define DEBUG 1
 
 #if DEBUG == 1
 #define PRINTLN(x) Serial.println(x)
@@ -299,8 +298,26 @@ void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
 
                           */
                 // char *data = toStr(mapping(dataField), index); // string buffer
-                const char *data = DATAOBJ.getValueAsStrChannel(mapping(dataField),DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel))-1);
+                const char *data;
 
+
+                //Achtung hier wird gebastelt::::
+
+                if (mapping(dataField) == FrankData::outputSource || mapping(dataField) == FrankData::stepSpeed ||
+                    mapping(dataField) == FrankData::midiSource || mapping(dataField) == FrankData::outputChannel ||
+                    mapping(dataField) == FrankData::outputClock || mapping(dataField) == FrankData::outputCc ||
+                    DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) == 0) {
+                    data = DATAOBJ.getValueAsStrChannel(
+                        mapping(dataField), DATAOBJ.get(FrankData::screenOutputChannel));
+                }
+                else{
+                    data = DATAOBJ.getValueAsStrChannel(
+                        mapping(dataField), DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1);
+                }
+
+
+                // ab hier ist alles wieder okay...
+                
                 byte length = strlen(data); // string length
                 if((byte)data[0] == 64){
                 
@@ -343,22 +360,19 @@ void Display::drawHead() {
     bufferHead->print(DATAOBJ.get(FrankData::bpm));
 
     // CLK
-    bufferHead->setCursor(55, 4);
-    bufferHead->print("CLK: ");
-    bufferHead->setCursor(79, 4);
+    bufferHead->setCursor(52, 4);
+    bufferHead->print("CL: ");
+    bufferHead->setCursor(71, 4);
+    bufferHead->print(DATAOBJ.getValueAsStrChannel(FrankData::outputClock, DATAOBJ.get(FrankData::screenOutputChannel)));
+    bufferHead->setCursor(100, 4);
+    bufferHead->print("SP: ");
 
-    bufferHead->print(DATAOBJ.getValueAsStrChannel(FrankData::outputClock, 0));
-    bufferHead->setCursor(108, 4);
-
-    bufferHead->print(DATAOBJ.getValueAsStrChannel(FrankData::outputClock, 1));
+    bufferHead->setCursor(119, 4);
+    bufferHead->print(DATAOBJ.getValueAsStrChannel(FrankData::stepSpeed, DATAOBJ.get(FrankData::screenOutputChannel)));
 
     if (DATAOBJ.get(FrankData::rec)) {
-
-        bufferHead->setCursor(139, 4);
-        bufferHead->setTextColor(0xF800, COLORTHEME);
-
-        bufferHead->print("REC");
-    }
+        bufferHead->fillCircle(150, 7, 3, RED);
+   }
 }
 
 

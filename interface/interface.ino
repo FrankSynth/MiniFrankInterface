@@ -150,8 +150,8 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(SWREC), ISRSwitch, CHANGE);
 
     // Set timer interrupt (display refresh)
-    myTimerLCD.begin(updateDisplay, 40000); // display refresh
-    myTimerLED.begin(updateTLC, 40000);     // display refresh
+    myTimerLCD.begin(updateDisplay, 20000); // display refresh
+    myTimerLED.begin(updateTLC, 20000);     // display refresh
 }
 
 void loop() {
