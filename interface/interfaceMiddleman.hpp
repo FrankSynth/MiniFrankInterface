@@ -9,9 +9,6 @@
 // save state for each output lane
 class PreviousOutputs {
     public:
-    enum previousData {
-        dataNote, dataGate
-    };
 
     byte note = 0;
     byte customCV = 0;
@@ -57,7 +54,4 @@ void updateCustomCVOut();
 void updateGateOut();
 void updateClockOut();
 void updateTriggerOut();
-void updateArp();
 
-    // advanced helper functions
-    byte getArpeggiatedNote();

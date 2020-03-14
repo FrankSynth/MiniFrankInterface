@@ -184,7 +184,7 @@ void Display::BodyTemplateSeq() { // has 2x4 dataField
         for (int y = 0; y < 2; y++) {
             byte dataField = x + y * 4; // current DataField
 
-            byte dataFieldIndex = x + y * 4 + DATAOBJ.get(FrankData::activePage, (DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1)) * 8; // current index
+            byte dataFieldIndex = x + y * 4 + DATAOBJ.get(FrankData::activePage, DATAOBJ.get(FrankData::screenOutputChannel)) * 8; // current index
 
             /////Draw the squares/////
             bufferBody->drawRect(x * 40, y * 36 - 1 + y, 40, 38, DARKGREY); //
@@ -305,7 +305,7 @@ void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
 
                 if (mapping(dataField) == FrankData::outputSource || mapping(dataField) == FrankData::stepSpeed ||
                     mapping(dataField) == FrankData::midiSource || mapping(dataField) == FrankData::outputChannel ||
-                    mapping(dataField) == FrankData::outputClock || mapping(dataField) == FrankData::outputCc ||
+                    mapping(dataField) == FrankData::outputClock || mapping(dataField) == FrankData::outputCc || mapping(dataField) == FrankData::nbPages ||
                     DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) == 0) {
                     data = DATAOBJ.getValueAsStrChannel(
                         mapping(dataField), DATAOBJ.get(FrankData::screenOutputChannel));
@@ -435,7 +435,7 @@ void Display::FootSeq() {
     // Tuning
     bufferFoot->setCursor(87, 4);
     bufferFoot->print("TUNE:");
-    bufferFoot->print(tuningToChar(DATAOBJ.get(FrankData::seqTuning, DATAOBJ.get(FrankData::screenOutputChannel))));
+    bufferFoot->print(tuningToChar(DATAOBJ.get(FrankData::seqTuning, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1)));
 
     // Offset Gate
 

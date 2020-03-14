@@ -1,7 +1,7 @@
 #include "interfaceMiddleman.hpp"
 
 // Debug logging
-#define DEBUG 0
+#define DEBUG 1
 
 #if DEBUG == 1
 #define PRINTLN(x) Serial.println(x)
@@ -38,40 +38,11 @@ void updateAllOutputs() {
 }
 
 void updateNoteOut() {
-    // Live
-    // if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
-
-    //     // Arp on
-    //     if (DATAOBJ.get(FrankData::outputArp, output)) {
-    //         byte tempStep = DATAOBJ.get(FrankData::stepArp);
-    //         if (tempStep != previousOutputs[output].stepArp) {
-    //             previousOutputs[output].stepArp = tempStep;
-
-    //             byte tempNote = DATAOBJ.get(FrankData::liveKeyArpNoteEvaluated, output);
-    //             if (tempNote != previousOutputs[output].note) {
-    //                 previousOutputs[output].note = tempNote;
-    //                 // send new Note
-    //             }
-    //         }
-    //     }
-
-    //     // Arp Off
-    //     else {
-    //         byte tempNote = DATAOBJ.get(FrankData::liveKeyNoteEvaluated, output);
-    //         if (tempNote != previousOutputs[output].note) {
-    //             previousOutputs[output].note = tempNote;
-    //             // send new Note
-    //         }
-    //     }
-    // }
-
-    // // Seq
-    // else {
-    // }
 }
 void updateCustomCVOut() {}
 void updateGateOut() {}
 void updateClockOut() {
+
     static double timer[2] = {0};
 
     if (!(DATAOBJ.get(FrankData::bpm16thCount) == previousState.old16thClockCount)) {
@@ -98,6 +69,8 @@ void updateClockOut() {
                     outputClock[output].setClock(1);
                     previousOutputs[output].clockPulseActivated = 1;
                     timer[output] = millis();
+                    PRINT("Clock 1 on output ");
+                    PRINTLN(output+1);
                 }
             }
         }
@@ -106,7 +79,7 @@ void updateClockOut() {
     for (byte output = 0; output < OUTPUTS; output++) {
         if (previousOutputs[output].clockPulseActivated) {
 
-            if (millis() - timer[output] > DATAOBJ.get(FrankData::pulseLength)) {
+            if (millis() - timer[output] >= DATAOBJ.get(FrankData::pulseLength)) {
                 outputClock[output].setClock(0);
                 previousOutputs[output].clockPulseActivated = 0;
             }
@@ -117,14 +90,6 @@ void updateClockOut() {
 void updateTriggerOut() {}
 
 void updateArp() {
-    // if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
-    //     if (DATAOBJ.get(FrankData::outputArp, output)) {
-    //         if (previousOutputs[output].sustain > DATAOBJ.get(FrankData::liveSustain) && DATAOBJ.get(FrankData::liveSustain) < 64) {
-    //             PRINTLN("Middleman updates Arp");
-    //             DATAOBJ.updateArp(output);
-    //         }
-    //     }
-    // }
 }
 
 void PreviousOutputs::setNewGateTimeSet() {

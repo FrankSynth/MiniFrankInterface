@@ -585,21 +585,28 @@ void FrankData::setBPMPoti(const unsigned &bpmPot) {
     stat.bpm = testByte(bpmPot / 4);
 }
 
-void FrankData::updateClockCounter() {
+void FrankData::updateClockCounter(const bool newMillis) {
+
 
     if (!stat.bpmSync) {
-        static long timer = 0;
-        if (stat.bpmPot == 0) stat.bpmPot = 1;
-        if (millis() - timer > 60000 / stat.bpmPot) {
-            increaseBpm16thCount();
+    static long timer = millis();
+        if (newMillis) {
             timer = millis();
+        }
+        else {
+
+            if (stat.bpmPot == 0) stat.bpmPot = 1;
+            if (millis() >= timer) {
+                increaseBpm16thCount();
+                timer += 60000 / stat.bpmPot;
+            }
         }
     }
 }
 
 inline void FrankData::calcBPM() {
     if (stat.bpmSync) {
-        static double bpm16thTimer = 0;
+        static long bpm16thTimer = 0;
         set(bpm, (int)(((60000 / (millis() - bpm16thTimer)) / 4 + 0.5)));
 
         bpm16thTimer = millis();
@@ -1026,7 +1033,7 @@ void FrankData::set(const frankData &frankDataType, const int &data, const bool 
     case play: stat.play = testByte(data, 0, 1, clampChange); break;
     case rec: stat.rec = testByte(data, 0, 1, clampChange); break;
     case error: stat.error = testByte(data, 0, 1, clampChange); break;
-    case bpmSync: stat.bpmSync = testByte(data, 0, 1, clampChange); break;
+    case bpmSync: stat.bpmSync = testByte(data, 0, 1, clampChange); updateClockCounter(true); break;
     case bpmPoti: stat.bpmPot = testByte(data, 0, 255, clampChange); break;
     case load:
     case save: stat.loadSaveSlot = testByte(data, 1, 10, clampChange); break;
@@ -1142,7 +1149,7 @@ void FrankData::toggle(const frankData &frankDataType) {
     case direction: config.direction = toggleValue(config.direction); break;
     case play: stat.play = toggleValue(stat.play); break;
     case rec: stat.rec = toggleValue(stat.rec); break;
-    case bpmSync: stat.bpmSync = toggleValue(stat.bpmSync); break;
+    case bpmSync: stat.bpmSync = toggleValue(stat.bpmSync);updateClockCounter(true); break;
     case outputArp:
         config.routing[stat.screen.channel].arp = toggleValue(config.routing[stat.screen.channel].arp);
         updateArp(stat.screen.channel);
