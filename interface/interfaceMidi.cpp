@@ -220,6 +220,10 @@ void midiCC(const byte &channel, const byte &cc, const byte &midiData) {
             }
         }
     }
+
+    if (cc == 121) {
+        DATAOBJ.receivedReset();
+    }
     
 }
 

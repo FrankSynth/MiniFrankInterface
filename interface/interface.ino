@@ -49,8 +49,8 @@ void readSerial3() {
     byte rcv;
     rcv = Serial3.read();
 
-    PRINT("Message: ");
-    PRINTLN2(rcv, BIN);
+    // PRINT("Message: ");
+    // PRINTLN2(rcv, BIN);
 
     cntrl.encode(rcv);
 }
@@ -78,7 +78,6 @@ static byte sendOld = 0;
             }
         }
         if (send != sendOld){
-            Serial.println("update");
             tlc.sendByte(send);
             sendOld = send;
         }
@@ -95,15 +94,12 @@ void setup() {
 
     DEBUGPRINTBEGIN;
     PRINTLN("Debug Mode");
-    PRINTLN("HELLO FRANK Mini");
+    PRINTLN("Hello FRANK Mini");
 
     PRINT("Brightness: ");
     PRINTLN(DATAOBJ.get(FrankData::displayBrightness));
-    PRINTLN(DATAOBJ.get(FrankData::play));
     PRINT("BPM: ");
     PRINTLN(DATAOBJ.get(FrankData::bpm));
-    PRINT("Clock: ");
-    PRINTLN(DATAOBJ.get(FrankData::outputClock, 0));
 
     pinMode(5, OUTPUT);
     digitalWrite(5, LOW);
@@ -151,11 +147,21 @@ void setup() {
         
 
     // Set timer interrupt (display refresh)
-    myTimerLCD.begin(updateDisplay, 20000); // display refresh
+    myTimerLCD.begin(updateDisplay, 17000); // display refresh
     myTimerLED.begin(updateTLC, 20000);     // display refresh
 }
 
 void loop() {
+    static int counter = 0;
+    static unsigned long timer = millis();
+    counter ++;
+
+    if (millis() > timer + 1000) {
+        PRINT("iterations per second: ");
+        PRINTLN(counter);
+        counter = 0;
+        timer = millis();
+    }
 
     // NEW Midi Signal
     updateMidi();
@@ -174,6 +180,7 @@ void loop() {
     updateAllOutputs();
     
     cntrl.readBPMSpeed();
+
 }
 
 void ISRSwitch() {

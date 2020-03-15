@@ -36,15 +36,12 @@ void inputControls::rotate(byte id, byte dir) {
     PRINTLN(id);
     PRINT("Direction: ");
     PRINTLN(dir);
-    Serial.print("mapping: ");
 
     FrankData::frankData mappedID = mapping(id);
 
-    id = id + DATAOBJ.get(FrankData::activePage,
-                          DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1) *
+    id = id + DATAOBJ.get(FrankData::activePage ,DATAOBJ.get(FrankData::screenOutputChannel)) *
                   8;
 
-    Serial.println(mappedID);
     switch (mappedID) {
 
 case STEP:
@@ -96,6 +93,8 @@ case STEP:
     case FrankData::outputChannel:
     case FrankData::outputSource:
 
+    case FrankData::nbPages:
+
         if (dir) {
             DATAOBJ.increase(mappedID, DATAOBJ.get(FrankData::screenOutputChannel));
         }
@@ -105,7 +104,6 @@ case STEP:
 
         break;
 
-    case FrankData::nbPages:
     case FrankData::seqTuning:
 
             if (dir) {

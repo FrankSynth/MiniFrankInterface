@@ -1,7 +1,7 @@
 #include "interfaceMapping.hpp"
 
 // Debug logging
-#define DEBUG 1
+#define DEBUG 0
 
 #if DEBUG == 1
 #define PRINTLN(x) Serial.println(x)
@@ -82,7 +82,7 @@ FrankData::frankData mappingMenuPush[] = {FrankData::load,
                                           MENU,
                                           PLAY}; // Menu Mapping
 
-FrankData::frankData mappingMenuCal[] = {NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE}; // Routing Menu Mapping
+FrankData::frankData mappingMenuCal[] = {FrankData::midiSource, NONE, NONE, NONE, NONE, NONE, NONE, NONE}; // Routing Menu Mapping
 FrankData::frankData mappingMenuCalPush[] = {NONE, NONE, NONE, NONE, NONE,
                                              NONE, NONE, NONE, MENU, PLAY}; // Routing Menu Mapping
 
@@ -147,7 +147,6 @@ FrankData::frankData mapping(byte input) {
 }
 
 FrankData::frankData mappingPush(byte input) {
-    Serial.println("MappingPush");
 
     // Main Menu is enabled
     if (DATAOBJ.get(FrankData::screenMainMenu) == 1) {

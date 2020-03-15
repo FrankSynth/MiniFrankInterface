@@ -301,6 +301,7 @@ void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
 
                 // Achtung hier wird gebastelt::::
 
+                // alle werte pro output channel
                 if (mapping(dataField) == FrankData::outputSource || mapping(dataField) == FrankData::stepSpeed ||
                     mapping(dataField) == FrankData::midiSource || mapping(dataField) == FrankData::outputChannel ||
                     mapping(dataField) == FrankData::outputClock || mapping(dataField) == FrankData::outputCc ||
@@ -308,6 +309,8 @@ void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
                     DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) == 0) {
                     data = DATAOBJ.getValueAsStrChannel(mapping(dataField), DATAOBJ.get(FrankData::screenOutputChannel));
                 }
+
+                // alle werte pro sequenz
                 else {
                     data = DATAOBJ.getValueAsStrChannel(mapping(dataField),
                                                         DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1);
@@ -431,7 +434,7 @@ void Display::FootSeq() {
 
     // Offset Gate
 
-    const char *data = DATAOBJ.getValueAsStr(FrankData::seqGateLengthOffset); // temporary removed index
+    const char *data = DATAOBJ.getValueAsStrChannel(FrankData::seqGateLengthOffset, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1); // temporary removed index
 
     byte length = strlen(data); // string length
 

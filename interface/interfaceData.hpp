@@ -15,13 +15,13 @@
 #define DATAOBJ FrankData::getDataObj()
 
 typedef struct {
-    byte outSource = 1;    // 0 = live, 1 = seq1, 2 = seq2, ...
+    byte outSource = 0;    // 0 = live, 1 = seq1, 2 = seq2, ...
     byte channel = 0;      // 0 = all, 1 = channel 1, ...
     byte arp = 0;          // 0 = off, 1 = on
     byte arpMode = 0;      // 0 = up, 1 = down, 2 = updown, 3= downup, 4 = order, 5 = random
     byte cc = 0;           // 0 = vel, 1 = mod, 2 = pitchbend, 3 = aftertouch, 4 = sustain
     byte liveMidiMode = 0; // 0 = latest, 1 = lowest, 2 = highest
-    byte clockSpeed = 2;       // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
+    byte clockSpeed = 2;   // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
     byte arpRatchet = 0;   // repeats per step, 1 = 1 repeat (2 notes total), up to 3 repeats
     byte arpOctaves = 3;   // Octaves 0 = -3, 3 = 0, 6 = +3
     byte stepSpeed = 2;    // ArpSeq Sync 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
@@ -75,7 +75,7 @@ typedef struct {
 
     byte loadSaveSlot = 1; // laod save 1-10
 
-    byte bpm = 120;    // current bpm
+    byte bpm = 120; // current bpm
     byte play = 1;  // play stop
     byte rec = 0;   // Rec Active
     byte error = 0; // ErrorFlag
@@ -133,9 +133,11 @@ class LiveMidi {
     byte aftertouch = 0;
     byte sustain = 0;
     byte triggered = 0;
+    byte released = 0;
     byte arpDirection = 1;
     byte arpOctaveDirection = 1;
     byte arpRetrigger = 1;
+    byte recModePlayback = 0;
     int arpOctave = 0;
     structKey lastKey;
     structKey arpKey;
@@ -297,6 +299,8 @@ class FrankData {
         liveAftertouch,
         liveSustain,
         liveTriggered,
+        liveReleased,
+        liveRecModePlayback,
         liveKeyArpNoteEvaluated,
         liveKeyArpVelEvaluated,
         liveKeyNoteEvaluated,
@@ -350,7 +354,6 @@ class FrankData {
     inline void increaseArpOct(const byte &array);
     inline void decreaseArpOct(const byte &array);
 
-
     inline byte getCurrentPageNumber(const byte &array);
     inline const byte getSubscreenMax();
     inline byte getLiveCcEvaluated(const byte &array);
@@ -373,7 +376,7 @@ class FrankData {
     inline structKey getKeyLowest(const byte &array);
     inline structKey getKeyLatest(const byte &array);
 
-    void setBPMPoti(const unsigned int & bpm);
+    void setBPMPoti(const unsigned int &bpm);
 
     void resetSubScreen(); // switch menu max 3 menu pages
 
@@ -442,14 +445,15 @@ class FrankData {
 
 // utility
 inline byte testByte(const int &value, const byte &minimum = 0, const byte &maximum = 255,
-                     const bool &clampChange = 0);                // test byte range and return valid byte
+                     const bool &clampChange = 0); // test byte range and return valid byte
+int testInt(const int &value, const int &minimum, const int &maximum);
 inline byte increaseByte(const byte &value, const byte &maximum); // increase byte
 inline byte decreaseByte(const byte &value, const byte &minimum); // decrease byte
 inline byte changeByte(const byte &value, const int &change, const byte &minimum = 0, const byte &maximum = 255,
                        const bool &clampChange = 0); // change byte
 inline int changeInt(const int &value, const int &change, const int &minimum, const int &maximum,
-                       const bool &clampChange = 0); // change byte
-inline byte changeByteReverse(const byte &value, const int &change, const byte &minimum = 0, const byte &maximum = 255);
+                     const bool &clampChange = 0); // change byte
+byte changeByteReverse(const byte &value, const int &change, const byte &minimum = 0, const byte &maximum = 255);
 inline int changeIntReverse(const int &value, const int &change, const int &minimum, const int &maximum);
 template <typename T> inline T toggleValue(const T &data);
 template <typename T> inline char *toStr(const T &data);

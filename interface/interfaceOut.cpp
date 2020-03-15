@@ -1,7 +1,7 @@
 #include "interfaceOut.hpp"
 
 // Debug logging
-#define DEBUG 1
+#define DEBUG 0
 
 #if DEBUG == 1
 #define PRINTLN(x) Serial.println(x)
