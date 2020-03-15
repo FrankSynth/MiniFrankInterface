@@ -1,4 +1,6 @@
 #include "interfaceDisplay.hpp"
+#include "interfaceMiddleman.hpp"
+#include "interfaceMidi.hpp"
 #include <string.h>
 
 #define DEBUG 0
@@ -457,6 +459,12 @@ void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t
     const uint16_t *buffer = bufferObj->getBuffer();
     lcd.startWrite();
     for (int16_t j = 0; j < h; j++, y++) {
+
+        // update midi, clocks, outputs while in loop, so no delays occur
+        updateMidi();
+        DATAOBJ.updateClockCounter();
+        updateAllOutputs();
+        
         for (int16_t i = 0; i < w; i++) {
             int16_t index = j * w + i;
             if (bufferObj->compareBuffer(index)) {

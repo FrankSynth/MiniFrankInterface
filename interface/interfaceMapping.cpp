@@ -48,9 +48,9 @@ FrankData::frankData mappingSeqCVPush[] = {GATE, GATE, GATE, GATE, GATE,
                                            GATE, GATE, GATE, MENU, PLAY}; // CV Mapping Push
 
 FrankData::frankData mappingLive[] = {
-    FrankData::outputArp, FrankData::outputLiveMode, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE}; // Live Mapping
+    FrankData::outputArp, FrankData::outputLiveMode, NONE, NONE, NONE, NONE, NONE, FrankData::screenRouting, NONE, NONE}; // Live Mapping
 FrankData::frankData mappingLivePush[] = {
-    FrankData::outputArp, NONE, NONE, NONE, NONE, NONE, NONE, NONE, MENU, PLAY}; // Live Mapping
+    FrankData::outputArp, NONE, NONE, NONE, NONE, NONE, NONE, FrankData::screenRouting, MENU, PLAY}; // Live Mapping
 
 FrankData::frankData mappingLiveArp[] = {
     FrankData::outputArp,        FrankData::outputArpOctave, NONE, NONE, FrankData::outputArpMode, FrankData::stepSpeed,

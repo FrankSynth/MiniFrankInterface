@@ -9,8 +9,8 @@
 #define TRIGGER2 5
 #define GATE1 2
 #define GATE2 3
-#define CLK1 1
-#define CLK2 0
+#define CLK1 0
+#define CLK2 1
 #define CLKLED 21
 
 void setVoltage(int dacpin, bool channel, bool gain, unsigned int mV); // channel 0, 1, Gain = 2 (default)
