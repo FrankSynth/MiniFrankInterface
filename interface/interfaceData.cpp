@@ -171,7 +171,6 @@ void LiveMidi::keyPressed(const byte &note, const byte &velocity) {
     }
 
     arpList.appendKey(note, velocity);
-    triggered = 1;
 }
 
 void LiveMidi::keyReleased(const byte &note) {
@@ -186,7 +185,6 @@ void LiveMidi::keyReleased(const byte &note) {
     if (noteList.size == 0) {
         arpRetrigger = 1;
     }
-    triggered = 1;
 }
 
 // bool, are any keys pressed
@@ -257,8 +255,7 @@ void LiveMidi::printArray() {
 void LiveMidi::updateArpArray(const byte &arpSettings) {
     copyArpListToArray();
 
-    if (arpSettings < 3) qsort(arpArray, arpList.size, sizeof(structKey), sort_asc);
-    triggered = 1; // update outputs
+    if (arpSettings < 4) qsort(arpArray, arpList.size, sizeof(structKey), sort_asc);
 }
 
 inline void LiveMidi::copyArpListToArray() {
@@ -439,6 +436,10 @@ void FrankData::receivedKeyPressed(const byte &channel, const byte &note, const 
 
                 if (stat.play) increaseStepCounters(x);
             }
+    
+            if (config.routing[x].outSource == 0) {
+                liveMidi[x].triggered = 1;
+            }
         }
     }
 }
@@ -611,7 +612,7 @@ void FrankData::updateClockCounter(const bool newMillis) {
             if (stat.bpmPot == 0) stat.bpmPot = 1;
             if (millis() >= timer) {
                 increaseBpm16thCount();
-                timer += 60000 / stat.bpmPot;
+                timer += 60000.0 / stat.bpmPot;
             }
         }
     }
@@ -638,7 +639,8 @@ inline void FrankData::increaseSeqStep(const byte &array) {
     else {
         liveMidi[array].stepSeq++; // increase Step
     }
-    liveMidi[array].triggered = 1;
+
+    if (config.routing[array].outSource) liveMidi[array].triggered = 1;
 }
 
 inline void FrankData::decreaseSeqStep(const byte &array) {
@@ -656,7 +658,7 @@ inline void FrankData::decreaseSeqStep(const byte &array) {
     else {
         liveMidi[array].stepSeq--; // decrease Step
     }
-    liveMidi[array].triggered = 1;
+    if (config.routing[array].outSource) liveMidi[array].triggered = 1;
 }
 
 inline byte FrankData::getCurrentPageNumber(const byte &array) { // number of pages, takes care if page number has changed
@@ -666,10 +668,11 @@ inline byte FrankData::getCurrentPageNumber(const byte &array) { // number of pa
 }
 
 // Singleton
-FrankData *FrankData::mainData = nullptr;
+// FrankData *FrankData::mainData = nullptr;
 FrankData &FrankData::getDataObj() {
-    if (mainData == nullptr) mainData = new FrankData();
-    return *mainData;
+    // if (mainData == nullptr) mainData = new FrankData();
+    static FrankData mainData;
+    return mainData;
 }
 
 inline structKey FrankData::getLiveKeyEvaluated(const byte &array) {
@@ -744,96 +747,99 @@ inline void FrankData::decreaseArpOct(const byte &array) {
 
 inline void FrankData::nextArpStep(const byte &array) {
 
-    switch (config.routing[array].arpMode) {
-    case 1:
-        if (liveMidi[array].stepArp == 0) {
-            decreaseArpOct(array);
-        }
-        liveMidi[array].stepArp = changeByteReverse(liveMidi[array].stepArp, -1, 0, liveMidi[array].arpList.size - 1);
-        break;
-    case 0:
-    case 4:
-    case 5:
-        if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
-            increaseArpOct(array);
-        }
-        liveMidi[array].stepArp = changeByteReverse(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1);
-        break;
-    case 2:
-        // going up
-        if (liveMidi[array].arpDirection) {
-            liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1);
-            if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
+    if (config.routing[array].outSource == 0 && config.routing[array].arp) {
 
-                liveMidi[array].arpDirection = 0;
-            }
-        }
-        // going down
-        else {
-            liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, -1, 0, liveMidi[array].arpList.size - 1);
+        switch (config.routing[array].arpMode) {
+        case 1:
             if (liveMidi[array].stepArp == 0) {
-                liveMidi[array].arpDirection = 1;
-                if (liveMidi[array].arpOctaveDirection == 1) {
-                    increaseArpOct(array);
-                }
-                else {
-                    decreaseArpOct(array);
-                }
+                decreaseArpOct(array);
             }
-        }
-        break;
-    case 3:
-        // going up
-        if (liveMidi[array].arpDirection) {
-            liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1);
+            liveMidi[array].stepArp = changeByteReverse(liveMidi[array].stepArp, -1, 0, liveMidi[array].arpList.size - 1);
+            break;
+        case 0:
+        case 4:
+        case 5:
             if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
+                increaseArpOct(array);
+            }
+            liveMidi[array].stepArp = changeByteReverse(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1);
+            break;
+        case 2:
+            // going up
+            if (liveMidi[array].arpDirection) {
+                liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1);
+                if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
 
-                liveMidi[array].arpDirection = 0;
-                if (liveMidi[array].arpOctaveDirection == 1) {
-                    increaseArpOct(array);
-                }
-                else {
-                    decreaseArpOct(array);
+                    liveMidi[array].arpDirection = 0;
                 }
             }
+            // going down
+            else {
+                liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, -1, 0, liveMidi[array].arpList.size - 1);
+                if (liveMidi[array].stepArp == 0) {
+                    liveMidi[array].arpDirection = 1;
+                    if (liveMidi[array].arpOctaveDirection == 1) {
+                        increaseArpOct(array);
+                    }
+                    else {
+                        decreaseArpOct(array);
+                    }
+                }
+            }
+            break;
+        case 3:
+            // going up
+            if (liveMidi[array].arpDirection) {
+                liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1);
+                if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
+
+                    liveMidi[array].arpDirection = 0;
+                    if (liveMidi[array].arpOctaveDirection == 1) {
+                        increaseArpOct(array);
+                    }
+                    else {
+                        decreaseArpOct(array);
+                    }
+                }
+            }
+            // going down
+            else {
+                liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, -1, 0, liveMidi[array].arpList.size - 1);
+                if (liveMidi[array].stepArp == 0) {
+                    liveMidi[array].arpDirection = 1;
+                }
+            }
+            break;
+        default:;
         }
-        // going down
+
+        byte step = liveMidi[array].stepArp;
+        structKey key;
+
+        if (config.routing[array].arpMode == 5) {
+            step = random(0, liveMidi[array].arpList.size);
+            key = liveMidi[array].getArpKey(step);
+        }
         else {
-            liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, -1, 0, liveMidi[array].arpList.size - 1);
-            if (liveMidi[array].stepArp == 0) {
-                liveMidi[array].arpDirection = 1;
+            key = liveMidi[array].getArpKey(step);
+        }
+
+        // lower octaves
+        if (liveMidi[array].arpOctave < 0) {
+            for (int x = liveMidi[array].arpOctave; x < 0; x++) {
+                key.note = changeByte(key.note, -12, 0, NOTERANGE, 0);
             }
         }
-        break;
-    default:;
-    }
-
-    byte step = liveMidi[array].stepArp;
-    structKey key;
-
-    if (config.routing[array].arpMode == 5) {
-        step = random(0, liveMidi[array].arpList.size);
-        key = liveMidi[array].getArpKey(step);
-    }
-    else {
-        key = liveMidi[array].getArpKey(step);
-    }
-
-    // lower octaves
-    if (liveMidi[array].arpOctave < 0) {
-        for (int x = liveMidi[array].arpOctave; x < 0; x++) {
-            key.note = changeByte(key.note, -12, 0, NOTERANGE, 0);
+        // raise octaves
+        else if (liveMidi[array].arpOctave > 0) {
+            for (int x = liveMidi[array].arpOctave; x > 0; x--) {
+                key.note = changeByte(key.note, 12, 0, NOTERANGE, 0);
+            }
         }
-    }
-    // raise octaves
-    else if (liveMidi[array].arpOctave > 0) {
-        for (int x = liveMidi[array].arpOctave; x > 0; x--) {
-            key.note = changeByte(key.note, 12, 0, NOTERANGE, 0);
-        }
-    }
 
-    liveMidi[array].arpKey = key;
-    liveMidi[array].triggered = 1;
+        liveMidi[array].arpKey = key;
+        liveMidi[array].triggered = 1;
+    }
 }
 
 inline structKey FrankData::getKeyHighest(const byte &array) {
@@ -974,6 +980,8 @@ byte FrankData::get(const frankData &frankDataType, const byte &array) {
     case outputRatchet: return config.routing[array].arpRatchet;
     case outputArpOctave: return config.routing[array].arpOctaves;
     case outputArpMode: return config.routing[array].arpMode;
+
+    case liveKeysPressed: return liveMidi[array].keysPressed();
 
     case cvCal: return getCvCal(array);
 

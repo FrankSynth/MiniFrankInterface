@@ -148,6 +148,7 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(SWSYNC), ISRSwitch, CHANGE);
     attachInterrupt(digitalPinToInterrupt(SWSEQ), ISRSwitch, CHANGE);
     attachInterrupt(digitalPinToInterrupt(SWREC), ISRSwitch, CHANGE);
+        
 
     // Set timer interrupt (display refresh)
     myTimerLCD.begin(updateDisplay, 20000); // display refresh
@@ -156,28 +157,22 @@ void setup() {
 
 void loop() {
 
-    // GETDATAOBJ
     // NEW Midi Signal
     updateMidi();
+
     //   Read uC UART Data
     while (Serial3.available()) {
         readSerial3();
     }
 
-    // Temp Clock
-    // static long timer = 0;
-    // if (millis() - timer > 125) {
-    //    DATAOBJ.increaseBpm16thCount();
-    // PRINTLN(DATAOBJ.get(FrankData::bpm16thCount));
-
-    //    timer = millis();
-    // }
-
     // count all clocks forward if not synced
+    // DATAOBJ.setBPMPoti(120*4); 
+    // DATAOBJ.set(FrankData::bpm, 120); 
     DATAOBJ.updateClockCounter();
 
     // activate middleman
     updateAllOutputs();
+    
     cntrl.readBPMSpeed();
 }
 

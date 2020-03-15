@@ -1,7 +1,7 @@
 #include "interfaceIn.hpp"
 
 // Debug logging
-#define DEBUG 1
+#define DEBUG 0
 
 #if DEBUG == 1
 #define PRINTLN(x) Serial.println(x)
@@ -225,9 +225,6 @@ void inputControls::readSeq() {
 
 void inputControls::readBPMSpeed() {
     DATAOBJ.setBPMPoti(1024-analogRead(BPMPOT));
-
-
-
 }
 
 void inputControls::init(){
