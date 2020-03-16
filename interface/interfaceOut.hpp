@@ -20,17 +20,8 @@ void setVoltage(int dacpin, bool channel, bool gain, unsigned int mV); // channe
 void initOutput();
 
 class Channel {
-  public:
-    Channel(byte outputChannel, byte noteDac, byte noteDacChannel, byte cvDac, byte cvDacChannel, byte triggerPin, byte gatePin)
-        : outputChannel(outputChannel), noteDac(noteDac), noteDacChannel(noteDacChannel), cvDac(cvDac), cvDacChannel(cvDacChannel), triggerPin(triggerPin), gatePin(gatePin) {}
 
-    void setTuning(float tuning);
-    void setGate(byte state);
-    void setTrigger(byte state);
-    void setNote(byte note);
-    void setCV(int value);
-
-  private:
+    byte outputChannel;
     byte noteDac;
     byte noteDacChannel;
 
@@ -41,7 +32,17 @@ class Channel {
 
     byte gatePin;
 
-    byte outputChannel;
+
+  public:
+    Channel(byte outputChannel, byte noteDac, byte noteDacChannel, byte cvDac, byte cvDacChannel, byte triggerPin, byte gatePin)
+        : outputChannel(outputChannel), noteDac(noteDac), noteDacChannel(noteDacChannel), cvDac(cvDac), cvDacChannel(cvDacChannel),
+          triggerPin(triggerPin), gatePin(gatePin) {}
+
+    void setTuning(float tuning);
+    void setGate(byte state);
+    void setTrigger(byte state);
+    void setNote(byte note);
+    void setCV(int value);
 };
 
 class clock {
