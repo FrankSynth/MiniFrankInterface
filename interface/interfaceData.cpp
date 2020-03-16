@@ -961,19 +961,6 @@ void FrankData::updateArp(const byte &array) {
     }
 }
 
-void FrankData::setNoteCal(const byte &data, const byte &array, const byte &note) {
-    cal[array].noteCalibration[note] = ((float)data - CALOFFSET) / 1000;
-}
-byte FrankData::getNoteCal(const byte &array, const byte &note) {
-    return (byte)((cal[array].noteCalibration[note] * 1000) + 0.5 + CALOFFSET);
-}
-void FrankData::setCvCal(const byte &data, const byte &array) {
-    cal[array].cvOffset = ((float)data - CALOFFSET) / 1000;
-}
-byte FrankData::getCvCal(const byte &array) {
-    return (byte)((cal[array].cvOffset * 1000) + 0.5 + CALOFFSET);
-}
-
 // Screen config
 void FrankData::resetSubScreen() {
     stat.screen.subscreen = FrankData::screenNote;
@@ -1030,7 +1017,7 @@ byte FrankData::get(const frankData &frankDataType, const byte &array) {
 
     case liveKeysPressed: return liveMidi[array].keysPressed();
 
-    case cvCal: return getCvCal(array);
+    case cvCalOffset: return cal[array].cvOffset;
 
     case liveMod: return liveMidi[array].mod;
     case livePitchbend: return liveMidi[array].pitchbend;
@@ -1075,7 +1062,7 @@ byte FrankData::get(const frankData &frankDataType, const byte &array, const byt
     case seqVelocity:
         return seq[array].sequence.velocity[step];
 
-    case noteCal: return getNoteCal(array, step);
+    case noteCalOffset: return cal[array].noteCalibration[step];
 
     case none: return (byte)0;
 
@@ -1135,7 +1122,7 @@ void FrankData::set(const frankData &frankDataType, const int &data, const byte 
         updateArp(array);
         break;
 
-    case cvCal: setCvCal(testByte(data, 0, 255, clampChange), array); break;
+    case cvCalOffset: cal[array].cvOffset = testByte(data, 0, 255, clampChange); break;
 
     case liveMod: liveMidi[array].mod = testByte(data, 0, 127, clampChange); break;
     case livePitchbend: liveMidi[array].pitchbend = testByte(data, 0, 255, clampChange); break;
@@ -1169,7 +1156,7 @@ void FrankData::set(const frankData &frankDataType, const int &data, const byte 
     case seqCc: seq[array].sequence.cc[step] = testByte(data, 0, 127, clampChange); break;
     case seqVelocity: seq[array].sequence.velocity[step] = testByte(data, 0, 127, clampChange); break;
 
-    case noteCal: setNoteCal(testByte(data, 0, 255, clampChange), array, step); break;
+    case noteCalOffset: cal[array].noteCalibration[step] = testByte(data, 0, 255, clampChange); break;
     case none: break;
     default:
         PRINTLN("FrankData set(frankData frankDataType, byte data, byte array, byte step, bool clampChange), no case "
@@ -1289,6 +1276,8 @@ void FrankData::toggle(const frankData &frankDataType) {
     case load: loadSequence(stat.loadSaveSlot, config.routing[stat.screen.config].outSource - 1); break;
     case save: saveSequence(stat.loadSaveSlot, config.routing[stat.screen.config].outSource - 1); break;
 
+    case cvCalOffset: cal[stat.screen.config].cvOffset = 127; break;
+
     case none: break;
     default: PRINTLN("FrankData toggle(frankData frankDataType), no case found");
     }
@@ -1297,6 +1286,7 @@ void FrankData::toggle(const frankData &frankDataType) {
 void FrankData::toggle(const frankData &frankDataType, const byte &array, const byte &step) {
     switch (frankDataType) {
     case seqGate: seq[array].sequence.gate[step] = toggleValue(seq[array].sequence.gate[step]); break;
+    case noteCalOffset: cal[array].noteCalibration[step] = 127;
     case none: break;
     default: PRINTLN("FrankData toggle(frankData frankDataType, byte array, byte step), no case found");
     }
@@ -1382,8 +1372,8 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
     case liveKeyVelEvaluated: setStr("Vel"); break;
     case saveCal: setStr("Save"); break;
 
-    case noteCal: setStr("NCal"); break;
-    case cvCal: setStr("CvCal"); break;
+    case noteCalOffset: setStr("NCal"); break;
+    case cvCalOffset: setStr("CvCal"); break;
 
     case resetStepCounters: setStr("RsStep"); break;
 
@@ -1467,7 +1457,7 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
     case seqOctaveDown:
     case saveCal:
     case seqResetNotes: setStr("@"); break;
-    case noteCal: setStr(toStr(((int)get(frankDataType, stat.screen.channel, stat.noteToCalibrate)) - CALOFFSET)); break;
+    case noteCalOffset: setStr(toStr(((int)get(frankDataType, stat.screen.channel, stat.noteToCalibrate)) - CALOFFSET)); break;
 
     case screenOutputChannel:
     case screenConfig:
@@ -1485,7 +1475,7 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
     case load:
     case save: setStr(toStr(get(frankDataType) + 1)); break;
 
-    case cvCal: setStr(toStr(((int)get(frankDataType, channel)) - CALOFFSET)); break;
+    case cvCalOffset: setStr(toStr(((int)get(frankDataType, channel)) - CALOFFSET)); break;
 
     case outputSource:
 

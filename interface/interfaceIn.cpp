@@ -95,7 +95,7 @@ case STEP:
 
     case FrankData::nbPages:
     
-    case FrankData::cvCal:
+    case FrankData::cvCalOffset:
     case FrankData::liveCalNote:
 
         if (dir) {
@@ -108,7 +108,7 @@ case STEP:
         break;
 
     // Calibration:
-    case FrankData::noteCal :
+    case FrankData::noteCalOffset :
         if (dir) {
             DATAOBJ.increase(mappedID, DATAOBJ.get(FrankData::liveCalNote));
         }
