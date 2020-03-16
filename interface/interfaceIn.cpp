@@ -110,10 +110,10 @@ case STEP:
     // Calibration:
     case FrankData::noteCalOffset :
         if (dir) {
-            DATAOBJ.increase(mappedID, DATAOBJ.get(FrankData::liveCalNote));
+            DATAOBJ.increase(mappedID, DATAOBJ.get(FrankData::screenOutputChannel), DATAOBJ.get(FrankData::liveCalNote));
         }
         else {
-            DATAOBJ.decrease(mappedID, DATAOBJ.get(FrankData::liveCalNote));
+            DATAOBJ.decrease(mappedID, DATAOBJ.get(FrankData::screenOutputChannel), DATAOBJ.get(FrankData::liveCalNote));
         }
 
         break;
@@ -191,6 +191,9 @@ void inputControls::push(byte id, byte push) { // switch message
     PRINTLN(mappedID);
 
     switch (mappedID) {
+    case FrankData::noteCalOffset: 
+    DATAOBJ.toggle(mappedID, DATAOBJ.get(FrankData::screenOutputChannel), DATAOBJ.get(FrankData::liveCalNote)); break;
+
     case GATE:
 
     DATAOBJ.toggle(mappedID, DATAOBJ.get(FrankData::screenOutputChannel), id);
