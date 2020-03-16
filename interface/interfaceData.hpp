@@ -235,10 +235,10 @@ class FrankData {
         seqSize,
 
         // calibration, needs value, array, step
-        noteCal,
+        noteCalOffset,
 
         // calibration, needs value, array
-        cvCal,
+        cvCalOffset,
 
         // Seq, needs value, array
         seqTuning,
@@ -364,10 +364,6 @@ class FrankData {
     inline byte getLiveCcEvaluated(const byte &array);
     inline void setStr(const char *newStr);
 
-    void setNoteCal(const byte &data, const byte &array, const byte &note);
-    byte getNoteCal(const byte &array, const byte &step);
-    void setCvCal(const byte &data, const byte &array);
-    byte getCvCal(const byte &array);
     const char *valueToStr(const frankData &frankDataType, const byte &channel);
 
   public:
