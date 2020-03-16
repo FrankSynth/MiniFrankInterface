@@ -1457,7 +1457,7 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
     case seqOctaveDown:
     case saveCal:
     case seqResetNotes: setStr("@"); break;
-    case noteCalOffset: setStr(toStr(((int)get(frankDataType, stat.screen.channel, stat.noteToCalibrate)) - CALOFFSET)); break;
+    case noteCalOffset: setStr(toStr(((int)get(frankDataType, channel, stat.noteToCalibrate)) - CALOFFSET)); break;
 
     case screenOutputChannel:
     case screenConfig:
@@ -1466,7 +1466,7 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
 
     case displayBrightness:
 
-    case liveCalNote:
+    case liveCalNote: 
 
     case bpm:
     case bpmSync:
@@ -1659,7 +1659,6 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType, const byte 
     case seqGateLength:
     case seqCc:
     case seqVelocity: setStr(toStr(get(frankDataType, config.routing[stat.screen.config].outSource - 1, step))); break;
-
 
     case none: setStr(""); break;
 

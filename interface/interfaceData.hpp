@@ -31,8 +31,8 @@ typedef struct {
 } structOutputRouting;
 
 typedef struct {
-    byte noteCalibration[NOTERANGE];
-    int cvOffset;
+    byte noteCalibration[NOTERANGE] = {127};
+    int cvOffset = 127;
 } structCalibration;
 
 // Sequence struct holding all values for a sequence, to save it
