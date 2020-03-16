@@ -100,10 +100,10 @@ class Display {
     void BodyTemplateMenu();
     void BodyTemplateLive();
     void BodyTemplateArp();
+    void BodyTemplateCal();
 
-    void updateDisplay();
-};
-
+        void updateDisplay();
+    };
 
 class TLC5916{
   public:

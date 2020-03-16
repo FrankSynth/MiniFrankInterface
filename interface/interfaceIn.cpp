@@ -94,17 +94,31 @@ case STEP:
     case FrankData::outputSource:
 
     case FrankData::nbPages:
+    
+    case FrankData::cvCal:
+    case FrankData::liveCalNote:
 
         if (dir) {
-            DATAOBJ.increase(mappedID, DATAOBJ.get(FrankData::screenOutputChannel));
-        }
+        DATAOBJ.increase(mappedID, DATAOBJ.get(FrankData::screenOutputChannel));
+    }
         else {
             DATAOBJ.decrease(mappedID, DATAOBJ.get(FrankData::screenOutputChannel));
         }
 
         break;
 
-    case FrankData::seqTuning:
+    // Calibration:
+    case FrankData::noteCal :
+        if (dir) {
+            DATAOBJ.increase(mappedID, DATAOBJ.get(FrankData::liveCalNote));
+        }
+        else {
+            DATAOBJ.decrease(mappedID, DATAOBJ.get(FrankData::liveCalNote));
+        }
+
+        break;
+
+    case FrankData::seqTuning :
 
             if (dir) {
             DATAOBJ.increase(mappedID, (byte)(DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1));
@@ -179,11 +193,14 @@ void inputControls::push(byte id, byte push) { // switch message
 
     switch (mappedID) {
 
+    case FrankData::saveCal:    break;
 
-        //funfction call:
+        // funfction call:
 
-        case FrankData::load:   break;              //Load function
-        case FrankData::save:   break;              //Save funtcion
+        case FrankData::load:
+        break; // Load function
+    case FrankData::save:
+        break; // Save funtcion
 
 
         // TYPE,Channel,index
