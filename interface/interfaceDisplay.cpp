@@ -200,22 +200,18 @@ void Display::BodyTemplateCal() { // has 1 dataFields + GateSignal
                     /////Name/////
 
                     const char *string; // get name
-                    if(FrankData::noteCal){
-                        string = DATAOBJ.get(mapping(dataField), DATAOBJ.get(FrankData::liveCalNote));
-                    }
-                    else{
                         string = DATAOBJ.getNameAsStr(mapping(dataField));
-                    }
+                    
                     byte offset = strlen(string) * 3;                              // get name length
                     bufferBody->setCursor(posX + 20 - offset, posY + 7 + y * 1); // set Cursor
                     bufferBody->print(string);                                   // print value to display
 
                     /////Data/////
 
+
                     bufferBody->setTextColor(WHITE, GREY); // font Color
 
-                    const char *data =
-                        DATAOBJ.getValueAsStr(mapping(dataField)); // temporary removed index
+                    const char *data = DATAOBJ.getValueAsStr(mapping(dataField)); // temporary removed index
 
                     if ((byte)data[0] == 64) {
 
@@ -251,9 +247,11 @@ void Display::BodyTemplateCal() { // has 1 dataFields + GateSignal
     float freq = 27.50 * pow(2, note/12.);
 
     bufferBody->setFont(&FreeSansBold9pt7b);
-    bufferBody->setCursor(80, 30);
+    bufferBody->setCursor(87, 30);
     bufferBody->print(freq);
-    bufferBody->print("hz");
+    bufferBody->setCursor(87, 50);
+
+    bufferBody->print("Hz");
 }
 
     void Display::BodyTemplateSeq() { // has 2x4 dataField
