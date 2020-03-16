@@ -1683,13 +1683,13 @@ inline void FrankData::setStr(const char *newStr) {
 }
 
 void FrankData::loadSequence(const byte &saveSlot, const byte &sequence) {
-    serial.print("Load Slot ");
-    serial.println(saveSlot);
-    serial.print(" into Sequence ");
-    serial.print(sequence);
+    Serial.print("Load Slot ");
+    Serial.println(saveSlot);
+    Serial.print(" into Sequence ");
+    Serial.print(sequence);
 
     if (sequence > OUTPUTS - 1 || saveSlot > SAVESLOTS - 1) {
-        serial.println("received wrong settings")   
+        Serial.println("received wrong settings");   
         return;
     }
 
@@ -1700,13 +1700,13 @@ void FrankData::loadSequence(const byte &saveSlot, const byte &sequence) {
 }
 
 void FrankData::saveSequence(const byte &saveSlot, const byte &sequence) {
-    serial.print("Store Sequence ");
-    serial.print(sequence);
-    serial.print(" into Slot ");
-    serial.println(saveSlot);
+    Serial.print("Store Sequence ");
+    Serial.print(sequence);
+    Serial.print(" into Slot ");
+    Serial.println(saveSlot);
 
     if (sequence > OUTPUTS - 1 || saveSlot > SAVESLOTS - 1) {
-        serial.println("received wrong settings")   
+        Serial.println("received wrong settings");   
         return;
     }
 
@@ -1717,28 +1717,28 @@ void FrankData::saveSequence(const byte &saveSlot, const byte &sequence) {
 }
 
 void FrankData::loadAllMenuSettings() {
-    serial.print("Load Menu settings");
+    Serial.print("Load Menu settings");
     int memory = 0;
 
     EEPROM.get(memory, config);
 }
 
 void FrankData::saveMenuSettings() {
-    serial.print("Save Menu settings");
+    Serial.print("Save Menu settings");
     int memory = 0;
 
     EEPROM.put(memory, config);
 }
 
 void FrankData::saveNoteCalibration() {
-    serial.print("Store Note Calibration ");
+    Serial.print("Store Note Calibration ");
     int memory = 512; // leave space for menu
 
     EEPROM.put(memory, cal);
 }
 
 void FrankData::loadNoteCalibration() {
-    serial.print("Get Note Calibration ");
+    Serial.print("Get Note Calibration ");
     int memory = 512; // leave space for menu
 
     EEPROM.get(memory, cal);

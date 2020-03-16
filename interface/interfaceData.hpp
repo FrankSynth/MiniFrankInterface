@@ -409,7 +409,7 @@ class FrankData {
     void loadAllMenuSettings();
     void saveMenuSettings();
 
-    void saveNoteCalibration(const byte &channel);
+    void saveNoteCalibration();
     void loadNoteCalibration();
 
   public:
