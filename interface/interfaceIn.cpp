@@ -190,20 +190,7 @@ void inputControls::push(byte id, byte push) { // switch message
     PRINT("Mapping:");
     PRINTLN(mappedID);
 
-
     switch (mappedID) {
-
-    case FrankData::saveCal:    break;
-
-        // funfction call:
-
-        case FrankData::load:
-        break; // Load function
-    case FrankData::save:
-        break; // Save funtcion
-
-
-        // TYPE,Channel,index
     case GATE:
 
     DATAOBJ.toggle(mappedID, DATAOBJ.get(FrankData::screenOutputChannel), id);
