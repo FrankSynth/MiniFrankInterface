@@ -26,13 +26,12 @@ void PressedNotesList::appendKey(const byte &note, const byte &velocity) {
         }
 
         listElement->next = new PressedNotesElement(note, velocity);
+        size++;
     }
-
     else {
-
         pressedNoteElement = new PressedNotesElement(note, velocity);
+        size++;
     }
-    size++;
 }
 
 void PressedNotesList::deleteKey(const byte &note) {
@@ -53,6 +52,8 @@ void PressedNotesList::deleteKey(const byte &note) {
         }
         if (pressedNoteElement->next == NULL) {
             delete listElement;
+            size--;
+
             pressedNoteElement = NULL;
         }
         else {
@@ -63,9 +64,9 @@ void PressedNotesList::deleteKey(const byte &note) {
                 listElementPrev->next = listElement->next;
             }
             delete listElement;
+            size--;
         }
     }
-    size--;
 }
 
 void PressedNotesList::deleteAllKeys() {

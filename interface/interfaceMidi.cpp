@@ -192,12 +192,12 @@ void updateMidi() {
 void midiNoteOn(const byte &channel, const byte &note, const byte &velocity) {
     PRINT("Midi Key pressed");
     PRINTLN(note - 21);
-    if (note > 20) DATAOBJ.receivedKeyPressed(channel, note-21, velocity);
+    if (note > 20) DATAOBJ.receivedKeyPressed(channel, note - 21, velocity);
 }
 
 void midiNoteOff(const byte &channel, const byte &note, const byte &velocity) {
     PRINTLN("Midi Key released");
-    if (note > 20) DATAOBJ.receivedKeyReleased(channel, note-21);
+    if (note > 20) DATAOBJ.receivedKeyReleased(channel, note - 21);
 }
 
 void midiCC(const byte &channel, const byte &cc, const byte &midiData) {
@@ -224,7 +224,6 @@ void midiCC(const byte &channel, const byte &cc, const byte &midiData) {
     if (cc == 121) {
         DATAOBJ.receivedReset();
     }
-    
 }
 
 void midiAfterTouch(const byte &channel, const byte &midiData) {
@@ -244,14 +243,26 @@ void midiPitchBend(const byte &channel, int value) {
     }
 }
 
-void midiClock() { DATAOBJ.receivedMidiClock(); }
+void midiClock() {
+    DATAOBJ.receivedMidiClock();
+}
 
-void midiSongPosition(unsigned int spp) { DATAOBJ.receivedMidiSongPosition(spp); }
+void midiSongPosition(unsigned int spp) {
+    DATAOBJ.receivedMidiSongPosition(spp);
+}
 
-void midiStart() { DATAOBJ.receivedStart(); }
+void midiStart() {
+    DATAOBJ.receivedStart();
+}
 
-void midiContinue() { DATAOBJ.receivedContinue(); }
+void midiContinue() {
+    DATAOBJ.receivedContinue();
+}
 
-void midiStop() { DATAOBJ.receivedStop(); }
+void midiStop() {
+    DATAOBJ.receivedStop();
+}
 
-void midiSystemReset() { DATAOBJ.receivedReset(); }
+void midiSystemReset() {
+    DATAOBJ.receivedReset();
+}

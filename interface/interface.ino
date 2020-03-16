@@ -60,14 +60,14 @@ void updateDisplay() { // update interrupt
 }
 
 void updateTLC() { // update interrupt
-static byte sendOld = 0;
+    static byte sendOld = 0;
     byte source = DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel));
     if (source) { // seq modus an?
         byte send = 0;
         for (int x = 0; x < 2; x++) {
 
             for (int i = 0; i < 4; i++) {
-                if (DATAOBJ.get(FrankData::seqGate, source - 1, DATAOBJ.get(FrankData::activePage, source - 1) * 8 + i+4*x)) { // gate an?,
+                if (DATAOBJ.get(FrankData::seqGate, source - 1, DATAOBJ.get(FrankData::activePage, source - 1) * 8 + i + 4 * x)) { // gate an?,
                     if (x == 0) {
                         send = send | 1 << i;
                     }
@@ -77,7 +77,7 @@ static byte sendOld = 0;
                 }
             }
         }
-        if (send != sendOld){
+        if (send != sendOld) {
             tlc.sendByte(send);
             sendOld = send;
         }
@@ -144,7 +144,6 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(SWSYNC), ISRSwitch, CHANGE);
     attachInterrupt(digitalPinToInterrupt(SWSEQ), ISRSwitch, CHANGE);
     attachInterrupt(digitalPinToInterrupt(SWREC), ISRSwitch, CHANGE);
-        
 
     // Set timer interrupt (display refresh)
     myTimerLCD.begin(updateDisplay, 17000); // display refresh
@@ -154,7 +153,7 @@ void setup() {
 void loop() {
     static int counter = 0;
     static unsigned long timer = millis();
-    counter ++;
+    counter++;
 
     if (millis() > timer + 1000) {
         PRINT("iterations per second: ");
@@ -172,15 +171,14 @@ void loop() {
     }
 
     // count all clocks forward if not synced
-    // DATAOBJ.setBPMPoti(120*4); 
-    // DATAOBJ.set(FrankData::bpm, 120); 
+    // DATAOBJ.setBPMPoti(120*4);
+    // DATAOBJ.set(FrankData::bpm, 120);
     DATAOBJ.updateClockCounter();
 
     // activate middleman
     updateAllOutputs();
-    
-    cntrl.readBPMSpeed();
 
+    cntrl.readBPMSpeed();
 }
 
 void ISRSwitch() {

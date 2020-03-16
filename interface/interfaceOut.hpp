@@ -19,8 +19,7 @@ void initOutput();
 class Channel {
   public:
     Channel(byte noteDac, byte noteChannel, byte cvDac, byte cvChannel, byte triggerPin, byte gatePin)
-        : noteDac(noteDac), noteChannel(noteChannel), cvDac(cvDac), cvChannel(cvChannel), triggerPin(triggerPin),
-          gatePin(gatePin) {}
+        : noteDac(noteDac), noteChannel(noteChannel), cvDac(cvDac), cvChannel(cvChannel), triggerPin(triggerPin), gatePin(gatePin) {}
 
     void setTuning(float tuning);
     void setGate(byte state);
