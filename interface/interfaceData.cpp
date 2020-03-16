@@ -1445,7 +1445,9 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
     case liveTriggered: setStr(toStr(get(frankDataType, channel))); break;
     case outputChannel:
         if (config.routing[channel].channel == 0) {
+
             setStr("ALL");
+
         }
         else {
             setStr(toStr(get(frankDataType, channel)));
