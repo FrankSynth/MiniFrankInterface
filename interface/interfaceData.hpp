@@ -33,6 +33,7 @@ typedef struct {
 typedef struct {
     byte noteCalibration[NOTERANGE] = {127};
     int cvOffset = 127;
+    byte noteScaleOffset = 127;
 } structCalibration;
 
 // Sequence struct holding all values for a sequence, to save it
@@ -239,6 +240,7 @@ class FrankData {
 
         // calibration, needs value, array
         cvCalOffset,
+        noteScaleOffset,
 
         // Seq, needs value, array
         seqTuning,
@@ -262,6 +264,7 @@ class FrankData {
         direction,
         displayBrightness,
         resetStepCounters,
+        saveCal,
 
         // Output Routing Settings, needs value, array
         stepArp,
@@ -275,7 +278,6 @@ class FrankData {
         outputCcEvaluated,
         outputLiveMode,
         outputClock,
-        saveCal,
 
         // Screen Settings, needs value
         screenOutputChannel,
@@ -372,6 +374,7 @@ class FrankData {
     void updateClockCounter(const bool newMillis = false);
     void increaseStepCounters(const byte &channel);
     void decreaseStepCounters(const byte &channel);
+
 
     void increaseBpm16thCount();
     inline structKey getLiveKeyEvaluated(const byte &array);

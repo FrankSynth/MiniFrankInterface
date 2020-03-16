@@ -478,7 +478,7 @@ void FrankData::init() {
     else {
         saveNoteCalibration();
         saveMenuSettings();
-        EEPROM.update(0,checkByte);
+        EEPROM.update(0, checkByte);
     }
 }
 
@@ -1032,6 +1032,7 @@ byte FrankData::get(const frankData &frankDataType, const byte &array) {
     case liveKeysPressed: return liveMidi[array].keysPressed();
 
     case cvCalOffset: return cal[array].cvOffset;
+    case noteScaleOffset: return cal[array].noteScaleOffset;
 
     case liveMod: return liveMidi[array].mod;
     case livePitchbend: return liveMidi[array].pitchbend;
@@ -1073,8 +1074,7 @@ byte FrankData::get(const frankData &frankDataType, const byte &array, const byt
     case seqGate: return seq[array].sequence.gate[step];
     case seqGateLength: return seq[array].sequence.gateLength[step];
     case seqCc: return seq[array].sequence.cc[step];
-    case seqVelocity:
-        return seq[array].sequence.velocity[step];
+    case seqVelocity: return seq[array].sequence.velocity[step];
 
     case noteCalOffset: return cal[array].noteCalibration[step];
 
@@ -1137,6 +1137,7 @@ void FrankData::set(const frankData &frankDataType, const int &data, const byte 
         break;
 
     case cvCalOffset: cal[array].cvOffset = testByte(data, 0, 255, clampChange); break;
+    case noteScaleOffset: cal[array].noteScaleOffset = testByte(data, 0, 255, clampChange); break;
 
     case liveMod: liveMidi[array].mod = testByte(data, 0, 127, clampChange); break;
     case livePitchbend: liveMidi[array].pitchbend = testByte(data, 0, 255, clampChange); break;
@@ -1246,14 +1247,12 @@ void FrankData::toggle(const frankData &frankDataType) {
         updateArp(stat.screen.channel);
         break;
     case screenMainMenu:
-        if (stat.screen.mainMenu) {
-            stat.screen.mainMenu = 0;
-        }
-        else if (stat.screen.config || stat.screen.routing || stat.screen.calibration) {
+        if (stat.screen.mainMenu || stat.screen.config || stat.screen.routing || stat.screen.calibration) {
             stat.screen.mainMenu = 0;
             stat.screen.config = 0;
             stat.screen.routing = 0;
             stat.screen.calibration = 0;
+            saveMenuSettings();
         }
         else {
             stat.screen.mainMenu = 1;
@@ -1262,7 +1261,11 @@ void FrankData::toggle(const frankData &frankDataType) {
             stat.screen.calibration = 0;
         }
         break;
-    case screenConfig: stat.screen.config = toggleValue(stat.screen.config); break;
+    case screenConfig:
+        stat.screen.config = toggleValue(stat.screen.config);
+        if (stat.screen.config == 0) saveMenuSettings();
+
+        break;
     case screenRouting:
         stat.screen.mainMenu = 0;
         stat.screen.config = 0;
@@ -1276,21 +1279,22 @@ void FrankData::toggle(const frankData &frankDataType) {
         stat.screen.calibration = 1;
         break;
 
-    case seqResetGates: seqResetAllGates(config.routing[stat.screen.config].outSource - 1); break;
-    case seqResetNotes: seqResetAllNotes(config.routing[stat.screen.config].outSource - 1); break;
-    case seqResetGateLengths: seqResetAllGateLengths(config.routing[stat.screen.config].outSource - 1); break;
-    case seqResetCC: seqResetAllCC(config.routing[stat.screen.config].outSource - 1); break;
-    case seqOctaveUp: seqAllOctaveUp(config.routing[stat.screen.config].outSource - 1); break;
-    case seqOctaveDown: seqAllOctaveDown(config.routing[stat.screen.config].outSource - 1); break;
+    case seqResetGates: seqResetAllGates(config.routing[stat.screen.channel].outSource - 1); break;
+    case seqResetNotes: seqResetAllNotes(config.routing[stat.screen.channel].outSource - 1); break;
+    case seqResetGateLengths: seqResetAllGateLengths(config.routing[stat.screen.channel].outSource - 1); break;
+    case seqResetCC: seqResetAllCC(config.routing[stat.screen.channel].outSource - 1); break;
+    case seqOctaveUp: seqAllOctaveUp(config.routing[stat.screen.channel].outSource - 1); break;
+    case seqOctaveDown: seqAllOctaveDown(config.routing[stat.screen.channel].outSource - 1); break;
 
     case resetStepCounters: resetAllStepCounter(); break;
 
     case saveCal: saveNoteCalibration(); break;
 
-    case load: loadSequence(stat.loadSaveSlot, config.routing[stat.screen.config].outSource - 1); break;
-    case save: saveSequence(stat.loadSaveSlot, config.routing[stat.screen.config].outSource - 1); break;
+    case load: loadSequence(stat.loadSaveSlot, config.routing[stat.screen.channel].outSource - 1); break;
+    case save: saveSequence(stat.loadSaveSlot, config.routing[stat.screen.channel].outSource - 1); break;
 
-    case cvCalOffset: cal[stat.screen.config].cvOffset = 127; break;
+    case cvCalOffset: cal[stat.screen.channel].cvOffset = 127; break;
+    case noteScaleOffset: cal[stat.screen.channel].noteScaleOffset = 127; break;
 
     case none: break;
     default: PRINTLN("FrankData toggle(frankData frankDataType), no case found");
@@ -1388,6 +1392,7 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
 
     case noteCalOffset: setStr("NCal"); break;
     case cvCalOffset: setStr("CvCal"); break;
+    case noteScaleOffset: setStr("NSCal"); break;
 
     case resetStepCounters: setStr("RsStep"); break;
 
@@ -1418,7 +1423,7 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType) {
     case nbPages: // potentionally wrong case?
     case stepSeq:
     case activePage:
-    case seqVelocity: channel = config.routing[stat.screen.config].outSource - 1;
+    case seqVelocity: channel = config.routing[stat.screen.channel].outSource - 1;
     default: channel = stat.screen.channel;
     }
     return valueToStr(frankDataType, channel);
@@ -1451,7 +1456,6 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
         if (config.routing[channel].channel == 0) {
 
             setStr("ALL");
-
         }
         else {
             setStr(toStr(get(frankDataType, channel)));
@@ -1480,7 +1484,7 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
 
     case displayBrightness:
 
-    case liveCalNote: 
+    case liveCalNote:
 
     case bpm:
     case bpmSync:
@@ -1489,6 +1493,7 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
     case load:
     case save: setStr(toStr(get(frankDataType) + 1)); break;
 
+    case noteScaleOffset:
     case cvCalOffset: setStr(toStr(((int)get(frankDataType, channel)) - CALOFFSET)); break;
 
     case outputSource:
@@ -1672,7 +1677,7 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType, const byte 
     case seqGate:
     case seqGateLength:
     case seqCc:
-    case seqVelocity: setStr(toStr(get(frankDataType, config.routing[stat.screen.config].outSource - 1, step))); break;
+    case seqVelocity: setStr(toStr(get(frankDataType, config.routing[stat.screen.channel].outSource - 1, step))); break;
 
     case none: setStr(""); break;
 
@@ -1693,7 +1698,7 @@ void FrankData::loadSequence(const byte &saveSlot, const byte &sequence) {
     Serial.println(sequence);
 
     if (sequence > OUTPUTS - 1 || saveSlot > SAVESLOTS - 1) {
-        Serial.println("received wrong settings")  ; 
+        Serial.println("received wrong settings");
         return;
     }
 
@@ -1710,7 +1715,7 @@ void FrankData::saveSequence(const byte &saveSlot, const byte &sequence) {
     Serial.println(saveSlot);
 
     if (sequence > OUTPUTS - 1 || saveSlot > SAVESLOTS - 1) {
-        Serial.println("received wrong settings")   ;
+        Serial.println("received wrong settings");
         return;
     }
 

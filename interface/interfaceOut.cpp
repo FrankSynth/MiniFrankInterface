@@ -15,20 +15,18 @@
 #define PRINT2(x, y)
 #endif
 
-void Channel::setTuning(float tuning) { noteTuning = tuning; }
-
 void Channel::setGate(byte state) { digitalWrite(gatePin, state); }
 
 void Channel::setTrigger(byte state) { digitalWrite(triggerPin, state); }
 
 void Channel::setNote(byte note) {
-    unsigned int mV = (unsigned int)((float)note * noteTuning + 0.5);
-    setVoltage(noteDac, noteChannel, 2, mV);
+    unsigned int mV = (unsigned int)testInt(((float)note * (NOTESCALING + (float)DATAOBJ.get(FrankData::noteScaleOffset, outputChannel) / 500.0f) + DATAOBJ.get(FrankData::noteCalOffset, outputChannel, note)), 0, 4095);
+    setVoltage(noteDac, noteDacChannel, 2, mV);
 }
 
 void Channel::setCV(int value) { // 0 - 1024 -> -5V -> 5V
-    unsigned int mV = (unsigned int)((float)value * 4);
-    setVoltage(cvDac, cvChannel, 2, mV);
+    unsigned int mV = (unsigned int)(testInt(value * 4 + DATAOBJ.get(FrankData::cvCalOffset, outputChannel), 0, 4095);
+    setVoltage(cvDac, cvDacChannel, 2, mV);
 }
 
 void initOutput() {
