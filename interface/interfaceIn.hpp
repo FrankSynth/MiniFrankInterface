@@ -5,24 +5,15 @@
 #include <Arduino.h>
 
 #define SWSYNC 9
-#define SWSEQ 31
-#define SWREC 23
+#define SWSEQ 23
+#define SWREC 31
 #define BPMPOT 22 
 
 //#define DEBUG
 
 // Controls object for the incoming UART messages
-class controls {
+class inputControls {
   public:
-    controls() { // SWITCHES init
-        pinMode(SWSYNC, INPUT_PULLUP);
-        pinMode(SWSEQ, INPUT_PULLUP);
-        pinMode(SWREC, INPUT_PULLUP);
-        pinMode(BPMPOT, INPUT);
-        readBPMSpeed();
-        readSwitches();
-    }
-
     void encode(byte message);      // encode message
     void rotate(byte id, byte dir); // is a rotate message
     void push(byte id, byte push);  // is a switch message

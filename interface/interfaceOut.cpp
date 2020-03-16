@@ -1,7 +1,7 @@
 #include "interfaceOut.hpp"
 
 // Debug logging
-#define DEBUG 1
+#define DEBUG 0
 
 #if DEBUG == 1
 #define PRINTLN(x) Serial.println(x)
@@ -15,18 +15,18 @@
 #define PRINT2(x, y)
 #endif
 
-void channel::setTuning(float tuning) { noteTuning = tuning; }
+void Channel::setTuning(float tuning) { noteTuning = tuning; }
 
-void channel::setGate(byte state) { digitalWrite(gatePin, state); }
+void Channel::setGate(byte state) { digitalWrite(gatePin, state); }
 
-void channel::setTrigger(byte state) { digitalWrite(triggerPin, state); }
+void Channel::setTrigger(byte state) { digitalWrite(triggerPin, state); }
 
-void channel::setNote(byte note) {
+void Channel::setNote(byte note) {
     unsigned int mV = (unsigned int)((float)note * noteTuning + 0.5);
     setVoltage(noteDac, noteChannel, 2, mV);
 }
 
-void channel::setCV(int value) { // 0 - 1024 -> -5V -> 5V
+void Channel::setCV(int value) { // 0 - 1024 -> -5V -> 5V
     unsigned int mV = (unsigned int)((float)value * 4);
     setVoltage(cvDac, cvChannel, 2, mV);
 }
@@ -77,3 +77,11 @@ void setVoltage(int dacpin, bool channel, bool gain, unsigned int mV) // channel
         digitalWrite(pin, state);
     }
 
+    void ClkLed::init(byte pin) {
+        clkLed = pin;
+        pinMode(pin, OUTPUT);
+    }
+
+    void ClkLed::setClkLed(byte state) {
+        digitalWrite(clkLed, state);
+    }

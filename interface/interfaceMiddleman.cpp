@@ -16,82 +16,273 @@
 #endif
 
 // OUTPUT Channels and clocks
-channel outputChannel[OUTPUTS] = {channel(DAC1, 0, DAC2, 0, TRIGGER1, GATE1), channel(DAC1, 1, DAC2, 1, TRIGGER2, GATE2)};
-
+Channel outputChannel[OUTPUTS] = {Channel(DAC1, 1, DAC2, 0, TRIGGER1, GATE1), Channel(DAC1, 0, DAC2, 1, TRIGGER2, GATE2)};
 clock outputClock[OUTPUTS] = {clock(CLK1), clock(CLK2)};
 
 PreviousState previousState;
 PreviousOutputs previousOutputs[OUTPUTS];
+ClkLed clkLed;
 
 void initMiddleman() {
     initOutput(); // init Outputs
+    clkLed.init(CLKLED);
 }
+
 void updateAllOutputs() {
+    updateClockOut();
+    updateNoteOut();
+    updateCVOut();
+    reactivateRatchet();
+    closeGates();
+    closeTriggers();
+}
+
+void updateNoteOut() {
+
     for (byte output = 0; output < OUTPUTS; output++) {
-        updateNoteOut(output);
-        updateCustomCVOut(output);
-        updateGateOut(output);
-        updateClockOut(output);
-        updateTriggerOut(output);
+
+        if (DATAOBJ.get(FrankData::liveTriggered, output)) {
+
+            byte newNote;
+            float gateDuration = 0.5f;
+            if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
+                if (DATAOBJ.get(FrankData::outputArp, output)) {
+                    newNote = DATAOBJ.get(FrankData::liveKeyArpNoteEvaluated, output);
+                }
+                else {
+                    newNote = DATAOBJ.get(FrankData::liveKeyNoteEvaluated, output);
+                }
+            }
+            else {
+                byte seqStep = DATAOBJ.get(FrankData::stepSeq, output);
+
+                if (DATAOBJ.get(FrankData::liveRecModePlayback, output)) {
+                    if (DATAOBJ.get(FrankData::play)) DATAOBJ.set(FrankData::liveRecModePlayback, 0, output);
+
+                    seqStep = changeByteReverse(seqStep, -1, 0, DATAOBJ.get(FrankData::nbPages, output) * STEPSPERPAGE - 1);
+                }
+
+                newNote = DATAOBJ.get(FrankData::seqNote, DATAOBJ.get(FrankData::outputSource, output) - 1, seqStep);
+                gateDuration = (float)testInt((int)DATAOBJ.get(FrankData::seqGateLength, DATAOBJ.get(FrankData::outputSource, output) - 1, seqStep) +
+                                                  (int)DATAOBJ.get(FrankData::seqGateLengthOffset, DATAOBJ.get(FrankData::outputSource, output) - 1) -
+                                                  GATELENGTHOFFSET,
+                                              0, 100) /
+                               100.0f;
+            }
+
+            // only if not a key was released
+            if (!DATAOBJ.get(FrankData::liveReleased, output)) {
+                // calc gate closure time if arp or seq mode
+                if (DATAOBJ.get(FrankData::outputArp, output) || DATAOBJ.get(FrankData::outputSource, output)) {
+                    // ratchet calc
+                    previousOutputs[output].ratchet = DATAOBJ.get(FrankData::outputRatchet, output);
+
+                    int bpmMult = 1; // achtung, doppelte value
+                    switch (DATAOBJ.get(FrankData::stepSpeed, output)) {
+                    case 0: bpmMult = 32; break; // 1/16
+                    case 1: bpmMult = 16; break;
+                    case 2: bpmMult = 8; break; // 1/4
+                    case 3: bpmMult = 4; break;
+                    case 4: bpmMult = 2; break;
+                    case 5: bpmMult = 1; break; // 2/1
+                    default:;
+                    }
+
+                    // /2 cause of double val, /4 cause of 4*16th per beat
+                    int divider = ((int)DATAOBJ.get(FrankData::bpm) * bpmMult * (int)(DATAOBJ.get(FrankData::outputRatchet, output) + 1) / 8);
+                    previousOutputs[output].ratchetOffsetTime = (60000 / divider);
+                    previousOutputs[output].gateCloseTime = millis() + previousOutputs[output].ratchetOffsetTime * gateDuration;
+                    previousOutputs[output].reactivateTime = millis() + previousOutputs[output].ratchetOffsetTime;
+                    // PRINT("current Time is ");
+                    // PRINT(millis());
+                    // PRINT(", New gate Close Time is ");
+                    // PRINT(previousOutputs[output].gateCloseTime);
+                    // PRINT(", next ratchet is ");
+                    // PRINT(previousOutputs[output].reactivateTime);
+                    // PRINT(", next step ist ");
+                    // PRINTLN(millis() + 60000 / (DATAOBJ.get(FrankData::bpm) * bpmMult / 8));
+                }
+
+                // output Trigger and Gate
+                outputChannel[output].setGate(1);
+                previousOutputs[output].gateActivated = 1;
+
+                if (DATAOBJ.get(FrankData::outputSource, output) == 0 || DATAOBJ.get(FrankData::play)) {
+                    outputChannel[output].setTrigger(1);
+                    previousOutputs[output].triggerActivated = 1;
+                    previousOutputs[output].triggerTimer = millis();
+                }
+            }
+
+            // output Note
+            if (newNote != previousOutputs[output].note) {
+                outputChannel[output].setNote(newNote);
+                previousOutputs[output].note = newNote;
+                PRINT("set new Note ");
+                PRINTLN(newNote);
+            }
+
+            DATAOBJ.set(FrankData::liveTriggered, 0, output);
+            DATAOBJ.set(FrankData::liveReleased, 0, output);
+        }
     }
 }
 
-void updateNoteOut(byte output) {
-    // Live
-    if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
+void reactivateRatchet() {
+    for (byte output = 0; output < OUTPUTS; output++) {
+        if (previousOutputs[output].ratchet && (DATAOBJ.get(FrankData::outputArp, output) || DATAOBJ.get(FrankData::outputSource, output))) {
+            if (millis() >= previousOutputs[output].reactivateTime) {
 
-        // Arp on
-        if (DATAOBJ.get(FrankData::outputArp, output)) {
-            byte tempStep = DATAOBJ.get(FrankData::stepArp);
-            if (tempStep != previousOutputs[output].stepArp) {
-                previousOutputs[output].stepArp = tempStep;
+                // PRINT("Ratchet reactivated");
+                // PRINT(", current Time is ");
+                // PRINT(millis());
+                float gateDuration = 0.5f;
+                if (DATAOBJ.get(FrankData::outputSource, output)) {
 
-                byte tempNote = DATAOBJ.get(FrankData::liveKeyArpNoteEvaluated, output);
-                if (tempNote != previousOutputs[output].note) {
-                    previousOutputs[output].note = tempNote;
-                    // send new Note
+                    gateDuration =
+                        (float)testInt((int)DATAOBJ.get(FrankData::seqGateLength, DATAOBJ.get(FrankData::outputSource, output) - 1,
+                                                        DATAOBJ.get(FrankData::stepSeq, output)) +
+                                           (int)DATAOBJ.get(FrankData::seqGateLengthOffset, DATAOBJ.get(FrankData::outputSource, output) - 1) -
+                                           GATELENGTHOFFSET,
+                                       0, 100) /
+                        100.0f;
+                }
+
+                previousOutputs[output].gateCloseTime = millis() + previousOutputs[output].ratchetOffsetTime * gateDuration;
+                previousOutputs[output].reactivateTime = millis() + previousOutputs[output].ratchetOffsetTime;
+                // PRINT(", New gate Close Time is ");
+                // PRINTLN(previousOutputs[output].gateCloseTime);
+
+                // output
+                outputChannel[output].setGate(1);
+                previousOutputs[output].gateActivated = 1;
+
+                outputChannel[output].setTrigger(1);
+                previousOutputs[output].triggerActivated = 1;
+                previousOutputs[output].triggerTimer = millis();
+
+                previousOutputs[output].ratchet--;
+            }
+        }
+    }
+}
+
+void updateCVOut() {
+    byte newCV = 0;
+    for (byte output = 0; output < OUTPUTS; output++) {
+
+        if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
+            newCV = DATAOBJ.get(FrankData::outputCcEvaluated, output);
+        }
+        else {
+            byte currentStep = DATAOBJ.get(FrankData::stepSeq, output);
+            if (currentStep != previousOutputs[output].stepSeq) {
+                previousOutputs[output].stepSeq = currentStep;
+                newCV = DATAOBJ.get(FrankData::seqCc, DATAOBJ.get(FrankData::outputSource, output) - 1, currentStep);
+            }
+        }
+
+        if (newCV != previousOutputs[output].cv) {
+            outputChannel[output].setCV(newCV * 8); // expects 0-1023
+            previousOutputs[output].cv = newCV;
+        }
+    }
+}
+
+void closeGates() {
+    for (byte output = 0; output < OUTPUTS; output++) {
+
+        if (previousOutputs[output].gateActivated) {
+
+            if (DATAOBJ.get(FrankData::liveSustain, output) < 64) {
+
+                if (DATAOBJ.get(FrankData::outputSource, output)) {
+                    if (DATAOBJ.get(FrankData::play)) {
+                        if (millis() >= previousOutputs[output].gateCloseTime) {
+                            outputChannel[output].setGate(0);
+                            previousOutputs[output].gateActivated = 0;
+                            // PRINT("close gate, arp/seq, on output ");
+                            // PRINT(output + 1);
+                            // PRINT(", time is ");
+                            // PRINTLN(millis());
+                        }
+                    }
+                }
+                else if (DATAOBJ.get(FrankData::outputArp, output)) {
+                    if (millis() >= previousOutputs[output].gateCloseTime) {
+                        outputChannel[output].setGate(0);
+                        previousOutputs[output].gateActivated = 0;
+                        // PRINT("close gate, arp/seq, on output ");
+                        // PRINT(output + 1);
+                        // PRINT(", time is ");
+                        // PRINTLN(millis());
+                    }
+                }
+                else if (!DATAOBJ.get(FrankData::liveKeysPressed, output)) {
+                    outputChannel[output].setGate(0);
+                    previousOutputs[output].gateActivated = 0;
+                    // PRINT("close gate, live, on output ");
+                    // PRINT(output + 1);
+                    // PRINT(", time is ");
+                    // PRINTLN(millis());
                 }
             }
         }
+    }
+}
 
-        // Arp Off
+void updateClockOut() {
+
+    static unsigned long timer[2] = {0};
+
+    if (!(DATAOBJ.get(FrankData::bpm16thCount) == previousState.old16thClockCount)) {
+        previousState.old16thClockCount = DATAOBJ.get(FrankData::bpm16thCount);
+
+        if (DATAOBJ.get(FrankData::bpm16thCount) % 4 < 2) {
+            if (!previousState.clockLED) {
+                clkLed.setClkLed(1);
+                previousState.clockLED = 1;
+            }
+        }
         else {
-            byte tempNote = DATAOBJ.get(FrankData::liveKeyNoteEvaluated, output);
-            if (tempNote != previousOutputs[output].note) {
-                previousOutputs[output].note = tempNote;
-                // send new Note
+            if (previousState.clockLED) {
+                clkLed.setClkLed(0);
+                previousState.clockLED = 0;
+            }
+        }
+
+        for (byte output = 0; output < OUTPUTS; output++) {
+
+            if (!previousOutputs[output].clockPulseActivated) {
+
+                if ((int)(DATAOBJ.get(FrankData::bpm16thCount)) % (int)pow(2, (int)DATAOBJ.get(FrankData::outputClock, output)) == 0) {
+                    outputClock[output].setClock(1);
+                    previousOutputs[output].clockPulseActivated = 1;
+                    timer[output] = millis();
+                }
             }
         }
     }
 
-    // Seq
-    else {
-    }
-}
-void updateCustomCVOut(byte output) {}
-void updateGateOut(byte output) {}
-void updateClockOut(byte output) {
-    byte currentClock = DATAOBJ.get(FrankData::bpm16thCount);
-}
-void updateTriggerOut(byte output) {}
+    for (byte output = 0; output < OUTPUTS; output++) {
+        if (previousOutputs[output].clockPulseActivated) {
 
-void updateArp(byte output) {
-    if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
-        if (DATAOBJ.get(FrankData::outputArp, output)) {
-            if (previousOutputs[output].sustain > DATAOBJ.get(FrankData::liveSustain) && DATAOBJ.get(FrankData::liveSustain) < 64) {
-                PRINTLN("Middleman updates Arp");
-                DATAOBJ.updateArp(output);
+            if (millis() - timer[output] >= DATAOBJ.get(FrankData::pulseLength)) {
+                outputClock[output].setClock(0);
+                previousOutputs[output].clockPulseActivated = 0;
             }
         }
     }
 }
 
-void PreviousOutputs::setNewGateTimeSet() {
-    gateTimeSet = millis();
-}
-void PreviousOutputs::setNewClockTimeSet() {
-    clockTimeSet = millis();
-}
-void PreviousOutputs::setNewTriggerTimeSet() {
-    triggerTimeSet = millis();
+void closeTriggers() {
+    for (byte output = 0; output < OUTPUTS; output++) {
+        if (previousOutputs[output].triggerActivated) {
+            if (millis() - previousOutputs[output].triggerTimer >= DATAOBJ.get(FrankData::pulseLength)) {
+                outputChannel[output].setTrigger(0);
+                previousOutputs[output].triggerActivated = 0;
+                // PRINTLN("Trigger closed");
+            }
+        }
+    }
 }

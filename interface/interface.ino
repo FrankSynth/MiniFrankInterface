@@ -16,26 +16,28 @@
 
 #if DEBUG == 1
 #define PRINTLN(x) Serial.println(x)
-#define PRINTLN2(x,y) Serial.println(x,y)
+#define PRINTLN2(x, y) Serial.println(x, y)
 #define PRINT(x) Serial.print(x)
-#define PRINT2(x,y) Serial.print(x,y)
+#define PRINT2(x, y) Serial.print(x, y)
 #define DEBUGPRINTBEGIN Serial.begin(115200)
 #else
-#define PRINTLN(x) 
-#define PRINTLN2(x,y) 
+#define PRINTLN(x)
+#define PRINTLN2(x, y)
 #define PRINT(x)
-#define PRINT2(x,y)
+#define PRINT2(x, y)
 #define DEBUGPRINTBEGIN
 #endif
 
 // status settings;   //init status object;
 // mfMidi midi0; //create midi object
 
-controls cntrl;
+inputControls cntrl;
 
 Display lcd = Display(160, 128, 3); // create display object, (width, heigh, rotation)
+TLC5916 tlc;
 
-IntervalTimer myTimer;
+IntervalTimer myTimerLCD;
+IntervalTimer myTimerLED;
 
 // PressedNotesList noteList0;
 // PressedNotesList noteList1;
@@ -47,43 +49,67 @@ void readSerial3() {
     byte rcv;
     rcv = Serial3.read();
 
-    PRINT("Message: ");
-    PRINTLN2(rcv, BIN);
+    // PRINT("Message: ");
+    // PRINTLN2(rcv, BIN);
 
     cntrl.encode(rcv);
 }
 
 void updateDisplay() { // update interrupt
- 
     lcd.refresh();
+}
 
+void updateTLC() { // update interrupt
+    static byte sendOld = 0;
+    byte source = DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel));
+    if (source) { // seq modus an?
+        byte send = 0;
+        for (int x = 0; x < 2; x++) {
+
+            for (int i = 0; i < 4; i++) {
+                if (DATAOBJ.get(FrankData::seqGate, source - 1, DATAOBJ.get(FrankData::activePage, source - 1) * 8 + i + 4 * x)) { // gate an?,
+                    if (x == 0) {
+                        send = send | 1 << i;
+                    }
+                    else {
+                        send = send | 1 << (7 - i);
+                    }
+                }
+            }
+        }
+        if (send != sendOld) {
+            tlc.sendByte(send);
+            sendOld = send;
+        }
+    }
+    else {
+        if (sendOld) {
+            tlc.sendByte(0);
+            sendOld = 0;
+        }
+    }
 }
 
 void setup() {
-    // GETDATAOBJ
-    // pin setup
-    SPI.begin() ;
 
     DEBUGPRINTBEGIN;
     PRINTLN("Debug Mode");
-    PRINTLN("HELLO FRANK Mini");
+    PRINTLN("Hello FRANK Mini");
 
     PRINT("Brightness: ");
     PRINTLN(DATAOBJ.get(FrankData::displayBrightness));
-    PRINTLN(DATAOBJ.get(FrankData::play));
     PRINT("BPM: ");
     PRINTLN(DATAOBJ.get(FrankData::bpm));
-    PRINT("Clock: ");
-    PRINTLN(DATAOBJ.get(FrankData::outputClock,0));
 
     pinMode(5, OUTPUT);
     digitalWrite(5, LOW);
 
-     lcd.displayBrightness(200);
+    lcd.displayBrightness(200);
 
     initMidi();
     initMiddleman();
-
+    tlc.init(7);
+    cntrl.init();
 
     ////////////////////////
     // Start Devices
@@ -101,7 +127,7 @@ void setup() {
         Serial3.write(send);
 
         if (millis() - timer > 2000) {
-            timeout = 1;         // we timed out
+            timeout = 1;                      // we timed out
             DATAOBJ.set(FrankData::error, 1); // set error status
             PRINTLN("uC : connection failed (timeout)");
         }
@@ -110,8 +136,8 @@ void setup() {
     if ((B01010101 == Serial3.read()) && !timeout) {
 
         PRINTLN("Connected");
-
-    } else {
+    }
+    else {
         DATAOBJ.set(FrankData::error, 1); // set error status
     }
 
@@ -120,32 +146,38 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(SWREC), ISRSwitch, CHANGE);
 
     // Set timer interrupt (display refresh)
-    myTimer.begin(updateDisplay, 40000); // display refresh
+    myTimerLCD.begin(updateDisplay, 17000); // display refresh
+    myTimerLED.begin(updateTLC, 20000);     // display refresh
 }
 
 void loop() {
+    static int counter = 0;
+    static unsigned long timer = millis();
+    counter++;
 
-    // GETDATAOBJ
+    if (millis() > timer + 1000) {
+        PRINT("iterations per second: ");
+        PRINTLN(counter);
+        counter = 0;
+        timer = millis();
+    }
+
     // NEW Midi Signal
     updateMidi();
+
     //   Read uC UART Data
     while (Serial3.available()) {
         readSerial3();
     }
 
-    // Temp Clock
-    static long timer = 0;
-    if (millis() - timer > 250) {
-        DATAOBJ.increase(FrankData::stepSeq, (byte)0);
-        DATAOBJ.increase(FrankData::stepSeq, (byte)1);
-
-     //   PRINT("Step: ");
-      //  PRINTLN(DATAOBJ.get(FrankData::stepSeq));
-        timer = millis();
-    }
+    // count all clocks forward if not synced
+    // DATAOBJ.setBPMPoti(120*4);
+    // DATAOBJ.set(FrankData::bpm, 120);
+    DATAOBJ.updateClockCounter();
 
     // activate middleman
-    //updateAllOutputs();
+    updateAllOutputs();
+
     cntrl.readBPMSpeed();
 }
 

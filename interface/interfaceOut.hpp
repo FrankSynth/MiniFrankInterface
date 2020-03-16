@@ -9,17 +9,17 @@
 #define TRIGGER2 5
 #define GATE1 2
 #define GATE2 3
-#define CLK1 1
-#define CLK2 0
+#define CLK1 0
+#define CLK2 1
+#define CLKLED 21
 
 void setVoltage(int dacpin, bool channel, bool gain, unsigned int mV); // channel 0, 1, Gain = 2 (default)
 void initOutput();
 
-class channel {
+class Channel {
   public:
-    channel(byte noteDac, byte noteChannel, byte cvDac, byte cvChannel, byte triggerPin, byte gatePin)
-        : noteDac(noteDac), noteChannel(noteChannel), cvDac(cvDac), cvChannel(cvChannel), triggerPin(triggerPin),
-          gatePin(gatePin) {}
+    Channel(byte noteDac, byte noteChannel, byte cvDac, byte cvChannel, byte triggerPin, byte gatePin)
+        : noteDac(noteDac), noteChannel(noteChannel), cvDac(cvDac), cvChannel(cvChannel), triggerPin(triggerPin), gatePin(gatePin) {}
 
     void setTuning(float tuning);
     void setGate(byte state);
@@ -43,10 +43,17 @@ class channel {
 class clock {
   public:
     clock(byte pin) : pin(pin) {}
-
     void setClock(byte state);
-
 
   private:
     byte pin;
+};
+
+class ClkLed {
+  public:
+    void init(byte pin);
+    void setClkLed(byte state);
+
+  private:
+    byte clkLed;
 };

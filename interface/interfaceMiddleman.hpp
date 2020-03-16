@@ -8,51 +8,33 @@
 
 // save state for each output lane
 class PreviousOutputs {
-    public:
-    enum previousData {
-        dataNote, dataGate
-    };
+  public:
+    byte note = 0;
+    byte cv = 0;
+    byte ratchet = 0;
+    byte gateActivated = 0;
+    unsigned long gateCloseTime = 0;
+    unsigned long reactivateTime = 0;
+    unsigned long ratchetOffsetTime = 0;
 
-    byte note;
-    byte customCV;
-    byte sustain;
-    byte gate;
-    byte gatelength;
-    byte stepSeq;
-    byte stepArp;
-    long gateTimeSet;
-    byte clock;
-    long clockTimeSet;
-    byte trigger;
-    long triggerTimeSet;
+    byte stepSeq = 0;
 
-public:
-    PreviousOutputs() {
-        this->note = 0;
-        this->customCV = 0;
-        this->sustain = 0;
-        this->gate = 0;
-        this->gatelength = 0;
-        this->stepSeq = 0;
-        this->stepArp = 0;
-        this->clock = 0;
-        this->clockTimeSet = 0;
-        this->trigger = 0;
-        this->triggerTimeSet = 0;
-    }
+    byte clockPulseActivated = 0;
 
-    void setNewGateTimeSet();
-    void setNewClockTimeSet();
-    void setNewTriggerTimeSet();
+    byte triggerActivated = 0;
+    unsigned long triggerTimer = 0;
+
+  public:
+    PreviousOutputs() {}
 };
 
 // save general output state parameters
 class PreviousState {
   public:
-    byte old16thClockCount;
+    byte clockLED = 0;
+    byte old16thClockCount = 0;
 
     PreviousState() { this->old16thClockCount = 0; }
-
 };
 
 // init Middleman
@@ -62,12 +44,9 @@ void initMiddleman();
 void updateAllOutputs();
 
 // Middleman helper functions
-void updateNoteOut(byte output);
-void updateCustomCVOut(byte output);
-void updateGateOut(byte output);
-void updateClockOut(byte output);
-void updateTriggerOut(byte output);
-void updateArp(byte output);
-
-    // advanced helper functions
-    byte getArpeggiatedNote();
+void updateNoteOut();
+void updateCVOut();
+void closeGates();
+void updateClockOut();
+void closeTriggers();
+void reactivateRatchet();

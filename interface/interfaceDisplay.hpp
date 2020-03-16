@@ -3,7 +3,7 @@
 #include "interfaceData.hpp"
 #include "interfaceMapping.hpp"
 #include <Adafruit_GFX.h>    // Core graphics library
-#include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
+#include <Adafruit_ST7735.h> // Hardware-specific library for ST7735 - CHANGE SPI SPEED
 #include <SPI.h>
 
 // Include extra Fonts
@@ -29,11 +29,13 @@
 #define YELLOW ST77XX_YELLOW
 #define ORANGE ST77XX_ORANGE
 
-#define BLACKBLUE 0x0410  // Schwarz Blau
-#define BLUE_LIGHT 0x94B2 // Hell Blau
-#define BLUE 0x39E7       // Blau
-#define BLUE_DARK 0x2965  // Dunkel Blau
+#define GREYWHITE 0xC638 // Hell Blau
+#define GREY 0x39E7       
 #define GREEN 0x4208      // Grün
+#define DARKGREY 0x2945   // linien
+#define BACKGROUND 0x3186
+
+#define COLORTHEME 0x1AAE
 
 ///  A 16-bit double buffer from the adafruit canvas
 class DispBuffer16 : public Adafruit_GFX {
@@ -62,9 +64,9 @@ class Display {
 
     void refresh();                    // refresh display
     void displayBrightness(byte brigthness); // set display display brightness
+    Adafruit_ST7735 lcd = Adafruit_ST7735(LCD_CS, LCD_DC, LCD_RST); // initialize LCD
 
   private:
-    Adafruit_ST7735 lcd = Adafruit_ST7735(LCD_CS, LCD_DC, LCD_RST); // initialize LCD
 
     // Build display buffers
     DispBuffer16 *bufferHead;
@@ -100,4 +102,13 @@ class Display {
     void BodyTemplateArp();
 
     void updateDisplay();
+};
+
+
+class TLC5916{
+  public:
+    void init(byte pin);
+    void sendByte(byte send);
+  private:
+    byte pinTLC;
 };
