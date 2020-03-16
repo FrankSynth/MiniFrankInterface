@@ -90,6 +90,8 @@ void updateTLC() { // update interrupt
 
 void setup() {
 
+    DATAOBJ.init();
+
     Serial.begin(115200);
     PRINTLN("Debug Mode");
     PRINTLN("Hello FRANK Mini");
@@ -146,6 +148,7 @@ void setup() {
     // Set timer interrupt (display refresh)
     myTimerLCD.begin(updateDisplay, 17000); // display refresh
     myTimerLED.begin(updateTLC, 20000);     // display refresh
+
 }
 
 void loop() {

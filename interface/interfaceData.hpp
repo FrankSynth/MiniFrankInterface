@@ -336,6 +336,8 @@ class FrankData {
   public:
     const char *returnStr = str;
 
+    void init();
+
     // receive MIDI
     void receivedKeyPressed(const byte &channel, const byte &note, const byte &velocity);
     void receivedKeyReleased(const byte &channel, const byte &note);
