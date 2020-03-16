@@ -19,13 +19,11 @@
 #define PRINTLN2(x, y) Serial.println(x, y)
 #define PRINT(x) Serial.print(x)
 #define PRINT2(x, y) Serial.print(x, y)
-#define DEBUGPRINTBEGIN Serial.begin(115200)
 #else
 #define PRINTLN(x)
 #define PRINTLN2(x, y)
 #define PRINT(x)
 #define PRINT2(x, y)
-#define DEBUGPRINTBEGIN
 #endif
 
 // status settings;   //init status object;
@@ -92,7 +90,7 @@ void updateTLC() { // update interrupt
 
 void setup() {
 
-    DEBUGPRINTBEGIN;
+    Serial.begin(115200);
     PRINTLN("Debug Mode");
     PRINTLN("Hello FRANK Mini");
 

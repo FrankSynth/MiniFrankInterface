@@ -41,6 +41,20 @@ void updateNoteOut() {
 
     for (byte output = 0; output < OUTPUTS; output++) {
 
+        // calbiration mode
+        if (DATAOBJ.get(FrankData::screenCal)) {
+            byte newNote = DATAOBJ.get(FrankData::liveCalNote);
+            if (previousOutputs[output].note != newNote) {
+                outputChannel[output].setNote(newNote);
+                previousOutputs[output].note = newNote;
+                PRINT("set new Calib Note ");
+                PRINTLN(newNote);
+                outputChannel[output].setGate(1);
+                previousOutputs[output].gateActivated = 1;
+            }
+            return;
+        }
+
         if (DATAOBJ.get(FrankData::liveTriggered, output)) {
 
             byte newNote;
@@ -190,6 +204,10 @@ void updateCVOut() {
 }
 
 void closeGates() {
+
+    // don't close gates if calibration mode is on
+    if (DATAOBJ.get(FrankData::screenCal)) return;
+
     for (byte output = 0; output < OUTPUTS; output++) {
 
         if (previousOutputs[output].gateActivated) {

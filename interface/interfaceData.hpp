@@ -1,9 +1,11 @@
 #pragma once
 
 #include <Arduino.h>
+#include <EEPROM.h>
 
-#define LENGTH 64 // max Seq length
-#define PAGES 8
+#define SAVESLOTS 30 // number of possible save slots
+#define LENGTH 128 // max Seq length
+#define PAGES 16
 #define NOTERANGE 88
 #define STEPSPERPAGE 8
 #define OUTPUTS 2 // Number of output lanes
@@ -25,12 +27,12 @@ typedef struct {
     byte arpRatchet = 0;   // repeats per step, 1 = 1 repeat (2 notes total), up to 3 repeats
     byte arpOctaves = 3;   // Octaves 0 = -3, 3 = 0, 6 = +3
     byte stepSpeed = 2;    // ArpSeq Sync 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
-    byte nbPages = 8;      // nb Pages  1 -> 8
+    byte nbPages = 8;      // nb Pages  1-16
 } structOutputRouting;
 
 typedef struct {
-    float noteCalibration[NOTERANGE];
-    float cvOffset;
+    byte noteCalibration[NOTERANGE];
+    int cvOffset;
 } structCalibration;
 
 // Sequence struct holding all values for a sequence, to save it
@@ -73,7 +75,7 @@ typedef struct {
 typedef struct {
     structScreen screen; // screen status
 
-    byte loadSaveSlot = 1; // laod save 1-10
+    byte loadSaveSlot = 0; // laod save 1-10
 
     byte bpm = 120; // current bpm
     byte play = 1;  // play stop
@@ -81,6 +83,8 @@ typedef struct {
     byte error = 0; // ErrorFlag
 
     byte pulseLength = 20; // pulse length in ms
+
+    byte noteToCalibrate = 0;
 
     byte bpmSync = 0; // Sync Active
     byte midiClockCount = 5;
@@ -143,6 +147,7 @@ class LiveMidi {
     structKey arpKey;
     PressedNotesList arpList;
     structKey arpArray[NOTERANGE];
+
 
     byte stepArp = 0;
     byte stepSeq = 0;
@@ -270,6 +275,7 @@ class FrankData {
         outputCcEvaluated,
         outputLiveMode,
         outputClock,
+        saveCal,
 
         // Screen Settings, needs value
         screenOutputChannel,
@@ -277,11 +283,9 @@ class FrankData {
         screenMainMenu,
         screenSubScreen,
         screenCal,
-        screenCalNote,
         screenRouting,
 
         // structStatus, needs value
-
         bpm,
         play,
         rec,
@@ -292,7 +296,7 @@ class FrankData {
         load,
         save,
         pulseLength,
-
+        
         // liveMidi, needs value, array
         liveMod,
         livePitchbend,
@@ -309,6 +313,7 @@ class FrankData {
         liveLatestKey,
         liveHighestKey,
         liveLowestKey,
+        liveCalNote,
     };
 
     // idea for further enumerators
@@ -398,7 +403,14 @@ class FrankData {
 
     void reset();
 
-    // settings
+    void loadSequence(const byte &saveSlot, const byte &sequence);
+    void saveSequence(const byte &saveSlot, const byte &sequence);
+
+    void loadAllMenuSettings();
+    void saveMenuSettings();
+
+    void saveNoteCalibration(const byte &channel);
+    void loadNoteCalibration();
 
   public:
     // get single type value
