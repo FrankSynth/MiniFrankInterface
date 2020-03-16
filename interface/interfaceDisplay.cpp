@@ -211,14 +211,8 @@ void Display::BodyTemplateCal() { // has 1 dataFields + GateSignal
 
                     bufferBody->setTextColor(WHITE, GREY); // font Color
 
-
-                    const char *data; // get name
-                    if (FrankData::noteCalOffset) {
-                        data = DATAOBJ.getValueAsStr(mapping(dataField), DATAOBJ.get(FrankData::liveCalNote));
-                    }
-                    else {
-                        data = DATAOBJ.getValueAsStr(mapping(dataField));
-                    }
+                    const char *data = DATAOBJ.getValueAsStr(mapping(dataField));
+                    
 
                     if ((byte)data[0] == 64) {
 
