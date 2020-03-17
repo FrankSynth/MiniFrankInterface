@@ -34,8 +34,8 @@ inputControls cntrl;
 Display lcd = Display(160, 128, 3); // create display object, (width, heigh, rotation)
 TLC5916 tlc;
 
-IntervalTimer myTimerLCD;
-IntervalTimer myTimerLED;
+// IntervalTimer myTimerLCD;
+// IntervalTimer myTimerLED;
 
 // PressedNotesList noteList0;
 // PressedNotesList noteList1;
@@ -146,21 +146,23 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(SWREC), ISRSwitch, CHANGE);
 
     // Set timer interrupt (display refresh)
-    myTimerLCD.begin(updateDisplay, 17000); // display refresh
-    myTimerLED.begin(updateTLC, 20000);     // display refresh
+    // myTimerLCD.begin(updateDisplay, 17000); // display refresh
+    // myTimerLED.begin(updateTLC, 20000);     // display refresh
 
 }
 
 void loop() {
-    static int counter = 0;
-    static unsigned long timer = millis();
-    counter++;
 
-    if (millis() > timer + 1000) {
-        PRINT("iterations per second: ");
-        PRINTLN(counter);
-        counter = 0;
-        timer = millis();
+    static unsigned int screenTimer = millis();
+
+    if (millis() > screenTimer + 16) {
+        
+        cli();
+        updateDisplay();
+        updateTLC();
+        sei();
+
+        screenTimer = millis();
     }
 
     // NEW Midi Signal
@@ -172,8 +174,6 @@ void loop() {
     }
 
     // count all clocks forward if not synced
-    // DATAOBJ.setBPMPoti(120*4);
-    // DATAOBJ.set(FrankData::bpm, 120);
     DATAOBJ.updateClockCounter();
 
     // activate middleman

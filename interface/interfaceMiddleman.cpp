@@ -39,12 +39,15 @@ void updateAllOutputs() {
 
 void updateNoteOut() {
 
-    for (byte output = 0; output < OUTPUTS; output++) {
+    // calbiration mode
+    if (DATAOBJ.get(FrankData::screenCal)) {
 
-        // calbiration mode
-        if (DATAOBJ.get(FrankData::screenCal)) {
-            byte newNote = DATAOBJ.get(FrankData::liveCalNote);
-            if (previousOutputs[output].note != newNote) {
+        static unsigned int calTimer = millis();
+
+        if (millis() > calTimer + 25) {
+            for (byte output = 0; output < OUTPUTS; output++) {
+                byte newNote = DATAOBJ.get(FrankData::liveCalNote);
+
                 outputChannel[output].setNote(newNote);
                 previousOutputs[output].note = newNote;
                 PRINT("set new Calib Note ");
@@ -52,8 +55,12 @@ void updateNoteOut() {
                 outputChannel[output].setGate(1);
                 previousOutputs[output].gateActivated = 1;
             }
-            return;
+            calTimer = millis();
         }
+        return;
+    }
+
+    for (byte output = 0; output < OUTPUTS; output++) {
 
         if (DATAOBJ.get(FrankData::liveTriggered, output)) {
 

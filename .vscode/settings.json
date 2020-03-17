@@ -34,7 +34,9 @@
         "ctime": "cpp",
         "mutex": "cpp",
         "array": "cpp",
-        "functional": "cpp"
+        "functional": "cpp",
+        "imxrt.h": "c",
+        "eeprom.h": "c"
     },
     "C_Cpp.intelliSenseEngineFallback": "Disabled",
     "C_Cpp.errorSquiggles": "Disabled",

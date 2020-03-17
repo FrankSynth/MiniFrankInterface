@@ -1,10 +1,10 @@
 #pragma once
-
+#include "interfaceEEPROM.hpp"
 #include <Arduino.h>
-#include <EEPROM.h>
+
 
 #define SAVESLOTS 30 // number of possible save slots
-#define LENGTH 128 // max Seq length
+#define LENGTH 128   // max Seq length
 #define PAGES 16
 #define NOTERANGE 88
 #define STEPSPERPAGE 8
@@ -40,11 +40,11 @@ typedef struct {
 typedef struct {
     byte note[LENGTH];
     byte cc[LENGTH];
-    byte gate[LENGTH];
+    byte gate[LENGTH]; // optimize data to single bits! middleman seq check, if gate
     byte gateLength[LENGTH];
     byte velocity[LENGTH];
     byte tuning;           // tuning offset
-    byte ratchet;          // repeats per step
+//     byte ratchet;          // repeats per step
     byte gateLengthOffset; // 100 = no offset
 } structSequence;
 
@@ -148,7 +148,6 @@ class LiveMidi {
     structKey arpKey;
     PressedNotesList arpList;
     structKey arpArray[NOTERANGE];
-
 
     byte stepArp = 0;
     byte stepSeq = 0;
@@ -298,7 +297,7 @@ class FrankData {
         load,
         save,
         pulseLength,
-        
+
         // liveMidi, needs value, array
         liveMod,
         livePitchbend,
@@ -374,7 +373,6 @@ class FrankData {
     void updateClockCounter(const bool newMillis = false);
     void increaseStepCounters(const byte &channel);
     void decreaseStepCounters(const byte &channel);
-
 
     void increaseBpm16thCount();
     inline structKey getLiveKeyEvaluated(const byte &array);
