@@ -1,9 +1,10 @@
 #pragma once
 
+// #include "Adafruit_ST7735_and_ST7789_Library/Adafruit_ST7735.h" // Hardware-specific library for ST7735 - CHANGE SPI SPEED
+#include "src/Adafruit_ST7735_and_ST7789_Library/Adafruit_ST7735.h" // Hardware-specific library for ST7735 - CHANGE SPI SPEED
 #include "interfaceData.hpp"
 #include "interfaceMapping.hpp"
-#include <Adafruit_GFX.h>    // Core graphics library
-#include <Adafruit_ST7735.h> // Hardware-specific library for ST7735 - CHANGE SPI SPEED
+#include <Adafruit_GFX.h> // Core graphics library
 #include <SPI.h>
 
 // Include extra Fonts
@@ -20,7 +21,7 @@
 #define BLACK ST77XX_BLACK
 #define WHITE ST77XX_WHITE
 #define RED ST77XX_RED
-//#define GREEN      ST77XX_GREEN
+// #define GREEN      ST77XX_GREEN
 
 // #define BLUE       ST77XX_BLUE
 
@@ -30,9 +31,9 @@
 #define ORANGE ST77XX_ORANGE
 
 #define GREYWHITE 0xC638 // Hell Blau
-#define GREY 0x39E7       
-#define GREEN 0x4208      // Grün
-#define DARKGREY 0x2945   // linien
+#define GREY 0x39E7
+#define GREEN 0x4208    // Grün
+#define DARKGREY 0x2945 // linien
 #define BACKGROUND 0x3186
 
 #define COLORTHEME 0x1AAE
@@ -62,12 +63,11 @@ class Display {
         initBuffer();
     }
 
-    void refresh();                    // refresh display
-    void displayBrightness(byte brigthness); // set display display brightness
+    void refresh();                                                 // refresh display
+    void displayBrightness(byte brigthness);                        // set display display brightness
     Adafruit_ST7735 lcd = Adafruit_ST7735(LCD_CS, LCD_DC, LCD_RST); // initialize LCD
 
   private:
-
     // Build display buffers
     DispBuffer16 *bufferHead;
     DispBuffer16 *bufferFoot;
@@ -90,10 +90,8 @@ class Display {
     void drawFoot();
     void drawBody();
 
-
     void FootLive();
     void FootSeq();
-
 
     // Templates
     void BodyTemplateSeq();
@@ -102,13 +100,14 @@ class Display {
     void BodyTemplateArp();
     void BodyTemplateCal();
 
-        void updateDisplay();
-    };
+    void updateDisplay();
+};
 
-class TLC5916{
+class TLC5916 {
   public:
     void init(byte pin);
     void sendByte(byte send);
+
   private:
     byte pinTLC;
 };
