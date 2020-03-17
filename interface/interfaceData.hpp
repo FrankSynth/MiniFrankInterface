@@ -2,7 +2,7 @@
 
 #include "src/EEPROM/eeprom.h"
 #include <Arduino.h>
-#include <EEPROM.h>
+
 
 
 #define SAVESLOTS 30 // number of possible save slots
@@ -42,11 +42,11 @@ typedef struct {
 typedef struct {
     byte note[LENGTH];
     byte cc[LENGTH];
-    byte gate[LENGTH];
+    byte gate[LENGTH]; // optimize data to single bits! middleman seq check, if gate
     byte gateLength[LENGTH];
     byte velocity[LENGTH];
     byte tuning;           // tuning offset
-    byte ratchet;          // repeats per step
+//     byte ratchet;          // repeats per step
     byte gateLengthOffset; // 100 = no offset
 } structSequence;
 

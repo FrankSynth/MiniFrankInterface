@@ -21,6 +21,8 @@ void Channel::setTrigger(byte state) { digitalWrite(triggerPin, state); }
 
 void Channel::setNote(byte note) {
     unsigned int mV = (unsigned int)testInt(((float)note * (NOTESCALING + (float)DATAOBJ.get(FrankData::noteScaleOffset, outputChannel) / 500.0f) + DATAOBJ.get(FrankData::noteCalOffset, outputChannel, note)), 0, 4095);
+    PRINT("Output Note mv ");
+    PRINTLN(mV);
     setVoltage(noteDac, noteDacChannel, 2, mV);
 }
 

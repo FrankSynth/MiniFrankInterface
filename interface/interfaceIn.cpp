@@ -97,10 +97,11 @@ case STEP:
     
     case FrankData::cvCalOffset:
     case FrankData::liveCalNote:
+     case   FrankData::noteScaleOffset:
 
-        if (dir) {
-        DATAOBJ.increase(mappedID, DATAOBJ.get(FrankData::screenOutputChannel));
-    }
+            if (dir) {
+            DATAOBJ.increase(mappedID, DATAOBJ.get(FrankData::screenOutputChannel));
+        }
         else {
             DATAOBJ.decrease(mappedID, DATAOBJ.get(FrankData::screenOutputChannel));
         }
