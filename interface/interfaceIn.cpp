@@ -195,10 +195,7 @@ void inputControls::push(byte id, byte push) { // switch message
     case FrankData::noteCalOffset: 
     DATAOBJ.toggle(mappedID, DATAOBJ.get(FrankData::screenOutputChannel), DATAOBJ.get(FrankData::liveCalNote)); break;
 
-    case GATE:
-
-    DATAOBJ.toggle(mappedID, DATAOBJ.get(FrankData::screenOutputChannel), id);
-    break;
+    case GATE: DATAOBJ.toggle(mappedID, (byte)(DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1), id); break;
 
     default: DATAOBJ.toggle(mappedID);
     }

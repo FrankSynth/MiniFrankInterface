@@ -1,11 +1,9 @@
 #pragma once
 
-#include "src/EEPROM/eeprom.h"
+#include "src/EEPROM/EEPROM.h"
 #include <Arduino.h>
 
-
-
-#define SAVESLOTS 30 // number of possible save slots
+#define SAVESLOTS 20 // number of possible save slots
 #define LENGTH 128   // max Seq length
 #define PAGES 16
 #define NOTERANGE 88
@@ -42,11 +40,11 @@ typedef struct {
 typedef struct {
     byte note[LENGTH];
     byte cc[LENGTH];
-    byte gate[LENGTH]; // optimize data to single bits! middleman seq check, if gate
+    byte gate[(LENGTH / 8)]; // optimize data to single bits! middleman seq check, if gate
     byte gateLength[LENGTH];
     byte velocity[LENGTH];
     byte tuning;           // tuning offset
-//     byte ratchet;          // repeats per step
+                           //     byte ratchet;          // repeats per step
     byte gateLengthOffset; // 100 = no offset
 } structSequence;
 
@@ -188,7 +186,6 @@ class Seq {
     Seq() { init(); }
 
     void init(const byte &note = 12, const byte &gate = 1, const byte &gateLength = 50, const byte &cc = 64, const byte &tuning = 0,
-              const byte &ratchet = 0,
               const byte &gateLengthOffset = 100); // init sequence to default values
 
     // Note
@@ -203,6 +200,9 @@ class Seq {
     void changeNotes(const int &change); // change all note values
     void octaveUp();                     // All notes one octave down (if possible)
     void octaveDown();                   // All notes one octave down (if possible)
+
+    void setGate(const byte &index, const byte &gate);
+    byte getGate(const byte &index);
 
     // GateLength
     void setGateLengths(const byte &gateLength); // set all gates at once

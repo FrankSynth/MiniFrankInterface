@@ -65,6 +65,7 @@ void updateNoteOut() {
         if (DATAOBJ.get(FrankData::liveTriggered, output)) {
 
             byte newNote;
+            byte seqStep = DATAOBJ.get(FrankData::stepSeq, output);
             float gateDuration = 0.5f;
             if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
                 if (DATAOBJ.get(FrankData::outputArp, output)) {
@@ -75,7 +76,6 @@ void updateNoteOut() {
                 }
             }
             else {
-                byte seqStep = DATAOBJ.get(FrankData::stepSeq, output);
 
                 if (DATAOBJ.get(FrankData::liveRecModePlayback, output)) {
                     if (DATAOBJ.get(FrankData::play)) DATAOBJ.set(FrankData::liveRecModePlayback, 0, output);
@@ -125,13 +125,25 @@ void updateNoteOut() {
                 }
 
                 // output Trigger and Gate
-                outputChannel[output].setGate(1);
-                previousOutputs[output].gateActivated = 1;
+                // if seq mode, check gate settings
+                if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
 
-                if (DATAOBJ.get(FrankData::outputSource, output) == 0 || DATAOBJ.get(FrankData::play)) {
+                    outputChannel[output].setGate(1);
+                    previousOutputs[output].gateActivated = 1;
+
                     outputChannel[output].setTrigger(1);
                     previousOutputs[output].triggerActivated = 1;
                     previousOutputs[output].triggerTimer = millis();
+                }
+                else if (DATAOBJ.get(FrankData::seqGate, DATAOBJ.get(FrankData::outputSource, output) - 1, seqStep) || DATAOBJ.get(FrankData::rec)) {
+                    outputChannel[output].setGate(1);
+                    previousOutputs[output].gateActivated = 1;
+
+                    if (DATAOBJ.get(FrankData::play)) {
+                        outputChannel[output].setTrigger(1);
+                        previousOutputs[output].triggerActivated = 1;
+                        previousOutputs[output].triggerTimer = millis();
+                    }
                 }
             }
 

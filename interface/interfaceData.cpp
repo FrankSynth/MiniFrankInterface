@@ -284,16 +284,14 @@ structKey LiveMidi::getArpKey(const byte &step) {
 
 // Sequence data for each sequence
 // init sequence to default values
-void Seq::init(const byte &note, const byte &gate, const byte &gateLength, const byte &cc, const byte &tuning, const byte &ratchet,
-               const byte &gateLengthOffset) {
+void Seq::init(const byte &note, const byte &gate, const byte &gateLength, const byte &cc, const byte &tuning, const byte &gateLengthOffset) {
     for (int i = 0; i < LENGTH; i++) {
-        sequence.note[i] = note;  // test
-        sequence.gate[i] = i % 2; // test
+        sequence.note[i] = note; // test
+        setGate(i, 1);           // test
         sequence.gateLength[i] = gateLength;
         sequence.cc[i] = cc;
     }
     sequence.tuning = tuning;
-    sequence.ratchet = ratchet;
     sequence.gateLengthOffset = gateLengthOffset;
 }
 
@@ -315,10 +313,17 @@ void Seq::setCCs(const byte &cc) { // set note value
     }
 }
 void Seq::setGates(const byte &gate) { // set note value
-
     for (int i = 0; i < LENGTH; i++) {
-        sequence.gate[i] = testByte(gate, 0, 1); // set notes
+        setGate(i, gate); // set gates
     }
+}
+
+byte Seq::getGate(const byte &index) {
+    return bitRead(sequence.gate[index / 8], index % 8);
+}
+
+void Seq::setGate(const byte &index, const byte &gate) {
+    bitWrite(sequence.gate[index / 8], index % 8, testByte(gate, 0, 1));
 }
 
 void Seq::increaseNote(const byte &index) { // increase note value and return new note
@@ -401,7 +406,7 @@ void Seq::octaveDown() { // change note
 void Seq::setGateLengths(const byte &gateLength) { // set all gates at once
     // gateLength = testByte(gateLength, 0, 255); // test gate length
     for (int i = 0; i < LENGTH; i++) {
-        sequence.gate[i] = gateLength; // set new gates
+        sequence.gateLength[i] = gateLength; // set new gates
     }
 }
 
@@ -470,12 +475,13 @@ void FrankData::receivedKeyReleased(const byte &channel, const byte &note) {
 
 void FrankData::init() {
     byte testByte = 0;
-    byte checkByte = 1;
+    byte checkByte = 2;
     if (EEPROM.get(0, testByte) == checkByte) {
         loadNoteCalibration();
         loadAllMenuSettings();
     }
     else {
+        memset(cal, 127, sizeof(cal));
         saveNoteCalibration();
         saveMenuSettings();
         EEPROM.update(0, checkByte);
@@ -1071,7 +1077,7 @@ byte FrankData::get(const frankData &frankDataType, const byte &array) {
 byte FrankData::get(const frankData &frankDataType, const byte &array, const byte &step) {
     switch (frankDataType) {
     case seqNote: return seq[array].sequence.note[step];
-    case seqGate: return seq[array].sequence.gate[step];
+    case seqGate: return seq[array].getGate(step);
     case seqGateLength: return seq[array].sequence.gateLength[step];
     case seqCc: return seq[array].sequence.cc[step];
     case seqVelocity: return seq[array].sequence.velocity[step];
@@ -1110,7 +1116,7 @@ void FrankData::set(const frankData &frankDataType, const int &data, const bool 
         break;
     case bpmPoti: stat.bpmPot = testByte(data, 0, 255, clampChange); break;
     case load:
-    case save: stat.loadSaveSlot = testByte(data, 1, SAVESLOTS - 1, clampChange); break;
+    case save: stat.loadSaveSlot = testByte(data, 0, SAVESLOTS - 1, clampChange); break;
     case pulseLength: stat.pulseLength = testByte(data, 0, 255, clampChange); break;
     case none: break;
     default: PRINTLN("FrankData set(frankData frankDataType, byte data, bool clampChange = 0), no case found");
@@ -1166,7 +1172,7 @@ void FrankData::set(const frankData &frankDataType, const int &data, const byte 
 void FrankData::set(const frankData &frankDataType, const int &data, const byte &array, const byte &step, const bool &clampChange) {
     switch (frankDataType) {
     case seqNote: seq[array].setNote(step, data); break;
-    case seqGate: seq[array].sequence.gate[step] = testByte(data, 0, 1, clampChange); break;
+    case seqGate: seq[array].setGate(step, data); break;
     case seqGateLength: seq[array].sequence.gateLength[step] = testByte(data, 0, 100, clampChange); break;
     case seqCc: seq[array].sequence.cc[step] = testByte(data, 0, 127, clampChange); break;
     case seqVelocity: seq[array].sequence.velocity[step] = testByte(data, 0, 127, clampChange); break;
@@ -1303,7 +1309,7 @@ void FrankData::toggle(const frankData &frankDataType) {
 
 void FrankData::toggle(const frankData &frankDataType, const byte &array, const byte &step) {
     switch (frankDataType) {
-    case seqGate: seq[array].sequence.gate[step] = toggleValue(seq[array].sequence.gate[step]); break;
+    case seqGate: seq[array].setGate(step, toggleValue(seq[array].getGate(step))); break;
     case noteCalOffset: cal[array].noteCalibration[step] = 127;
     case none: break;
     default: PRINTLN("FrankData toggle(frankData frankDataType, byte array, byte step), no case found");
@@ -1703,7 +1709,7 @@ void FrankData::loadSequence(const byte &saveSlot, const byte &sequence) {
     }
 
     int memory = 0;
-    memory = saveSlot * sizeof(structSequence) + 1024; // leave space for menu
+    memory = saveSlot * sizeof(structSequence) + 300; // leave space for menu and calibration
 
     EEPROM.get(memory, seq[sequence].sequence);
 }
@@ -1720,7 +1726,7 @@ void FrankData::saveSequence(const byte &saveSlot, const byte &sequence) {
     }
 
     int memory = 0;
-    memory = saveSlot * sizeof(structSequence) + 1024; // leave space for menu and calibration
+    memory = saveSlot * sizeof(structSequence) + 300; // leave space for menu and calibration
 
     EEPROM.put(memory, seq[sequence].sequence);
 }
@@ -1741,14 +1747,14 @@ void FrankData::saveMenuSettings() {
 
 void FrankData::saveNoteCalibration() {
     Serial.println("Store Note Calibration ");
-    int memory = 512; // leave space for menu
+    int memory = 50; // leave space for menu
 
     EEPROM.put(memory, cal);
 }
 
 void FrankData::loadNoteCalibration() {
     Serial.println("Get Note Calibration ");
-    int memory = 512; // leave space for menu
+    int memory = 50; // leave space for menu
 
     EEPROM.get(memory, cal);
 }

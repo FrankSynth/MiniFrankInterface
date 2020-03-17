@@ -90,9 +90,10 @@ void updateTLC() { // update interrupt
 
 void setup() {
 
+    Serial.begin(115200);
+    
     DATAOBJ.init();
 
-    Serial.begin(115200);
     PRINTLN("Debug Mode");
     PRINTLN("Hello FRANK Mini");
 

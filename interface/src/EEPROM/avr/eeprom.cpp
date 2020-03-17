@@ -33,21 +33,33 @@
 // Generally you should avoid editing this code, unless you really
 // know what you're doing.
 
-#include "imxrt.h"
-#include <avr/eeprom.h>
-#include <string.h>
-#include "debug/printf.h"
+#define DEBUG 1
 
-#if defined(ARDUINO_TEENSY40)
-#define FLASH_BASEADDR 0x601F0000
-#define FLASH_SECTORS  15
-#elif defined(ARDUINO_TEENSY41)
-#define FLASH_BASEADDR 0x607C0000
-#define FLASH_SECTORS  63
+#if DEBUG == 0
+#define PRINTLN(x) Serial.println(x)
+#define PRINTLN2(x, y) Serial.println(x, y)
+#define PRINT(x) Serial.print(x)
+#define PRINT2(x, y) Serial.print(x, y)
+#else
+#define PRINTLN(x)
+#define PRINTLN2(x, y)
+#define PRINT(x)
+#define PRINT2(x, y)
 #endif
 
+#include "eeprom.h"
+#include "imxrt.h"
+#include <string.h>
+#include <arduino.h>
 
-#if E2END > (255*FLASH_SECTORS-1)
+#define FLASH_BASEADDR 0x601F0000
+#define FLASH_SECTORS 15
+
+#define SECTORMULTIPLIER 4
+#define DATASECTORS (FLASH_SECTORS * SECTORMULTIPLIER)
+#define DATASECTORSIZE (4096 / SECTORMULTIPLIER)
+
+#if E2END > (255 * DATASECTORS - 1)
 #error "E2END is set larger than the maximum possible EEPROM size"
 #endif
 
@@ -58,98 +70,132 @@ static void flash_write(void *addr, const void *data, uint32_t len);
 static void flash_erase_sector(void *addr);
 
 static uint8_t initialized=0;
-static uint16_t sector_index[FLASH_SECTORS];
+static uint16_t sector_index[DATASECTORS];
 
 void eeprom_initialize(void)
 {
-	uint32_t sector;
-	//printf("eeprom init\n");
-	for (sector=0; sector < FLASH_SECTORS; sector++) {
-		const uint16_t *p = (uint16_t *)(FLASH_BASEADDR + sector * 4096);
-		const uint16_t *end = (uint16_t *)(FLASH_BASEADDR + (sector + 1) * 4096);
-		uint16_t index = 0;
-		do {
-			if (*p++ == 0xFFFF) break;
-			index++;
+		PRINTLN("Init Memory");
+
+		uint32_t sector;
+		// printf("eeprom init\n");
+		for (sector = 0; sector < DATASECTORS; sector++) {
+			const uint16_t *p = (uint16_t *)(FLASH_BASEADDR + sector * DATASECTORSIZE);
+			const uint16_t *end = (uint16_t *)(FLASH_BASEADDR + (sector + 1) * DATASECTORSIZE);
+			uint16_t index = 0;
+			do {
+				if (*p++ == 0xFFFF) break;
+				index++;
 		} while (p < end);
-		sector_index[sector] = index;
-	}
-	initialized = 1;
+        sector_index[sector] = index;
+        PRINT("Sector ");
+        PRINT(sector);
+        PRINT(" has index ");
+        PRINTLN(index);
+        }
+        initialized = 1;
 }
 
 uint8_t eeprom_read_byte(const uint8_t *addr_ptr)
 {
-	uint32_t addr = (uint32_t)addr_ptr;
-	uint32_t sector, offset;
-	const uint16_t *p, *end;
-	uint8_t data=0xFF;
+    PRINTLN("Read Byte");
+    uint32_t addr = (uint32_t)addr_ptr;
+    uint32_t sector, offset;
+    const uint16_t *p, *end;
+    uint8_t data = 0xFF;
 
-	if (addr > E2END) return 0xFF;
-	if (!initialized) eeprom_initialize();
-	sector = (addr >> 2) % FLASH_SECTORS;
-	offset = (addr & 3) | (((addr >> 2) / FLASH_SECTORS) << 2);
-	//printf("ee_rd, addr=%u, sector=%u, offset=%u, len=%u\n",
-		//addr, sector, offset, sector_index[sector]);
-	p = (uint16_t *)(FLASH_BASEADDR + sector * 4096);
-	end = p + sector_index[sector];
-	while (p < end) {
-		uint32_t val = *p++;
-		if ((val & 255) == offset) data = val >> 8;
+    if (addr > E2END) return 0xFF;
+    if (!initialized) eeprom_initialize();
+    sector = (addr >> 2) % DATASECTORS;
+    offset = (addr & 3) | (((addr >> 2) / DATASECTORS) << 2);
+    // printf("ee_rd, addr=%u, sector=%u, offset=%u, len=%u\n",
+    // addr, sector, offset, sector_index[sector]);
+    p = (uint16_t *)(FLASH_BASEADDR + sector * DATASECTORSIZE);
+    end = p + sector_index[sector];
+    while (p < end) {
+        uint32_t val = *p++;
+        if ((val & 255) == offset) data = val >> 8;
 	}
 	return data;
 }
 
 void eeprom_write_byte(uint8_t *addr_ptr, uint8_t data)
 {
-	uint32_t addr = (uint32_t)addr_ptr;
-	uint32_t sector, offset, index, i;
-	uint16_t *p, *end;
-	uint8_t olddata=0xFF;
-	uint8_t buf[256];
+    PRINT("write byte, ");
+    uint32_t addr = (uint32_t)addr_ptr;
+    uint32_t sector, offset, index, i;
+    uint16_t *p, *end;
+    uint8_t olddata = 0xFF;
+    uint8_t buf[SECTORMULTIPLIER][256];
 
-	if (addr > E2END) return;
-	if (!initialized) eeprom_initialize();
+    if (addr > E2END) return;
+    if (!initialized) eeprom_initialize();
 
-	sector = (addr >> 2) % FLASH_SECTORS; 
-	offset = (addr & 3) | (((addr >> 2) / FLASH_SECTORS) << 2);
-	//printf("ee_wr, addr=%u, sector=%u, offset=%u, len=%u\n",
-		//addr, sector, offset, sector_index[sector]);
-	p = (uint16_t *)(FLASH_BASEADDR + sector * 4096);
-	end = p + sector_index[sector];
-	while (p < end) {
-		uint16_t val = *p++;
-		if ((val & 255) == offset) olddata = val >> 8;
+    sector = (addr >> 2) % DATASECTORS;
+    offset = (addr & 3) | (((addr >> 2) / DATASECTORS) << 2);
+    // printf("ee_wr, addr=%u, sector=%u, offset=%u, len=%u\n",
+    // addr, sector, offset, sector_index[sector]);
+    p = (uint16_t *)(FLASH_BASEADDR + sector * DATASECTORSIZE);
+    end = p + sector_index[sector];
+    while (p < end) {
+        uint16_t val = *p++;
+        if ((val & 255) == offset) olddata = val >> 8;
 	}
-	if (data == olddata) return;
-	if (sector_index[sector] < 2048) {
-		//printf("ee_wr, writing\n");
+	if (data == olddata) {
+		PRINTLN("but byte written was the same");
+		return;
+	}
+	PRINTLN("and it is new");
+
+	if (sector_index[sector] < DATASECTORSIZE / 2) {
+		// printf("ee_wr, writing\n");
 		uint16_t newdata = offset | (data << 8);
 		flash_write(end, &newdata, 2);
 		sector_index[sector] = sector_index[sector] + 1;
-	} else {
-		//printf("ee_wr, erase then write\n");
+		PRINT("Sector ");
+		PRINT(sector);
+		PRINT(" has new index ");
+        PRINTLN(sector_index[sector]);
+        }
+	else {
+		Serial.print("erase and rewrite memory, erasing datasector ");
+		Serial.print(sector - sector % SECTORMULTIPLIER);
+		Serial.print(" to datasector ");
+		Serial.println((sector - sector % SECTORMULTIPLIER) + SECTORMULTIPLIER - 1);
+
+                // printf("ee_wr, erase then write\n");
 		memset(buf, 0xFF, sizeof(buf));
-		p = (uint16_t *)(FLASH_BASEADDR + sector * 4096);
-		end = p + 2048;
-		while (p < end) {
-			uint16_t val = *p++;
-			buf[val & 255] = val >> 8;
-		}
-		buf[offset] = data;
-		p = (uint16_t *)(FLASH_BASEADDR + sector * 4096);
-		flash_erase_sector(p);
-		index = 0;
-		for (i=0; i < 256; i++) {
-			if (buf[i] != 0xFF) {
-				// TODO: combining these to larger write
-				// would (probably) be more efficient
-				uint16_t newval = i | (buf[i] << 8);
-				flash_write(p + index, &newval, 2);
-				index = index + 1;
+
+		for (int count = 0; count < SECTORMULTIPLIER; count++) {
+
+			p = (uint16_t *)(FLASH_BASEADDR + (sector - sector % SECTORMULTIPLIER + count) * DATASECTORSIZE);
+			end = p + DATASECTORSIZE / 2;
+			while (p < end) {
+				uint16_t val = *p++;
+				buf[count][val & 255] = val >> 8;
 			}
 		}
-		sector_index[sector] = index;
-	}
+
+
+		buf[sector % SECTORMULTIPLIER][offset] = data;
+
+		p = (uint16_t *)(FLASH_BASEADDR + (sector - sector % SECTORMULTIPLIER) * DATASECTORSIZE);
+		flash_erase_sector(p);
+
+		for (int count = 0; count < SECTORMULTIPLIER; count++) {
+			p = (uint16_t *)(FLASH_BASEADDR + (sector - sector % SECTORMULTIPLIER + count) * DATASECTORSIZE);
+			index = 0;
+			for (i = 0; i < 256; i++) {
+				if (buf[count][i] != 0xFF) {
+					// TODO: combining these to larger write
+					// would (probably) be more efficient
+					uint16_t newval = i | (buf[count][i] << 8);
+					flash_write(p + index, &newval, 2);
+					index = index + 1;
+				}
+			}
+			sector_index[sector - sector % SECTORMULTIPLIER + count] = index;
+		}
+    }
 }
 
 uint16_t eeprom_read_word(const uint16_t *addr)
@@ -281,25 +327,28 @@ static void flash_write(void *addr, const void *data, uint32_t len)
 // erase a 4K sector
 static void flash_erase_sector(void *addr)
 {
-	__disable_irq();
-	FLEXSPI_LUTKEY = FLEXSPI_LUTKEY_VALUE;
-	FLEXSPI_LUTCR = FLEXSPI_LUTCR_UNLOCK;
-	FLEXSPI_LUT60 = LUT0(CMD_SDR, PINS1, 0x06); // 06 = write enable
-	FLEXSPI_LUT61 = 0;
-	FLEXSPI_LUT62 = 0;
-	FLEXSPI_LUT63 = 0;
-	FLEXSPI_IPCR0 = 0;
-	FLEXSPI_IPCR1 = FLEXSPI_IPCR1_ISEQID(15);
-	FLEXSPI_IPCMD = FLEXSPI_IPCMD_TRG;
-	arm_dcache_delete((void *)((uint32_t)addr & 0xFFFFF000), 4096); // purge data from cache
-	while (!(FLEXSPI_INTR & FLEXSPI_INTR_IPCMDDONE)) ; // wait
-	FLEXSPI_INTR = FLEXSPI_INTR_IPCMDDONE;
-	FLEXSPI_LUT60 = LUT0(CMD_SDR, PINS1, 0x20) | LUT1(ADDR_SDR, PINS1, 24); // 20 = sector erase
-	FLEXSPI_IPCR0 = (uint32_t)addr & 0x007FF000;
-	FLEXSPI_IPCR1 = FLEXSPI_IPCR1_ISEQID(15);
-	FLEXSPI_IPCMD = FLEXSPI_IPCMD_TRG;
-	while (!(FLEXSPI_INTR & FLEXSPI_INTR_IPCMDDONE)) ; // wait
-	FLEXSPI_INTR = FLEXSPI_INTR_IPCMDDONE;
-	flash_wait();
+    PRINTLN("Memory erase function");
+    __disable_irq();
+    FLEXSPI_LUTKEY = FLEXSPI_LUTKEY_VALUE;
+    FLEXSPI_LUTCR = FLEXSPI_LUTCR_UNLOCK;
+    FLEXSPI_LUT60 = LUT0(CMD_SDR, PINS1, 0x06); // 06 = write enable
+    FLEXSPI_LUT61 = 0;
+    FLEXSPI_LUT62 = 0;
+    FLEXSPI_LUT63 = 0;
+    FLEXSPI_IPCR0 = 0;
+    FLEXSPI_IPCR1 = FLEXSPI_IPCR1_ISEQID(15);
+    FLEXSPI_IPCMD = FLEXSPI_IPCMD_TRG;
+    arm_dcache_delete((void *)((uint32_t)addr & 0xFFFFF000), 4096); // purge data from cache
+    while (!(FLEXSPI_INTR & FLEXSPI_INTR_IPCMDDONE))
+        ; // wait
+    FLEXSPI_INTR = FLEXSPI_INTR_IPCMDDONE;
+    FLEXSPI_LUT60 = LUT0(CMD_SDR, PINS1, 0x20) | LUT1(ADDR_SDR, PINS1, 24); // 20 = sector erase
+    FLEXSPI_IPCR0 = (uint32_t)addr & 0x007FF000;
+    FLEXSPI_IPCR1 = FLEXSPI_IPCR1_ISEQID(15);
+    FLEXSPI_IPCMD = FLEXSPI_IPCMD_TRG;
+    while (!(FLEXSPI_INTR & FLEXSPI_INTR_IPCMDDONE))
+        ; // wait
+    FLEXSPI_INTR = FLEXSPI_INTR_IPCMDDONE;
+    flash_wait();
 }
 
