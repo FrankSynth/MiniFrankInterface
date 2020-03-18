@@ -1,9 +1,11 @@
 #pragma once
 
+#include "src/EEPROM/EEPROM.h"
 #include <Arduino.h>
 
-#define LENGTH 64 // max Seq length
-#define PAGES 8
+#define SAVESLOTS 20 // number of possible save slots
+#define LENGTH 128   // max Seq length
+#define PAGES 16
 #define NOTERANGE 88
 #define STEPSPERPAGE 8
 #define OUTPUTS 2 // Number of output lanes
@@ -25,23 +27,24 @@ typedef struct {
     byte arpRatchet = 0;   // repeats per step, 1 = 1 repeat (2 notes total), up to 3 repeats
     byte arpOctaves = 3;   // Octaves 0 = -3, 3 = 0, 6 = +3
     byte stepSpeed = 2;    // ArpSeq Sync 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
-    byte nbPages = 8;      // nb Pages  1 -> 8
+    byte nbPages = 8;      // nb Pages  1-16
 } structOutputRouting;
 
 typedef struct {
-    float noteCalibration[NOTERANGE];
-    float cvOffset;
+    byte noteCalibration[NOTERANGE] = {127};
+    int cvOffset = 127;
+    byte noteScaleOffset = 127;
 } structCalibration;
 
 // Sequence struct holding all values for a sequence, to save it
 typedef struct {
     byte note[LENGTH];
     byte cc[LENGTH];
-    byte gate[LENGTH];
+    byte gate[(LENGTH / 8)]; // optimize data to single bits! middleman seq check, if gate
     byte gateLength[LENGTH];
     byte velocity[LENGTH];
     byte tuning;           // tuning offset
-    byte ratchet;          // repeats per step
+                           //     byte ratchet;          // repeats per step
     byte gateLengthOffset; // 100 = no offset
 } structSequence;
 
@@ -73,7 +76,7 @@ typedef struct {
 typedef struct {
     structScreen screen; // screen status
 
-    byte loadSaveSlot = 1; // laod save 1-10
+    byte loadSaveSlot = 0; // laod save 1-10
 
     byte bpm = 120; // current bpm
     byte play = 1;  // play stop
@@ -81,6 +84,8 @@ typedef struct {
     byte error = 0; // ErrorFlag
 
     byte pulseLength = 20; // pulse length in ms
+
+    byte noteToCalibrate = 0;
 
     byte bpmSync = 0; // Sync Active
     byte midiClockCount = 5;
@@ -181,7 +186,6 @@ class Seq {
     Seq() { init(); }
 
     void init(const byte &note = 12, const byte &gate = 1, const byte &gateLength = 50, const byte &cc = 64, const byte &tuning = 0,
-              const byte &ratchet = 0,
               const byte &gateLengthOffset = 100); // init sequence to default values
 
     // Note
@@ -196,6 +200,9 @@ class Seq {
     void changeNotes(const int &change); // change all note values
     void octaveUp();                     // All notes one octave down (if possible)
     void octaveDown();                   // All notes one octave down (if possible)
+
+    void setGate(const byte &index, const byte &gate);
+    byte getGate(const byte &index);
 
     // GateLength
     void setGateLengths(const byte &gateLength); // set all gates at once
@@ -230,10 +237,11 @@ class FrankData {
         seqSize,
 
         // calibration, needs value, array, step
-        noteCal,
+        noteCalOffset,
 
         // calibration, needs value, array
-        cvCal,
+        cvCalOffset,
+        noteScaleOffset,
 
         // Seq, needs value, array
         seqTuning,
@@ -257,6 +265,7 @@ class FrankData {
         direction,
         displayBrightness,
         resetStepCounters,
+        saveCal,
 
         // Output Routing Settings, needs value, array
         stepArp,
@@ -277,11 +286,9 @@ class FrankData {
         screenMainMenu,
         screenSubScreen,
         screenCal,
-        screenCalNote,
         screenRouting,
 
         // structStatus, needs value
-
         bpm,
         play,
         rec,
@@ -309,6 +316,7 @@ class FrankData {
         liveLatestKey,
         liveHighestKey,
         liveLowestKey,
+        liveCalNote,
     };
 
     // idea for further enumerators
@@ -330,6 +338,8 @@ class FrankData {
 
   public:
     const char *returnStr = str;
+
+    void init();
 
     // receive MIDI
     void receivedKeyPressed(const byte &channel, const byte &note, const byte &velocity);
@@ -359,10 +369,6 @@ class FrankData {
     inline byte getLiveCcEvaluated(const byte &array);
     inline void setStr(const char *newStr);
 
-    void setNoteCal(const byte &data, const byte &array, const byte &note);
-    byte getNoteCal(const byte &array, const byte &step);
-    void setCvCal(const byte &data, const byte &array);
-    byte getCvCal(const byte &array);
     const char *valueToStr(const frankData &frankDataType, const byte &channel);
 
   public:
@@ -398,7 +404,14 @@ class FrankData {
 
     void reset();
 
-    // settings
+    void loadSequence(const byte &saveSlot, const byte &sequence);
+    void saveSequence(const byte &saveSlot, const byte &sequence);
+
+    void loadAllMenuSettings();
+    void saveMenuSettings();
+
+    void saveNoteCalibration();
+    void loadNoteCalibration();
 
   public:
     // get single type value

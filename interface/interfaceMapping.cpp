@@ -42,6 +42,7 @@ FrankData::frankData mappingSeqCVPush[] = {GATE, GATE, GATE, GATE, GATE, GATE, G
 
 FrankData::frankData mappingLive[] = {
     FrankData::outputArp, FrankData::outputLiveMode, NONE, NONE, NONE, NONE, NONE, FrankData::screenRouting, NONE, NONE}; // Live Mapping
+
 FrankData::frankData mappingLivePush[] = {FrankData::outputArp,     NONE, NONE, NONE, NONE, NONE, NONE,
                                           FrankData::screenRouting, MENU, PLAY}; // Live Mapping
 
@@ -67,8 +68,7 @@ FrankData::frankData mappingMenu[] = {FrankData::load,
 FrankData::frankData mappingMenuPush[] = {FrankData::load,          NONE, NONE, FrankData::screenCal /*CalibrationMenu*/, FrankData::save, NONE, NONE,
                                           FrankData::screenRouting, MENU, PLAY}; // Menu Mapping
 
-FrankData::frankData mappingMenuCal[] = {FrankData::midiSource, NONE, NONE, NONE, NONE, NONE, NONE, NONE}; // Routing Menu Mapping
-FrankData::frankData mappingMenuCalPush[] = {NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, MENU, PLAY};  // Routing Menu Mapping
+
 
 FrankData::frankData mappingMenuMidi[] = {FrankData::midiSource,
                                           FrankData::outputChannel,
@@ -81,6 +81,11 @@ FrankData::frankData mappingMenuMidi[] = {FrankData::midiSource,
                                           NONE,
                                           NONE};                                                                               // Routing Menu Mapping
 FrankData::frankData mappingMenuMidiPush[] = {NONE, NONE, NONE, NONE, NONE, NONE, NONE, FrankData::screenRouting, MENU, PLAY}; // Routing Menu Mapping
+
+FrankData::frankData mappingMenuCal[] = {FrankData::liveCalNote,     FrankData::noteCalOffset, NONE, NONE, FrankData::cvCalOffset, FrankData::noteScaleOffset, NONE, FrankData::saveCal,       NONE, NONE}; // Routing Menu Mapping
+FrankData::frankData mappingMenuCalPush[] = {
+    NONE, FrankData::noteCalOffset, NONE, NONE, FrankData::cvCalOffset, FrankData::noteScaleOffset, NONE, FrankData::saveCal, MENU,
+    PLAY}; // Routing Menu Mapping
 
 FrankData::frankData mapping(byte input) {
 

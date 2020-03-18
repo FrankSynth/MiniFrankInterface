@@ -1,5 +1,6 @@
 #pragma once
 
+#include "interfaceMiddleman.hpp"
 #include <Arduino.h>
 #include <SPI.h>
 
@@ -13,31 +14,35 @@
 #define CLK2 1
 #define CLKLED 21
 
+#define NOTESCALING 46.54f
+
 void setVoltage(int dacpin, bool channel, bool gain, unsigned int mV); // channel 0, 1, Gain = 2 (default)
 void initOutput();
 
 class Channel {
+
+    byte outputChannel;
+    byte noteDac;
+    byte noteDacChannel;
+
+    byte cvDac;
+    byte cvDacChannel;
+
+    byte triggerPin;
+
+    byte gatePin;
+
+
   public:
-    Channel(byte noteDac, byte noteChannel, byte cvDac, byte cvChannel, byte triggerPin, byte gatePin)
-        : noteDac(noteDac), noteChannel(noteChannel), cvDac(cvDac), cvChannel(cvChannel), triggerPin(triggerPin), gatePin(gatePin) {}
+    Channel(byte outputChannel, byte noteDac, byte noteDacChannel, byte cvDac, byte cvDacChannel, byte triggerPin, byte gatePin)
+        : outputChannel(outputChannel), noteDac(noteDac), noteDacChannel(noteDacChannel), cvDac(cvDac), cvDacChannel(cvDacChannel),
+          triggerPin(triggerPin), gatePin(gatePin) {}
 
     void setTuning(float tuning);
     void setGate(byte state);
     void setTrigger(byte state);
     void setNote(byte note);
     void setCV(int value);
-
-  private:
-    byte noteDac;
-    byte noteChannel;
-    float noteTuning = 47.069;
-
-    byte cvDac;
-    byte cvChannel;
-
-    byte triggerPin;
-
-    byte gatePin;
 };
 
 class clock {

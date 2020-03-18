@@ -94,8 +94,12 @@ case STEP:
     case FrankData::outputSource:
 
     case FrankData::nbPages:
+    
+    case FrankData::cvCalOffset:
+    case FrankData::liveCalNote:
+     case   FrankData::noteScaleOffset:
 
-        if (dir) {
+            if (dir) {
             DATAOBJ.increase(mappedID, DATAOBJ.get(FrankData::screenOutputChannel));
         }
         else {
@@ -104,7 +108,18 @@ case STEP:
 
         break;
 
-    case FrankData::seqTuning:
+    // Calibration:
+    case FrankData::noteCalOffset :
+        if (dir) {
+            DATAOBJ.increase(mappedID, DATAOBJ.get(FrankData::screenOutputChannel), DATAOBJ.get(FrankData::liveCalNote));
+        }
+        else {
+            DATAOBJ.decrease(mappedID, DATAOBJ.get(FrankData::screenOutputChannel), DATAOBJ.get(FrankData::liveCalNote));
+        }
+
+        break;
+
+    case FrankData::seqTuning :
 
             if (dir) {
             DATAOBJ.increase(mappedID, (byte)(DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1));
@@ -176,21 +191,11 @@ void inputControls::push(byte id, byte push) { // switch message
     PRINT("Mapping:");
     PRINTLN(mappedID);
 
-
     switch (mappedID) {
+    case FrankData::noteCalOffset: 
+    DATAOBJ.toggle(mappedID, DATAOBJ.get(FrankData::screenOutputChannel), DATAOBJ.get(FrankData::liveCalNote)); break;
 
-
-        //funfction call:
-
-        case FrankData::load:   break;              //Load function
-        case FrankData::save:   break;              //Save funtcion
-
-
-        // TYPE,Channel,index
-    case GATE:
-
-    DATAOBJ.toggle(mappedID, DATAOBJ.get(FrankData::screenOutputChannel), id);
-    break;
+    case GATE: DATAOBJ.toggle(mappedID, (byte)(DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1), id); break;
 
     default: DATAOBJ.toggle(mappedID);
     }

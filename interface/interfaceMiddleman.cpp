@@ -16,7 +16,7 @@
 #endif
 
 // OUTPUT Channels and clocks
-Channel outputChannel[OUTPUTS] = {Channel(DAC1, 1, DAC2, 0, TRIGGER1, GATE1), Channel(DAC1, 0, DAC2, 1, TRIGGER2, GATE2)};
+Channel outputChannel[OUTPUTS] = {Channel(0, DAC1, 1, DAC2, 0, TRIGGER1, GATE1), Channel(1, DAC1, 0, DAC2, 1, TRIGGER2, GATE2)};
 clock outputClock[OUTPUTS] = {clock(CLK1), clock(CLK2)};
 
 PreviousState previousState;
@@ -39,12 +39,37 @@ void updateAllOutputs() {
 
 void updateNoteOut() {
 
+    // calbiration mode
+    if (DATAOBJ.get(FrankData::screenCal)) {
+
+        static unsigned int calTimer = millis();
+
+        if (millis() > calTimer + 25) {
+            for (byte output = 0; output < OUTPUTS; output++) {
+                byte newNote = DATAOBJ.get(FrankData::liveCalNote);
+
+                outputChannel[output].setNote(newNote);
+                previousOutputs[output].note = newNote;
+                PRINT("set new Calib Note ");
+                PRINTLN(newNote);
+                outputChannel[output].setGate(1);
+                previousOutputs[output].gateActivated = 1;
+            }
+            calTimer = millis();
+        }
+        return;
+    }
+
+    // normal non-calib play mode
     for (byte output = 0; output < OUTPUTS; output++) {
 
         if (DATAOBJ.get(FrankData::liveTriggered, output)) {
 
             byte newNote;
+            byte seqStep = DATAOBJ.get(FrankData::stepSeq, output);
             float gateDuration = 0.5f;
+
+            //live mode
             if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
                 if (DATAOBJ.get(FrankData::outputArp, output)) {
                     newNote = DATAOBJ.get(FrankData::liveKeyArpNoteEvaluated, output);
@@ -53,9 +78,11 @@ void updateNoteOut() {
                     newNote = DATAOBJ.get(FrankData::liveKeyNoteEvaluated, output);
                 }
             }
-            else {
-                byte seqStep = DATAOBJ.get(FrankData::stepSeq, output);
 
+            // seq mode
+            else {
+
+                // if in rec mode, play last step, not current
                 if (DATAOBJ.get(FrankData::liveRecModePlayback, output)) {
                     if (DATAOBJ.get(FrankData::play)) DATAOBJ.set(FrankData::liveRecModePlayback, 0, output);
 
@@ -63,6 +90,7 @@ void updateNoteOut() {
                 }
 
                 newNote = DATAOBJ.get(FrankData::seqNote, DATAOBJ.get(FrankData::outputSource, output) - 1, seqStep);
+
                 gateDuration = (float)testInt((int)DATAOBJ.get(FrankData::seqGateLength, DATAOBJ.get(FrankData::outputSource, output) - 1, seqStep) +
                                                   (int)DATAOBJ.get(FrankData::seqGateLengthOffset, DATAOBJ.get(FrankData::outputSource, output) - 1) -
                                                   GATELENGTHOFFSET,
@@ -104,13 +132,25 @@ void updateNoteOut() {
                 }
 
                 // output Trigger and Gate
-                outputChannel[output].setGate(1);
-                previousOutputs[output].gateActivated = 1;
+                // if seq mode, check gate settings
+                if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
 
-                if (DATAOBJ.get(FrankData::outputSource, output) == 0 || DATAOBJ.get(FrankData::play)) {
+                    outputChannel[output].setGate(1);
+                    previousOutputs[output].gateActivated = 1;
+
                     outputChannel[output].setTrigger(1);
                     previousOutputs[output].triggerActivated = 1;
                     previousOutputs[output].triggerTimer = millis();
+                }
+                else if (DATAOBJ.get(FrankData::seqGate, DATAOBJ.get(FrankData::outputSource, output) - 1, seqStep) || DATAOBJ.get(FrankData::rec)) {
+                    outputChannel[output].setGate(1);
+                    previousOutputs[output].gateActivated = 1;
+
+                    if (DATAOBJ.get(FrankData::play)) {
+                        outputChannel[output].setTrigger(1);
+                        previousOutputs[output].triggerActivated = 1;
+                        previousOutputs[output].triggerTimer = millis();
+                    }
                 }
             }
 
@@ -190,6 +230,10 @@ void updateCVOut() {
 }
 
 void closeGates() {
+
+    // don't close gates if calibration mode is on
+    if (DATAOBJ.get(FrankData::screenCal)) return;
+
     for (byte output = 0; output < OUTPUTS; output++) {
 
         if (previousOutputs[output].gateActivated) {

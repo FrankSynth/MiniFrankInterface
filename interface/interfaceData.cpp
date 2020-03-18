@@ -284,21 +284,19 @@ structKey LiveMidi::getArpKey(const byte &step) {
 
 // Sequence data for each sequence
 // init sequence to default values
-void Seq::init(const byte &note, const byte &gate, const byte &gateLength, const byte &cc, const byte &tuning, const byte &ratchet,
-               const byte &gateLengthOffset) {
+void Seq::init(const byte &note, const byte &gate, const byte &gateLength, const byte &cc, const byte &tuning, const byte &gateLengthOffset) {
     for (int i = 0; i < LENGTH; i++) {
-        sequence.note[i] = note;  // test
-        sequence.gate[i] = i % 2; // test
+        sequence.note[i] = note; // test
+        setGate(i, 1);           // test
         sequence.gateLength[i] = gateLength;
         sequence.cc[i] = cc;
     }
     sequence.tuning = tuning;
-    sequence.ratchet = ratchet;
     sequence.gateLengthOffset = gateLengthOffset;
 }
 
 void Seq::setNote(const byte &index, const byte &note) { // set note value
-    sequence.note[testByte(index, 0, LENGTH)] = testByte(note, 0, NOTERANGE);
+    sequence.note[testByte(index, 0, LENGTH)] = testByte(note, 0, NOTERANGE-1);
 }
 
 void Seq::setNotes(const byte &note) { // set note value
@@ -315,10 +313,17 @@ void Seq::setCCs(const byte &cc) { // set note value
     }
 }
 void Seq::setGates(const byte &gate) { // set note value
-
     for (int i = 0; i < LENGTH; i++) {
-        sequence.gate[i] = testByte(gate, 0, 1); // set notes
+        setGate(i, gate); // set gates
     }
+}
+
+byte Seq::getGate(const byte &index) {
+    return bitRead(sequence.gate[index / 8], index % 8);
+}
+
+void Seq::setGate(const byte &index, const byte &gate) {
+    bitWrite(sequence.gate[index / 8], index % 8, testByte(gate, 0, 1));
 }
 
 void Seq::increaseNote(const byte &index) { // increase note value and return new note
@@ -328,7 +333,7 @@ void Seq::increaseNote(const byte &index) { // increase note value and return ne
     // no tuning
     if (sequence.tuning == 0) {
         // note up
-        sequence.note[index] = increaseByte(note, NOTERANGE);
+        sequence.note[index] = increaseByte(note, NOTERANGE-1);
     }
     else { // tuning active
         if (note < 88) {
@@ -381,19 +386,19 @@ void Seq::decreaseNote(const byte &index) { // decrease  note value and return n
 
 void Seq::changeNotes(const int &change) { // change note
     for (int i = 0; i < LENGTH; i++) {
-        sequence.note[i] = changeByte(sequence.note[i], change, 0, NOTERANGE, 1);
+        sequence.note[i] = changeByte(sequence.note[i], change, 0, NOTERANGE-1, 1);
     }
 }
 
 void Seq::octaveUp() { // change note
     for (int i = 0; i < LENGTH; i++) {
-        sequence.note[i] = changeByte(sequence.note[i], 12, 0, NOTERANGE, 0);
+        sequence.note[i] = changeByte(sequence.note[i], 12, 0, NOTERANGE - 1, 0);
     }
 }
 
 void Seq::octaveDown() { // change note
     for (int i = 0; i < LENGTH; i++) {
-        sequence.note[i] = changeByte(sequence.note[i], -12, 0, NOTERANGE, 0);
+        sequence.note[i] = changeByte(sequence.note[i], -12, 0, NOTERANGE - 1, 0);
     }
 }
 
@@ -401,7 +406,7 @@ void Seq::octaveDown() { // change note
 void Seq::setGateLengths(const byte &gateLength) { // set all gates at once
     // gateLength = testByte(gateLength, 0, 255); // test gate length
     for (int i = 0; i < LENGTH; i++) {
-        sequence.gate[i] = gateLength; // set new gates
+        sequence.gateLength[i] = gateLength; // set new gates
     }
 }
 
@@ -465,6 +470,21 @@ void FrankData::receivedKeyReleased(const byte &channel, const byte &note) {
             liveMidi[x].released = 1;
             liveMidi[x].triggered = 1;
         }
+    }
+}
+
+void FrankData::init() {
+    byte testByte = 0;
+    byte checkByte = 2;
+    if (EEPROM.get(0, testByte) == checkByte) {
+        loadNoteCalibration();
+        loadAllMenuSettings();
+    }
+    else {
+        memset(cal, 127, sizeof(cal));
+        saveNoteCalibration();
+        saveMenuSettings();
+        EEPROM.update(0, checkByte);
     }
 }
 
@@ -874,13 +894,13 @@ inline void FrankData::nextArpStep(const byte &array) {
         // lower octaves
         if (liveMidi[array].arpOctave < 0) {
             for (int x = liveMidi[array].arpOctave; x < 0; x++) {
-                key.note = changeByte(key.note, -12, 0, NOTERANGE, 0);
+                key.note = changeByte(key.note, -12, 0, NOTERANGE - 1, 0);
             }
         }
         // raise octaves
         else if (liveMidi[array].arpOctave > 0) {
             for (int x = liveMidi[array].arpOctave; x > 0; x--) {
-                key.note = changeByte(key.note, 12, 0, NOTERANGE, 0);
+                key.note = changeByte(key.note, 12, 0, NOTERANGE - 1, 0);
             }
         }
 
@@ -961,19 +981,6 @@ void FrankData::updateArp(const byte &array) {
     }
 }
 
-void FrankData::setNoteCal(const byte &data, const byte &array, const byte &note) {
-    cal[array].noteCalibration[note] = ((float)data - CALOFFSET) / 1000;
-}
-byte FrankData::getNoteCal(const byte &array, const byte &note) {
-    return (byte)((cal[array].noteCalibration[note] * 1000) + 0.5 + CALOFFSET);
-}
-void FrankData::setCvCal(const byte &data, const byte &array) {
-    cal[array].cvOffset = ((float)data - CALOFFSET) / 1000;
-}
-byte FrankData::getCvCal(const byte &array) {
-    return (byte)((cal[array].cvOffset * 1000) + 0.5 + CALOFFSET);
-}
-
 // Screen config
 void FrankData::resetSubScreen() {
     stat.screen.subscreen = FrankData::screenNote;
@@ -997,8 +1004,8 @@ byte FrankData::get(const frankData &frankDataType) {
     case screenSubScreen: return stat.screen.subscreen;
     case screenRouting: return stat.screen.routing;
     case screenCal: return stat.screen.calibration;
-    case screenCalNote: return stat.screen.calibrateNote;
 
+    case liveCalNote: return stat.noteToCalibrate;
     case bpm: return stat.bpm;
     case play: return stat.play;
     case rec: return stat.rec;
@@ -1030,7 +1037,8 @@ byte FrankData::get(const frankData &frankDataType, const byte &array) {
 
     case liveKeysPressed: return liveMidi[array].keysPressed();
 
-    case cvCal: return getCvCal(array);
+    case cvCalOffset: return cal[array].cvOffset;
+    case noteScaleOffset: return cal[array].noteScaleOffset;
 
     case liveMod: return liveMidi[array].mod;
     case livePitchbend: return liveMidi[array].pitchbend;
@@ -1056,8 +1064,9 @@ byte FrankData::get(const frankData &frankDataType, const byte &array) {
     case currentPageNumber: return getCurrentPageNumber(array);
 
     case seqTuning: return seq[array].sequence.tuning;
-    // case seqRatchet: return seq[array].sequence.ratchet;
     case seqGateLengthOffset: return seq[array].sequence.gateLengthOffset;
+
+    case liveCalNote: return stat.noteToCalibrate;
 
     case none: return (byte)0;
 
@@ -1068,14 +1077,12 @@ byte FrankData::get(const frankData &frankDataType, const byte &array) {
 byte FrankData::get(const frankData &frankDataType, const byte &array, const byte &step) {
     switch (frankDataType) {
     case seqNote: return seq[array].sequence.note[step];
-    case seqGate: return seq[array].sequence.gate[step];
+    case seqGate: return seq[array].getGate(step);
     case seqGateLength: return seq[array].sequence.gateLength[step];
     case seqCc: return seq[array].sequence.cc[step];
-    case seqVelocity:
-        return seq[array].sequence.velocity[step];
-        // case seqCcEvaluated: return getSeqCCEvaluated(array, step);
+    case seqVelocity: return seq[array].sequence.velocity[step];
 
-    case noteCal: return getNoteCal(array, step);
+    case noteCalOffset: return cal[array].noteCalibration[step];
 
     case none: return (byte)0;
 
@@ -1089,7 +1096,7 @@ void FrankData::set(const frankData &frankDataType, const int &data, const bool 
     case midiSource: config.midiSource = testByte(data, 0, 1, clampChange); break;
 
     case direction: config.direction = testByte(data, 0, 1, clampChange); break;
-    case displayBrightness: config.displayBrightness = testByte(data, 0, 255, clampChange); break; // how high?
+    case displayBrightness: config.displayBrightness = testByte(data, 5, 255, clampChange); break; // how high?
 
     case screenOutputChannel: stat.screen.channel = testByte(data, 0, OUTPUTS - 1, clampChange); break;
     case screenConfig: stat.screen.config = testByte(data, 0, 1, clampChange); break;
@@ -1097,8 +1104,8 @@ void FrankData::set(const frankData &frankDataType, const int &data, const bool 
     case screenSubScreen: stat.screen.subscreen = testByte(data, 0, getSubscreenMax(), clampChange); break;
     case screenRouting: stat.screen.routing = testByte(data, 0, 1, clampChange); break;
     case screenCal: stat.screen.calibration = testByte(data, 0, 1, clampChange); break;
-    case screenCalNote: stat.screen.calibrateNote = testByte(data, 0, 1, clampChange); break;
 
+    case liveCalNote: stat.noteToCalibrate = testByte(data, 0, NOTERANGE - 1, clampChange); break;
     case bpm: stat.bpm = testByte(data, 0, 255, clampChange); break;
     case play: stat.play = testByte(data, 0, 1, clampChange); break;
     case rec: stat.rec = testByte(data, 0, 1, clampChange); break;
@@ -1109,7 +1116,7 @@ void FrankData::set(const frankData &frankDataType, const int &data, const bool 
         break;
     case bpmPoti: stat.bpmPot = testByte(data, 0, 255, clampChange); break;
     case load:
-    case save: stat.loadSaveSlot = testByte(data, 1, 10, clampChange); break;
+    case save: stat.loadSaveSlot = testByte(data, 0, SAVESLOTS - 1, clampChange); break;
     case pulseLength: stat.pulseLength = testByte(data, 0, 255, clampChange); break;
     case none: break;
     default: PRINTLN("FrankData set(frankData frankDataType, byte data, bool clampChange = 0), no case found");
@@ -1135,7 +1142,8 @@ void FrankData::set(const frankData &frankDataType, const int &data, const byte 
         updateArp(array);
         break;
 
-    case cvCal: setCvCal(testByte(data, 0, 255, clampChange), array); break;
+    case cvCalOffset: cal[array].cvOffset = testByte(data, 0, 255, clampChange); break;
+    case noteScaleOffset: cal[array].noteScaleOffset = testByte(data, 0, 255, clampChange); break;
 
     case liveMod: liveMidi[array].mod = testByte(data, 0, 127, clampChange); break;
     case livePitchbend: liveMidi[array].pitchbend = testByte(data, 0, 255, clampChange); break;
@@ -1145,10 +1153,12 @@ void FrankData::set(const frankData &frankDataType, const int &data, const byte 
     case liveReleased: liveMidi[array].released = testByte(data, 0, 1, clampChange); break;
     case liveRecModePlayback: liveMidi[array].recModePlayback = testByte(data, 0, 1, clampChange); break;
 
-    case stepArp: liveMidi[array].stepArp = testByte(data, 0, NOTERANGE, clampChange); break;
+    case stepArp: liveMidi[array].stepArp = testByte(data, 0, NOTERANGE - 1, clampChange); break;
     case stepSeq: liveMidi[array].stepSeq = testByte(data, 0, STEPSPERPAGE * config.routing[array].nbPages - 1, clampChange); break;
     case stepSpeed: config.routing[array].stepSpeed = testByte(data, 0, 5, clampChange); break;
     case nbPages: config.routing[array].nbPages = testByte(data, 1, PAGES, clampChange); break;
+
+    case liveCalNote: stat.noteToCalibrate = testByte(data, 0, NOTERANGE - 1, clampChange); break;
 
     case seqTuning: seq[array].sequence.tuning = testByte(data, 0, 13, clampChange); break;
     // case seqRatchet: seq[array].sequence.ratchet = testByte(data, 0, 3, clampChange); break;
@@ -1162,12 +1172,12 @@ void FrankData::set(const frankData &frankDataType, const int &data, const byte 
 void FrankData::set(const frankData &frankDataType, const int &data, const byte &array, const byte &step, const bool &clampChange) {
     switch (frankDataType) {
     case seqNote: seq[array].setNote(step, data); break;
-    case seqGate: seq[array].sequence.gate[step] = testByte(data, 0, 1, clampChange); break;
+    case seqGate: seq[array].setGate(step, data); break;
     case seqGateLength: seq[array].sequence.gateLength[step] = testByte(data, 0, 100, clampChange); break;
     case seqCc: seq[array].sequence.cc[step] = testByte(data, 0, 127, clampChange); break;
     case seqVelocity: seq[array].sequence.velocity[step] = testByte(data, 0, 127, clampChange); break;
 
-    case noteCal: setNoteCal(testByte(data, 0, 255, clampChange), array, step); break;
+    case noteCalOffset: cal[array].noteCalibration[step] = testByte(data, 0, 255, clampChange); break;
     case none: break;
     default:
         PRINTLN("FrankData set(frankData frankDataType, byte data, byte array, byte step, bool clampChange), no case "
@@ -1200,7 +1210,8 @@ void FrankData::increase(const frankData &frankDataType, const byte &array, cons
     case seqNote:
         seq[array].increaseNote(step);
         if (!stat.play) {
-            liveMidi[array].triggered = 1;
+            liveMidi[stat.screen.channel].triggered = 1;
+            liveMidi[stat.screen.channel].recModePlayback = 0;
         }
         break;
     default: change(frankDataType, 1, array, step, clampChange);
@@ -1222,7 +1233,8 @@ void FrankData::decrease(const frankData &frankDataType, const byte &array, cons
     case seqNote:
         seq[array].decreaseNote(step);
         if (!stat.play) {
-            liveMidi[array].triggered = 1;
+            liveMidi[stat.screen.channel].triggered = 1;
+            liveMidi[stat.screen.channel].recModePlayback = 0;
         }
         break;
     default: change(frankDataType, -1, array, step, clampChange);
@@ -1243,55 +1255,54 @@ void FrankData::toggle(const frankData &frankDataType) {
         updateArp(stat.screen.channel);
         break;
     case screenMainMenu:
-        if (stat.screen.mainMenu) {
-            stat.screen.mainMenu = 0;
-        }
-        else if (stat.screen.config || stat.screen.routing || stat.screen.calibration || stat.screen.calibrateNote) {
+        if (stat.screen.mainMenu || stat.screen.config || stat.screen.routing || stat.screen.calibration) {
             stat.screen.mainMenu = 0;
             stat.screen.config = 0;
             stat.screen.routing = 0;
             stat.screen.calibration = 0;
-            stat.screen.calibrateNote = 0;
+            saveMenuSettings();
         }
         else {
             stat.screen.mainMenu = 1;
             stat.screen.config = 0;
             stat.screen.routing = 0;
             stat.screen.calibration = 0;
-            stat.screen.calibrateNote = 0;
         }
         break;
-    case screenConfig: stat.screen.config = toggleValue(stat.screen.config); break;
+    case screenConfig:
+        stat.screen.config = toggleValue(stat.screen.config);
+        if (stat.screen.config == 0) saveMenuSettings();
+
+        break;
     case screenRouting:
         stat.screen.mainMenu = 0;
         stat.screen.config = 0;
         stat.screen.routing = !stat.screen.routing;
         stat.screen.calibration = 0;
-        stat.screen.calibrateNote = 0;
         break;
     case screenCal:
         stat.screen.mainMenu = 0;
         stat.screen.config = 0;
         stat.screen.routing = 0;
         stat.screen.calibration = 1;
-        stat.screen.calibrateNote = 0;
-        break;
-    case screenCalNote:
-        stat.screen.mainMenu = 0;
-        stat.screen.config = 0;
-        stat.screen.routing = 0;
-        stat.screen.calibration = 0;
-        stat.screen.calibrateNote = 1;
         break;
 
-    case seqResetGates: seqResetAllGates(config.routing[stat.screen.config].outSource - 1); break;
-    case seqResetNotes: seqResetAllNotes(config.routing[stat.screen.config].outSource - 1); break;
-    case seqResetGateLengths: seqResetAllGateLengths(config.routing[stat.screen.config].outSource - 1); break;
-    case seqResetCC: seqResetAllCC(config.routing[stat.screen.config].outSource - 1); break;
-    case seqOctaveUp: seqAllOctaveUp(config.routing[stat.screen.config].outSource - 1); break;
-    case seqOctaveDown: seqAllOctaveDown(config.routing[stat.screen.config].outSource - 1); break;
+    case seqResetGates: seqResetAllGates(config.routing[stat.screen.channel].outSource - 1); break;
+    case seqResetNotes: seqResetAllNotes(config.routing[stat.screen.channel].outSource - 1); break;
+    case seqResetGateLengths: seqResetAllGateLengths(config.routing[stat.screen.channel].outSource - 1); break;
+    case seqResetCC: seqResetAllCC(config.routing[stat.screen.channel].outSource - 1); break;
+    case seqOctaveUp: seqAllOctaveUp(config.routing[stat.screen.channel].outSource - 1); break;
+    case seqOctaveDown: seqAllOctaveDown(config.routing[stat.screen.channel].outSource - 1); break;
 
     case resetStepCounters: resetAllStepCounter(); break;
+
+    case saveCal: saveNoteCalibration(); break;
+
+    case load: loadSequence(stat.loadSaveSlot, config.routing[stat.screen.channel].outSource - 1); break;
+    case save: saveSequence(stat.loadSaveSlot, config.routing[stat.screen.channel].outSource - 1); break;
+
+    case cvCalOffset: cal[stat.screen.channel].cvOffset = 127; break;
+    case noteScaleOffset: cal[stat.screen.channel].noteScaleOffset = 127; break;
 
     case none: break;
     default: PRINTLN("FrankData toggle(frankData frankDataType), no case found");
@@ -1300,7 +1311,8 @@ void FrankData::toggle(const frankData &frankDataType) {
 
 void FrankData::toggle(const frankData &frankDataType, const byte &array, const byte &step) {
     switch (frankDataType) {
-    case seqGate: seq[array].sequence.gate[step] = toggleValue(seq[array].sequence.gate[step]); break;
+    case seqGate: seq[array].setGate(step, toggleValue(seq[array].getGate(step))); break;
+    case noteCalOffset: cal[array].noteCalibration[step] = 127;
     case none: break;
     default: PRINTLN("FrankData toggle(frankData frankDataType, byte array, byte step), no case found");
     }
@@ -1357,7 +1369,6 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
     case screenMainMenu: setStr("Main"); break;
     case screenSubScreen: setStr("Sub"); break;
     case screenCal: setStr("Cal"); break;
-    case screenCalNote: setStr("CalNt"); break;
     case screenRouting: setStr("MIDI"); break;
 
     case stepSeq: setStr("Step"); break;
@@ -1381,12 +1392,15 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
     case liveLowestKey: setStr("Low"); break;
     case liveHighestKey: setStr("High"); break;
     case liveKeyArpNoteEvaluated:
+    case liveCalNote:
     case liveKeyNoteEvaluated: setStr("Note"); break;
     case liveKeyArpVelEvaluated:
     case liveKeyVelEvaluated: setStr("Vel"); break;
+    case saveCal: setStr("Save"); break;
 
-    case noteCal: setStr("NCal"); break;
-    case cvCal: setStr("CvCal"); break;
+    case noteCalOffset: setStr("NCal"); break;
+    case cvCalOffset: setStr("CvCal"); break;
+    case noteScaleOffset: setStr("NSCal"); break;
 
     case resetStepCounters: setStr("RsStep"); break;
 
@@ -1410,16 +1424,14 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType) {
     case seqGate:
     case seqGateLength:
     case seqCc:
-    // case seqCcEvaluated:
     case seqSize:
-    // case seqRatchet:
     case seqGateLengthOffset:
     case stepOnPage:
     case currentPageNumber:
-    case nbPages:
+    case nbPages: // potentionally wrong case?
     case stepSeq:
     case activePage:
-    case seqVelocity: channel = config.routing[stat.screen.config].outSource - 1;
+    case seqVelocity: channel = config.routing[stat.screen.channel].outSource - 1;
     default: channel = stat.screen.channel;
     }
     return valueToStr(frankDataType, channel);
@@ -1452,7 +1464,6 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
         if (config.routing[channel].channel == 0) {
 
             setStr("ALL");
-
         }
         else {
             setStr(toStr(get(frankDataType, channel)));
@@ -1465,13 +1476,14 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
     case resetStepCounters:
     case screenRouting:
     case screenCal:
-    case screenCalNote:
     case seqResetGates:
     case seqResetGateLengths:
     case seqResetCC:
     case seqOctaveUp:
     case seqOctaveDown:
+    case saveCal:
     case seqResetNotes: setStr("@"); break;
+    case noteCalOffset: setStr(toStr(((int)get(frankDataType, channel, stat.noteToCalibrate)) - CALOFFSET)); break;
 
     case screenOutputChannel:
     case screenConfig:
@@ -1480,14 +1492,17 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
 
     case displayBrightness:
 
+    case liveCalNote:
+
     case bpm:
     case bpmSync:
-    case load:
-    case save:
     case pulseLength:
     case bpmPoti: setStr(toStr(get(frankDataType))); break;
+    case load:
+    case save: setStr(toStr(get(frankDataType) + 1)); break;
 
-    case cvCal: setStr(toStr(((int)get(frankDataType, channel)) - CALOFFSET)); break;
+    case noteScaleOffset:
+    case cvCalOffset: setStr(toStr(((int)get(frankDataType, channel)) - CALOFFSET)); break;
 
     case outputSource:
 
@@ -1670,9 +1685,7 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType, const byte 
     case seqGate:
     case seqGateLength:
     case seqCc:
-    case seqVelocity: setStr(toStr(get(frankDataType, config.routing[stat.screen.config].outSource - 1, step))); break;
-
-    case noteCal: setStr(toStr(((int)get(frankDataType, stat.screen.channel, step)) - CALOFFSET)); break;
+    case seqVelocity: setStr(toStr(get(frankDataType, config.routing[stat.screen.channel].outSource - 1, step))); break;
 
     case none: setStr(""); break;
 
@@ -1684,6 +1697,68 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType, const byte 
 inline void FrankData::setStr(const char *newStr) {
     strncpy(str, newStr, MAXSTRINGSIZE - 1);
     str[MAXSTRINGSIZE] = '\0';
+}
+
+void FrankData::loadSequence(const byte &saveSlot, const byte &sequence) {
+    Serial.print("Load Slot ");
+    Serial.print(saveSlot);
+    Serial.print(" into Sequence ");
+    Serial.println(sequence);
+
+    if (sequence > OUTPUTS - 1 || saveSlot > SAVESLOTS - 1) {
+        Serial.println("received wrong settings");
+        return;
+    }
+
+    int memory = 0;
+    memory = saveSlot * sizeof(structSequence) + 300; // leave space for menu and calibration
+
+    EEPROM.get(memory, seq[sequence].sequence);
+}
+
+void FrankData::saveSequence(const byte &saveSlot, const byte &sequence) {
+    Serial.print("Store Sequence ");
+    Serial.print(sequence);
+    Serial.print(" into Slot ");
+    Serial.println(saveSlot);
+
+    if (sequence > OUTPUTS - 1 || saveSlot > SAVESLOTS - 1) {
+        Serial.println("received wrong settings");
+        return;
+    }
+
+    int memory = 0;
+    memory = saveSlot * sizeof(structSequence) + 300; // leave space for menu and calibration
+
+    EEPROM.put(memory, seq[sequence].sequence);
+}
+
+void FrankData::loadAllMenuSettings() {
+    Serial.println("Load Menu settings");
+    int memory = 1;
+
+    EEPROM.get(memory, config);
+}
+
+void FrankData::saveMenuSettings() {
+    Serial.println("Save Menu settings");
+    int memory = 1;
+
+    EEPROM.put(memory, config);
+}
+
+void FrankData::saveNoteCalibration() {
+    Serial.println("Store Note Calibration ");
+    int memory = 50; // leave space for menu
+
+    EEPROM.put(memory, cal);
+}
+
+void FrankData::loadNoteCalibration() {
+    Serial.println("Get Note Calibration ");
+    int memory = 50; // leave space for menu
+
+    EEPROM.get(memory, cal);
 }
 
 // utility
