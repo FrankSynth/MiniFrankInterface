@@ -20,14 +20,17 @@ void Channel::setGate(byte state) { digitalWrite(gatePin, state); }
 void Channel::setTrigger(byte state) { digitalWrite(triggerPin, state); }
 
 void Channel::setNote(byte note) {
-    unsigned int mV = (unsigned int)testInt(((float)note * (NOTESCALING + (float)DATAOBJ.get(FrankData::noteScaleOffset, outputChannel) / 500.0f) + DATAOBJ.get(FrankData::noteCalOffset, outputChannel, note)), 0, 4095);
+    unsigned int mV =
+        (unsigned int)testInt(((float)note * (NOTESCALING + ((float)DATAOBJ.get(FrankData::noteScaleOffset, outputChannel) - CALOFFSET) / 500.0f) +
+                               DATAOBJ.get(FrankData::noteCalOffset, outputChannel, note) - CALOFFSET),
+                              0, 4095);
     PRINT("Output Note mv ");
     PRINTLN(mV);
     setVoltage(noteDac, noteDacChannel, 2, mV);
 }
 
 void Channel::setCV(int value) { // 0 - 1024 -> -5V -> 5V
-    unsigned int mV = (unsigned int)(testInt(value * 4 + DATAOBJ.get(FrankData::cvCalOffset, outputChannel), 0, 4095));
+    unsigned int mV = (unsigned int)(testInt(value * 4 + DATAOBJ.get(FrankData::cvCalOffset, outputChannel) - CALOFFSET, 0, 4095));
     setVoltage(cvDac, cvDacChannel, 2, mV);
 }
 

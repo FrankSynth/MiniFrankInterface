@@ -277,10 +277,6 @@ void Display::BodyTemplateCal() { // has 1 dataFields + GateSignal
 
                 // Font Color depends on Gate status
 
-                if (DATAOBJ.get(FrankData::seqGate, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1,
-                                dataFieldIndex)) {
-                    bufferBody->drawRect(x * 40 + 1, y * 36 + y, 38, 36, GREYWHITE); // Blue Gate on Rectangle
-                }
 
                 bufferBody->setTextColor(WHITE, BACKGROUND); // Note  Color GateOn
 
@@ -301,8 +297,13 @@ void Display::BodyTemplateCal() { // has 1 dataFields + GateSignal
                     bufferBody->print(valueToSharp(note));
 
                     bufferBody->setFont();
-                    bufferBody->setCursor(x * 40 + 30, y * 35 + 5);
+                    bufferBody->setCursor(x * 40 + 27, y * 35 + 6);
                     bufferBody->print(valueToOctave(note));
+                }
+                
+                if (DATAOBJ.get(FrankData::seqGate, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1,
+                                dataFieldIndex)) {
+                    bufferBody->drawRect(x * 40 + 1, y * 36 + y, 38, 36, GREYWHITE); // Blue Gate on Rectangle
                 }
 
                 // Data is default type (123456789, max 3 digits)

@@ -14,7 +14,7 @@
 #define CLK2 1
 #define CLKLED 21
 
-#define NOTESCALING 47.069f
+#define NOTESCALING 46.54f
 
 void setVoltage(int dacpin, bool channel, bool gain, unsigned int mV); // channel 0, 1, Gain = 2 (default)
 void initOutput();

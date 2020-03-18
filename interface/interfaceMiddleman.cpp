@@ -60,6 +60,7 @@ void updateNoteOut() {
         return;
     }
 
+    // normal non-calib play mode
     for (byte output = 0; output < OUTPUTS; output++) {
 
         if (DATAOBJ.get(FrankData::liveTriggered, output)) {
@@ -67,6 +68,8 @@ void updateNoteOut() {
             byte newNote;
             byte seqStep = DATAOBJ.get(FrankData::stepSeq, output);
             float gateDuration = 0.5f;
+
+            //live mode
             if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
                 if (DATAOBJ.get(FrankData::outputArp, output)) {
                     newNote = DATAOBJ.get(FrankData::liveKeyArpNoteEvaluated, output);
@@ -75,8 +78,11 @@ void updateNoteOut() {
                     newNote = DATAOBJ.get(FrankData::liveKeyNoteEvaluated, output);
                 }
             }
+
+            // seq mode
             else {
 
+                // if in rec mode, play last step, not current
                 if (DATAOBJ.get(FrankData::liveRecModePlayback, output)) {
                     if (DATAOBJ.get(FrankData::play)) DATAOBJ.set(FrankData::liveRecModePlayback, 0, output);
 
@@ -84,6 +90,7 @@ void updateNoteOut() {
                 }
 
                 newNote = DATAOBJ.get(FrankData::seqNote, DATAOBJ.get(FrankData::outputSource, output) - 1, seqStep);
+
                 gateDuration = (float)testInt((int)DATAOBJ.get(FrankData::seqGateLength, DATAOBJ.get(FrankData::outputSource, output) - 1, seqStep) +
                                                   (int)DATAOBJ.get(FrankData::seqGateLengthOffset, DATAOBJ.get(FrankData::outputSource, output) - 1) -
                                                   GATELENGTHOFFSET,

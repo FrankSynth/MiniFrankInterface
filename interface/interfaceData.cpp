@@ -296,7 +296,7 @@ void Seq::init(const byte &note, const byte &gate, const byte &gateLength, const
 }
 
 void Seq::setNote(const byte &index, const byte &note) { // set note value
-    sequence.note[testByte(index, 0, LENGTH)] = testByte(note, 0, NOTERANGE);
+    sequence.note[testByte(index, 0, LENGTH)] = testByte(note, 0, NOTERANGE-1);
 }
 
 void Seq::setNotes(const byte &note) { // set note value
@@ -333,7 +333,7 @@ void Seq::increaseNote(const byte &index) { // increase note value and return ne
     // no tuning
     if (sequence.tuning == 0) {
         // note up
-        sequence.note[index] = increaseByte(note, NOTERANGE);
+        sequence.note[index] = increaseByte(note, NOTERANGE-1);
     }
     else { // tuning active
         if (note < 88) {
@@ -386,19 +386,19 @@ void Seq::decreaseNote(const byte &index) { // decrease  note value and return n
 
 void Seq::changeNotes(const int &change) { // change note
     for (int i = 0; i < LENGTH; i++) {
-        sequence.note[i] = changeByte(sequence.note[i], change, 0, NOTERANGE, 1);
+        sequence.note[i] = changeByte(sequence.note[i], change, 0, NOTERANGE-1, 1);
     }
 }
 
 void Seq::octaveUp() { // change note
     for (int i = 0; i < LENGTH; i++) {
-        sequence.note[i] = changeByte(sequence.note[i], 12, 0, NOTERANGE, 0);
+        sequence.note[i] = changeByte(sequence.note[i], 12, 0, NOTERANGE - 1, 0);
     }
 }
 
 void Seq::octaveDown() { // change note
     for (int i = 0; i < LENGTH; i++) {
-        sequence.note[i] = changeByte(sequence.note[i], -12, 0, NOTERANGE, 0);
+        sequence.note[i] = changeByte(sequence.note[i], -12, 0, NOTERANGE - 1, 0);
     }
 }
 
@@ -894,13 +894,13 @@ inline void FrankData::nextArpStep(const byte &array) {
         // lower octaves
         if (liveMidi[array].arpOctave < 0) {
             for (int x = liveMidi[array].arpOctave; x < 0; x++) {
-                key.note = changeByte(key.note, -12, 0, NOTERANGE, 0);
+                key.note = changeByte(key.note, -12, 0, NOTERANGE - 1, 0);
             }
         }
         // raise octaves
         else if (liveMidi[array].arpOctave > 0) {
             for (int x = liveMidi[array].arpOctave; x > 0; x--) {
-                key.note = changeByte(key.note, 12, 0, NOTERANGE, 0);
+                key.note = changeByte(key.note, 12, 0, NOTERANGE - 1, 0);
             }
         }
 
@@ -1153,7 +1153,7 @@ void FrankData::set(const frankData &frankDataType, const int &data, const byte 
     case liveReleased: liveMidi[array].released = testByte(data, 0, 1, clampChange); break;
     case liveRecModePlayback: liveMidi[array].recModePlayback = testByte(data, 0, 1, clampChange); break;
 
-    case stepArp: liveMidi[array].stepArp = testByte(data, 0, NOTERANGE, clampChange); break;
+    case stepArp: liveMidi[array].stepArp = testByte(data, 0, NOTERANGE - 1, clampChange); break;
     case stepSeq: liveMidi[array].stepSeq = testByte(data, 0, STEPSPERPAGE * config.routing[array].nbPages - 1, clampChange); break;
     case stepSpeed: config.routing[array].stepSpeed = testByte(data, 0, 5, clampChange); break;
     case nbPages: config.routing[array].nbPages = testByte(data, 1, PAGES, clampChange); break;
@@ -1210,7 +1210,8 @@ void FrankData::increase(const frankData &frankDataType, const byte &array, cons
     case seqNote:
         seq[array].increaseNote(step);
         if (!stat.play) {
-            liveMidi[array].triggered = 1;
+            liveMidi[stat.screen.channel].triggered = 1;
+            liveMidi[stat.screen.channel].recModePlayback = 0;
         }
         break;
     default: change(frankDataType, 1, array, step, clampChange);
@@ -1232,7 +1233,8 @@ void FrankData::decrease(const frankData &frankDataType, const byte &array, cons
     case seqNote:
         seq[array].decreaseNote(step);
         if (!stat.play) {
-            liveMidi[array].triggered = 1;
+            liveMidi[stat.screen.channel].triggered = 1;
+            liveMidi[stat.screen.channel].recModePlayback = 0;
         }
         break;
     default: change(frankDataType, -1, array, step, clampChange);
