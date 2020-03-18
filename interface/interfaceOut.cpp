@@ -24,13 +24,15 @@ void Channel::setNote(byte note) {
         (unsigned int)testInt(((float)note * (NOTESCALING + ((float)DATAOBJ.get(FrankData::noteScaleOffset, outputChannel) - CALOFFSET) / 500.0f) +
                                DATAOBJ.get(FrankData::noteCalOffset, outputChannel, note) - CALOFFSET),
                               0, 4095);
-    PRINT("Output Note mv ");
-    PRINTLN(mV);
+    // PRINT("Output Note mv ");
+    // PRINTLN(mV);
     setVoltage(noteDac, noteDacChannel, 2, mV);
 }
 
 void Channel::setCV(int value) { // 0 - 1024 -> -5V -> 5V
-    unsigned int mV = (unsigned int)(testInt(value * 4 + DATAOBJ.get(FrankData::cvCalOffset, outputChannel) - CALOFFSET, 0, 4095));
+    unsigned int mV = (unsigned int)(testInt((1023-value) * 4 + (DATAOBJ.get(FrankData::cvCalOffset, outputChannel) - CALOFFSET) * 4, 0, 4095));
+    // PRINT("Output CV mv ");
+    // PRINTLN(mV);
     setVoltage(cvDac, cvDacChannel, 2, mV);
 }
 

@@ -1096,7 +1096,7 @@ void FrankData::set(const frankData &frankDataType, const int &data, const bool 
     case midiSource: config.midiSource = testByte(data, 0, 1, clampChange); break;
 
     case direction: config.direction = testByte(data, 0, 1, clampChange); break;
-    case displayBrightness: config.displayBrightness = testByte(data, 0, 255, clampChange); break; // how high?
+    case displayBrightness: config.displayBrightness = testByte(data, 5, 255, clampChange); break; // how high?
 
     case screenOutputChannel: stat.screen.channel = testByte(data, 0, OUTPUTS - 1, clampChange); break;
     case screenConfig: stat.screen.config = testByte(data, 0, 1, clampChange); break;
