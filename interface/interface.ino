@@ -26,19 +26,10 @@
 #define PRINT2(x, y)
 #endif
 
-// status settings;   //init status object;
-// mfMidi midi0; //create midi object
-
 inputControls cntrl;
 
 Display lcd = Display(160, 128, 3); // create display object, (width, heigh, rotation)
 TLC5916 tlc;
-
-// IntervalTimer myTimerLCD;
-// IntervalTimer myTimerLED;
-
-// PressedNotesList noteList0;
-// PressedNotesList noteList1;
 
 void ISRSwitch(); // Switch Interrupt
 

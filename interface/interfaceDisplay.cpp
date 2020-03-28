@@ -3,7 +3,7 @@
 #include "interfaceMidi.hpp"
 #include <string.h>
 
-#define DEBUG 0
+#define DEBUG 1
 
 #if DEBUG == 1
 #define PRINTLN(x) Serial.println(x)
@@ -257,8 +257,6 @@ void Display::BodyTemplateCal() { // has 1 dataFields + GateSignal
 
     void Display::BodyTemplateSeq() { // has 2x4 dataField
 
-        // Seq activeSeq = &DATAOBJ.seq[DATAOBJ.getScreenChannel()];
-
         // DataFields
         for (int x = 0; x < 4; x++) {
             for (int y = 0; y < 2; y++) {
@@ -301,11 +299,6 @@ void Display::BodyTemplateCal() { // has 1 dataFields + GateSignal
                     bufferBody->print(valueToOctave(note));
                 }
                 
-                if (DATAOBJ.get(FrankData::seqGate, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1,
-                                dataFieldIndex)) {
-                    bufferBody->drawRect(x * 40 + 1, y * 36 + y, 38, 36, GREYWHITE); // Blue Gate on Rectangle
-                }
-
                 // Data is default type (123456789, max 3 digits)
                 else {
                     if (DATAOBJ.get(mapping(dataField), DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1,
@@ -325,6 +318,11 @@ void Display::BodyTemplateCal() { // has 1 dataFields + GateSignal
                     bufferBody->print(DATAOBJ.get(mapping(dataField),
                                                   DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1,
                                                   dataFieldIndex)); // print value
+                }
+
+                if (DATAOBJ.get(FrankData::seqGate, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1,
+                                dataFieldIndex)) {
+                    bufferBody->drawRect(x * 40 + 1, y * 36 + y, 38, 36, GREYWHITE); // Blue Gate on Rectangle
                 }
             }
         }

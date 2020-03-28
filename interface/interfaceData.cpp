@@ -596,34 +596,6 @@ void FrankData::increaseStepCounters(const byte &channel) {
         if (stat.bpm16thCount == 32) {
             stat.bpm16thCount = 0;
         }
-        for (byte out = 0; out < OUTPUTS; out++) {
-            if ((int)liveMidi[out].channel16thCount == 0) {
-                liveMidi[out].channel16thCount = 0;
-                liveMidi[out].channel16thCount = ((int)config.routing[out].nbPages * STEPSPERPAGE * 16) - 1;
-            }
-            else {
-                liveMidi[out].channel16thCount--;
-            }
-        }
-        for (byte out = 0; out < OUTPUTS; out++) {
-            if ((int)stat.bpm16thCount % (int)pow(2, (int)(config.routing[out].stepSpeed)) == 0) {
-
-                increaseSeqStep(out);
-            }
-        }
-    }
-}
-
-void FrankData::decreaseStepCounters(const byte &channel) {
-
-    byte amount = config.routing[channel].stepSpeed;
-
-    for (byte count = 0; count < amount; count++) {
-
-        if (stat.bpm16thCount == 0) {
-            stat.bpm16thCount = 32;
-        }
-        stat.bpm16thCount--;
 
         for (byte out = 0; out < OUTPUTS; out++) {
             if ((int)liveMidi[out].channel16thCount == ((int)config.routing[out].nbPages * STEPSPERPAGE * 16) - 1) {
@@ -633,6 +605,52 @@ void FrankData::decreaseStepCounters(const byte &channel) {
                 liveMidi[out].channel16thCount++;
             }
         }
+
+        for (byte out = 0; out < OUTPUTS; out++) {
+            if ((int)stat.bpm16thCount % (int)pow(2, (int)(config.routing[out].stepSpeed)) == 0) {
+
+                increaseSeqStep(out);
+            }
+        }
+        
+    }
+    // PRINTLN("---------------increaseStepCounters----------------");
+    // PRINT("current channel ");
+    // PRINTLN(channel);
+    // PRINT("config.routing[0].stepSpeed ");
+    // PRINTLN(config.routing[0].stepSpeed);
+    // PRINT("config.routing[1].stepSpeed ");
+    // PRINTLN(config.routing[1].stepSpeed);
+    // PRINT("amount ");
+    // PRINTLN(amount);
+    // PRINT("stat.bpm16thCount ");
+    // PRINTLN(stat.bpm16thCount);
+    // PRINT("stat.liveMidi[0].channel16thCount  ");
+    // PRINTLN(liveMidi[0].channel16thCount);
+    // PRINT("stat.liveMidi[1].channel16thCount  ");
+    // PRINTLN(liveMidi[1].channel16thCount);
+}
+
+void FrankData::decreaseStepCounters(const byte &channel) {
+
+    byte amount = (byte)pow(2, (int)(config.routing[channel].stepSpeed));
+
+    for (byte count = 0; count < amount; count++) {
+
+        if (stat.bpm16thCount == 0) {
+            stat.bpm16thCount = 32;
+        }
+        stat.bpm16thCount--;
+
+        
+        for (byte out = 0; out < OUTPUTS; out++) {
+            if ((int)liveMidi[out].channel16thCount == 0) {
+                liveMidi[out].channel16thCount = ((int)config.routing[out].nbPages * STEPSPERPAGE * 16) - 1;
+            }
+            else {
+                liveMidi[out].channel16thCount--;
+            }
+        }
         for (byte out = 0; out < OUTPUTS; out++) {
             if ((int)stat.bpm16thCount % (int)pow(2, (int)(config.routing[out].stepSpeed)) == 0) {
 
@@ -640,6 +658,21 @@ void FrankData::decreaseStepCounters(const byte &channel) {
             }
         }
     }
+    // PRINTLN("---------------decreaseStepCounters----------------");
+    // PRINT("current channel ");
+    // PRINTLN(channel);
+    // PRINT("config.routing[0].stepSpeed ");
+    // PRINTLN(config.routing[0].stepSpeed);
+    // PRINT("config.routing[1].stepSpeed ");
+    // PRINTLN(config.routing[1].stepSpeed);
+    // PRINT("amount ");
+    // PRINTLN(amount);
+    // PRINT("stat.bpm16thCount ");
+    // PRINTLN(stat.bpm16thCount);
+    // PRINT("stat.liveMidi[0].channel16thCount  ");
+    // PRINTLN(liveMidi[0].channel16thCount);
+    // PRINT("stat.liveMidi[1].channel16thCount  ");
+    // PRINTLN(liveMidi[1].channel16thCount);
 }
 
 void FrankData::setBpm16thCount(unsigned int spp) {
@@ -674,17 +707,16 @@ inline void FrankData::calcBPM() {
     if (stat.bpmSync) {
         static unsigned long bpm16thTimer = 0;
         static unsigned long averagingStartTime = millis();
-        static float averageTimer = 0;
+        static double averageTimer = 0;
         static byte counter = 0;
 
-        averageTimer += (((60000 / (millis() - bpm16thTimer))));
-
-        bpm16thTimer = millis();
+        averageTimer += 60000000.0f / (double)(micros() - bpm16thTimer + 1.0);
+        bpm16thTimer = micros();
         counter++;
 
-        if (millis() > averagingStartTime + 1000 && counter > 3) {
-            averageTimer = averageTimer / 4 + 0.5;
-            set(bpm, (int)((averageTimer / (float)counter) + 0.5));
+        if (millis() > averagingStartTime + 1000) {
+            averageTimer = averageTimer / 4.0 - averageTimer / 500. + 0.5;
+            set(bpm, (int)(averageTimer / (double)counter + 0.5));
             averageTimer = 0;
             counter = 0;
             averagingStartTime = millis();

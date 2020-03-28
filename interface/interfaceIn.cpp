@@ -47,10 +47,10 @@ void inputControls::rotate(byte id, byte dir) {
 case STEP:
 
     if (dir) {
-        DATAOBJ.increaseStepCounters(DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1);
+        DATAOBJ.increaseStepCounters(DATAOBJ.get(FrankData::screenOutputChannel));
     }
     else {
-        DATAOBJ.decreaseStepCounters(DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1);
+        DATAOBJ.decreaseStepCounters(DATAOBJ.get(FrankData::screenOutputChannel));
     }
     break;
 
