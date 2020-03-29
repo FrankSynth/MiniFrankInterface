@@ -7,7 +7,7 @@
 #define SWSYNC 9
 #define SWSEQ 23
 #define SWREC 31
-#define BPMPOT 22 
+#define BPMPOT 22
 
 //#define DEBUG
 
@@ -24,7 +24,7 @@ class inputControls {
     void readSeq();  // read Seq Swicch
     void readRec();  // read Rec Switch
 
-    void readBPMSpeed(); //read sync potentiometer
+    void readBPMSpeed(); // read sync potentiometer
 
     void init();
 };

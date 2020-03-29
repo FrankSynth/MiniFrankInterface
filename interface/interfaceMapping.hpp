@@ -15,11 +15,9 @@
 #define CONFIG FrankData::screenConfig
 #define MENU FrankData::screenMainMenu
 
-
 #define SUBSCREEN FrankData::screenSubScreen
 
 // Encoder{0,1,2,3,4,5,6,7,8,9}
 
-
-FrankData::frankData mapping(byte input); // return target ID
+FrankData::frankData mapping(byte input);     // return target ID
 FrankData::frankData mappingPush(byte input); // return target ID

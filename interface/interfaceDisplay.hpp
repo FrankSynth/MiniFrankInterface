@@ -1,11 +1,12 @@
 #pragma once
 
 // #include "Adafruit_ST7735_and_ST7789_Library/Adafruit_ST7735.h" // Hardware-specific library for ST7735 - CHANGE SPI SPEED
-#include "src/Adafruit_ST7735_and_ST7789_Library/Adafruit_ST7735.h" // Hardware-specific library for ST7735 - CHANGE SPI SPEED
 #include "interfaceData.hpp"
 #include "interfaceMapping.hpp"
-#include <Adafruit_GFX.h> // Core graphics library
+#include "src/Adafruit_ST7735_and_ST7789_Library/Adafruit_ST7735.h" // Hardware-specific library for ST7735 - CHANGE SPI SPEED
+#include <Adafruit_GFX.h>                                           // Core graphics library
 #include <SPI.h>
+
 
 // Include extra Fonts
 #include <Fonts/FreeSansBold12pt7b.h>

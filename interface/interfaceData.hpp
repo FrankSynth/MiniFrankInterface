@@ -23,10 +23,10 @@ typedef struct {
     byte arpMode = 0;      // 0 = up, 1 = down, 2 = updown, 3= downup, 4 = upRdownR, 5 = downRupR, 6 = order, 7 = random
     byte cc = 0;           // 0 = vel, 1 = mod, 2 = pitchbend, 3 = aftertouch, 4 = sustain
     byte liveMidiMode = 0; // 0 = latest, 1 = lowest, 2 = highest
-    byte clockSpeed = 2;   // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
+    byte clockSpeed = 2;   // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = 1 bar, 5 = 2 bars
     byte arpRatchet = 0;   // repeats per step, 1 = 1 repeat (2 notes total), up to 3 repeats
     byte arpOctaves = 3;   // Octaves 0 = -3, 3 = 0, 6 = +3
-    byte stepSpeed = 2;    // ArpSeq Sync 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = full, 5 = 8 beats
+    byte stepSpeed = 2;    // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = 1 bar, 5 = 2 bars
     byte nbPages = 8;      // nb Pages  1-16
 } structOutputRouting;
 
@@ -41,33 +41,28 @@ typedef struct {
     byte note[LENGTH];
     byte cc[LENGTH];
     byte gate[(LENGTH / 8)]; // optimize data to single bits! middleman seq check, if gate
-    byte gateLength[LENGTH];
-    byte velocity[LENGTH];
-    byte tuning;           // tuning offset
-                           //     byte ratchet;          // repeats per step
-    byte gateLengthOffset; // 100 = no offset
+    byte gateLength[LENGTH]; //
+    byte tuning;             // tuning offset
+    byte gateLengthOffset;   // 100 = no offset
 } structSequence;
 
 // Settings struct for all settings that need to be saved permanently
 typedef struct {
-    byte midiSource = 1; // active MidiDevice (usb -> 1, din -> 0)
-
+    byte midiSource = 1;                  // active MidiDevice (usb -> 1, din -> 0)
     byte direction = 1;                   // 0 -> reverse ; 1 -> forward
     byte displayBrightness = 200;         // 0-255;
     structOutputRouting routing[OUTPUTS]; // hold settings for that many outputs
-
 } structSettings;
 
 // possible screen status
 typedef struct {
-    byte channel = 0;       // active channel, 0-> Channel 1, 1-> Channel 2
-    byte config = 0;        // display config, 0-> off, 1-> on
-    byte mainMenu = 0;      // display Main Menu, 0-> off, 1-> on
-    byte subscreen = 0;     // subscreen -> current displayed screen .. note, gate, cv (seq) ; live, appregiator (live)
-    byte calibration = 0;   // calibration screen
-    byte calibrateNote = 0; // Note calibration screen
-    byte routing = 0;       // routing screen
-
+    byte channel = 0;                // active channel, 0-> Channel 1, 1-> Channel 2
+    byte config = 0;                 // display config, 0-> off, 1-> on
+    byte mainMenu = 0;               // display Main Menu, 0-> off, 1-> on
+    byte subscreen = 0;              // subscreen -> current displayed screen .. note, gate, cv (seq) ; live, appregiator (live)
+    byte calibration = 0;            // calibration screen
+    byte calibrateNote = 0;          // Note calibration screen
+    byte routing = 0;                // routing screen
     const byte subScreenMaxSeq = 2;  // Number of subscreens for seq mode
     const byte subScreenMaxLive = 0; // Number of subscreens for live mode
 } structScreen;
@@ -85,12 +80,12 @@ typedef struct {
 
     byte pulseLength = 20; // pulse length in ms
 
-    byte noteToCalibrate = 0;
+    byte noteToCalibrate = 0; // note value that gets calibrated
 
-    byte bpmSync = 0; // Sync Active
-    byte midiClockCount = 5;
-    byte bpm16thCount = 0;
-    unsigned int bpmPot = 120; // sync= 0 ? 0-1023 bpm log : divider /4, /2, 1, *2, *4 ; Range is 0-1023
+    byte bpmSync = 0;          // Sync Active
+    byte midiClockCount = 5;   // counts incoming midiclock signals (6 ticks per 16th)
+    byte bpm16thCount = 0;     // general 16th counter for clock outputs
+    unsigned int bpmPot = 120; // sync= 0 ? 0-1023 bpm log : divider /4, /2, 1, *2, *4 ; Range is 0-1023 (not yet implemented)
 } structStatus;
 
 // Midi Key data
@@ -132,30 +127,34 @@ class PressedNotesList {
 // save live midi data
 class LiveMidi {
   public:
-    PressedNotesList noteList;
-    byte mod = 0;
-    byte pitchbend = 64;
-    byte aftertouch = 0;
-    byte sustain = 0;
-    byte triggered = 0;
-    byte released = 0;
-    byte arpDirection = 1;
-    byte arpOctaveDirection = 1;
-    byte arpRetrigger = 1;
-    byte arpTriggeredNewNote = 0;
-    byte arpStepRepeat = 1;
-    byte arpRestarted = 1;
-    byte recModePlayback = 0;
-    int arpOctave = 0;
-    structKey lastKey;
-    structKey arpKey;
-    PressedNotesList arpList;
-    structKey arpArray[NOTERANGE];
+    PressedNotesList noteList; // Key List for Live Midi
+    byte mod = 0;              // live midi mod
+    byte pitchbend = 64;       // live midi pitchbend
+    byte aftertouch = 0;       // live midi aftertouch
+    byte sustain = 0;          // live midi sustain
+    byte triggered = 0;        // key was pressed
+    byte released = 0;         // key was released
 
-    byte stepArp = 0;
-    byte stepSeq = 0;
+    byte arpDirection = 1;        // arp direction for updown etc, 1 = up
+    byte arpOctaveDirection = 1;  // arp octave direction for updown etc, 1 = up
+    byte arpRetrigger = 1;        // clears Arp Array on next iteration
+    byte arpTriggeredNewNote = 0; // Arp has a new step to send out via middleman
+    byte arpStepRepeat = 1;       // arp repeats step, for upRdownR, etc
+    byte arpRestarted = 1;        // arp was reset
 
-    unsigned int channel16thCount = 0;
+    byte recModePlayback = 0; // status for rec mode playback (last recorded note will be played instead of current step)
+
+    int arpOctave = 0; // current arp octave being played
+
+    structKey lastKey;             // always holds the last played key, if no keys are pressed
+    structKey arpKey;              // always holds the last played key, if no keys are pressed
+    PressedNotesList arpList;      // Key List for arpeggiator
+    structKey arpArray[NOTERANGE]; // sorted array for arpeggiator
+
+    byte stepArp = 0; // current arp step
+    byte stepSeq = 0; // current seq step
+
+    unsigned int channel16thCount = 0; // individual 16th counter for asynchronous playback
 
     LiveMidi() {
         // initialize with a default key
@@ -235,8 +234,6 @@ class FrankData {
         seqGate,
         seqGateLength,
         seqCc,
-        // seqCcEvaluated,
-        seqVelocity,
         seqSize,
 
         // calibration, needs value, array, step
@@ -248,7 +245,6 @@ class FrankData {
 
         // Seq, needs value, array
         seqTuning,
-        // seqRatchet,
         seqGateLengthOffset,
         stepSpeed,
         nbPages,
@@ -418,22 +414,16 @@ class FrankData {
     void loadNoteCalibration();
 
   public:
-    // get single type value
     byte get(const frankData &frankDataType);
-    // get value that is part of an array, e.g. output, seq current step, ...
     byte get(const frankData &frankDataType, const byte &array);
-    // get value for certain step
     byte get(const frankData &frankDataType, const byte &array, const byte &step);
 
-    // set single type value
     void set(const frankData &frankDataType, const int &data, const bool &clampChange = 0);
-    // set value prat of an array
     void set(const frankData &frankDataType, const int &data, const byte &array, const bool &clampChange = 0);
-    // set value for certain step
     void set(const frankData &frankDataType, const int &data, const byte &array, const byte &step, const bool &clampChange = 0);
 
-    // toggle what can be toggled
     void toggle(const frankData &frankdataType);
+    void toggle(const frankData &frankdataType, const byte &array);
     void toggle(const frankData &frankdataType, const byte &array, const byte &step);
 
     void change(const frankData &frankDataType, const int &amount, const bool &clampChange = 0);

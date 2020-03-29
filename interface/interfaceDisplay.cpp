@@ -72,18 +72,18 @@ void Display::updateDisplay() {
 void Display::drawBody() {
     bufferBody->fillScreen(BACKGROUND); // resetBuffer
 
-    if (DATAOBJ.get(FrankData::screenMainMenu) == 1 || DATAOBJ.get(FrankData::screenConfig) == 1 || DATAOBJ.get(FrankData::screenRouting) == 1
-        ) { // Load Config Template
+    if (DATAOBJ.get(FrankData::screenMainMenu) == 1 || DATAOBJ.get(FrankData::screenConfig) == 1 ||
+        DATAOBJ.get(FrankData::screenRouting) == 1) { // Load Config Template
         BodyTemplateMenu();
     }
-    else if (DATAOBJ.get(FrankData::screenCal) == 1){
+    else if (DATAOBJ.get(FrankData::screenCal) == 1) {
 
         BodyTemplateCal();
     }
 
-        else if (DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) == 0) { // Live Mode
-            BodyTemplateLive();
-        }
+    else if (DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) == 0) { // Live Mode
+        BodyTemplateLive();
+    }
     else if (DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) > 0) { // Seq Mode
         BodyTemplateSeq();
     }
@@ -200,19 +200,17 @@ void Display::BodyTemplateCal() { // has 1 dataFields + GateSignal
                     /////Name/////
 
                     const char *string; // get name
-                        string = DATAOBJ.getNameAsStr(mapping(dataField));
-                    
-                    byte offset = strlen(string) * 3;                              // get name length
+                    string = DATAOBJ.getNameAsStr(mapping(dataField));
+
+                    byte offset = strlen(string) * 3;                            // get name length
                     bufferBody->setCursor(posX + 20 - offset, posY + 7 + y * 1); // set Cursor
                     bufferBody->print(string);                                   // print value to display
 
                     /////Data/////
 
-
                     bufferBody->setTextColor(WHITE, GREY); // font Color
 
                     const char *data = DATAOBJ.getValueAsStr(mapping(dataField));
-                    
 
                     if ((byte)data[0] == 64) {
 
@@ -243,9 +241,9 @@ void Display::BodyTemplateCal() { // has 1 dataFields + GateSignal
         }
     }
 
-    //print frequency target
+    // print frequency target
     byte note = DATAOBJ.get(FrankData::liveCalNote);
-    float freq = 27.50 * pow(2, note/12.);
+    float freq = 27.50 * pow(2, note / 12.);
 
     bufferBody->setFont(&FreeSansBold9pt7b);
     bufferBody->setCursor(87, 30);
@@ -255,90 +253,88 @@ void Display::BodyTemplateCal() { // has 1 dataFields + GateSignal
     bufferBody->print("Hz");
 }
 
-    void Display::BodyTemplateSeq() { // has 2x4 dataField
+void Display::BodyTemplateSeq() { // has 2x4 dataField
 
-        // DataFields
-        for (int x = 0; x < 4; x++) {
-            for (int y = 0; y < 2; y++) {
-                byte dataField = x + y * 4; // current DataField
+    // DataFields
+    for (int x = 0; x < 4; x++) {
+        for (int y = 0; y < 2; y++) {
+            byte dataField = x + y * 4; // current DataField
 
-                byte dataFieldIndex =
-                    x + y * 4 + DATAOBJ.get(FrankData::activePage, DATAOBJ.get(FrankData::screenOutputChannel)) * 8; // current index
+            byte dataFieldIndex = x + y * 4 + DATAOBJ.get(FrankData::activePage, DATAOBJ.get(FrankData::screenOutputChannel)) * 8; // current index
 
-                /////Draw the squares/////
-                bufferBody->drawRect(x * 40, y * 36 - 1 + y, 40, 38, DARKGREY); //
+            /////Draw the squares/////
+            bufferBody->drawRect(x * 40, y * 36 - 1 + y, 40, 38, DARKGREY); //
 
-                /////Draw red bar for the ActiveDataField (STEP) /////
-                if (DATAOBJ.get(FrankData::stepOnPage, DATAOBJ.get(FrankData::screenOutputChannel)) == (x + y * 4)) {
-                    bufferBody->fillRect(x * 40 + 1, y * 35 + 32 + y, 38, 4, RED); // red bar for active Step
-                }
+            /////Draw red bar for the ActiveDataField (STEP) /////
+            if (DATAOBJ.get(FrankData::stepOnPage, DATAOBJ.get(FrankData::screenOutputChannel)) == (x + y * 4)) {
+                bufferBody->fillRect(x * 40 + 1, y * 35 + 32 + y, 38, 4, RED); // red bar for active Step
+            }
 
-                // Font Color depends on Gate status
+            // Font Color depends on Gate status
 
+            bufferBody->setTextColor(WHITE, BACKGROUND); // Note  Color GateOn
 
-                bufferBody->setTextColor(WHITE, BACKGROUND); // Note  Color GateOn
+            // PRINT("DataFieldType:");
+            // PRINTLN(mapping(dataField));
 
-                // PRINT("DataFieldType:");
-                // PRINTLN(mapping(dataField));
+            // Data is NOTE type
+            if (mapping(dataField) == NOTE) {
+                // Note Value
+                byte note = DATAOBJ.get(FrankData::seqNote, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1,
+                                        dataFieldIndex);
+                bufferBody->setFont(&FreeSansBold12pt7b);
+                bufferBody->setCursor(x * 40 + 7, y * 35 + 27 + y);
+                bufferBody->print(valueToNote(note));
 
-                // Data is NOTE type
-                if (mapping(dataField) == NOTE) {
-                    // Note Value
-                    byte note = DATAOBJ.get(FrankData::seqNote, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1,
-                                            dataFieldIndex);
+                bufferBody->setFont(&FreeSansBold9pt7b);
+                bufferBody->setCursor(x * 40 + 26, y * 35 + 27);
+                bufferBody->print(valueToSharp(note));
+
+                bufferBody->setFont();
+                bufferBody->setCursor(x * 40 + 27, y * 35 + 6);
+                bufferBody->print(valueToOctave(note));
+            }
+
+            // Data is default type (123456789, max 3 digits)
+            else {
+                if (DATAOBJ.get(mapping(dataField), DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1,
+                                dataFieldIndex) < 10) { // 1 digit
                     bufferBody->setFont(&FreeSansBold12pt7b);
-                    bufferBody->setCursor(x * 40 + 7, y * 35 + 27 + y);
-                    bufferBody->print(valueToNote(note));
-
+                    bufferBody->setCursor(x * 40 + 12, y * 35 + 25);
+                }
+                else if (DATAOBJ.get(mapping(dataField), DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1,
+                                     dataFieldIndex) < 100) { // 2digit
+                    bufferBody->setFont(&FreeSansBold12pt7b);
+                    bufferBody->setCursor(x * 40 + 6, y * 35 + 25);
+                }
+                else { // 3 digit
                     bufferBody->setFont(&FreeSansBold9pt7b);
-                    bufferBody->setCursor(x * 40 + 26, y * 35 + 27);
-                    bufferBody->print(valueToSharp(note));
+                    bufferBody->setCursor(x * 40 + 4, y * 35 + 24);
+                }
+                bufferBody->print(DATAOBJ.get(mapping(dataField),
+                                              DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1,
+                                              dataFieldIndex)); // print value
+            }
 
-                    bufferBody->setFont();
-                    bufferBody->setCursor(x * 40 + 27, y * 35 + 6);
-                    bufferBody->print(valueToOctave(note));
-                }
-                
-                // Data is default type (123456789, max 3 digits)
-                else {
-                    if (DATAOBJ.get(mapping(dataField), DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1,
-                                    dataFieldIndex) < 10) { // 1 digit
-                        bufferBody->setFont(&FreeSansBold12pt7b);
-                        bufferBody->setCursor(x * 40 + 12, y * 35 + 25);
-                    }
-                    else if (DATAOBJ.get(mapping(dataField), DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1,
-                                         dataFieldIndex) < 100) { // 2digit
-                        bufferBody->setFont(&FreeSansBold12pt7b);
-                        bufferBody->setCursor(x * 40 + 6, y * 35 + 25);
-                    }
-                    else { // 3 digit
-                        bufferBody->setFont(&FreeSansBold9pt7b);
-                        bufferBody->setCursor(x * 40 + 4, y * 35 + 24);
-                    }
-                    bufferBody->print(DATAOBJ.get(mapping(dataField),
-                                                  DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1,
-                                                  dataFieldIndex)); // print value
-                }
-
-                if (DATAOBJ.get(FrankData::seqGate, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1,
-                                dataFieldIndex)) {
-                    bufferBody->drawRect(x * 40 + 1, y * 36 + y, 38, 36, GREYWHITE); // Blue Gate on Rectangle
-                }
+            if (DATAOBJ.get(FrankData::seqGate, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1,
+                            dataFieldIndex)) {
+                bufferBody->drawRect(x * 40 + 1, y * 36 + y, 38, 36, GREYWHITE); // Blue Gate on Rectangle
             }
         }
+    }
 
-        ///// PageBlocks /////
-        byte width = 160 / DATAOBJ.get(FrankData::currentPageNumber, DATAOBJ.get(FrankData::screenOutputChannel));                // block width
-        byte offset = (160 - DATAOBJ.get(FrankData::currentPageNumber, DATAOBJ.get(FrankData::screenOutputChannel)) * width) / 2; // center blocks
+    ///// PageBlocks /////
+    byte width = 160 / DATAOBJ.get(FrankData::currentPageNumber, DATAOBJ.get(FrankData::screenOutputChannel));                // block width
+    byte offset = (160 - DATAOBJ.get(FrankData::currentPageNumber, DATAOBJ.get(FrankData::screenOutputChannel)) * width) / 2; // center blocks
 
-        for (int x = 0; x < DATAOBJ.get(FrankData::currentPageNumber, DATAOBJ.get(FrankData::screenOutputChannel)); x++) {
-            bufferBody->drawRect(x * width + offset, 73, width, 25, DARKGREY);          // dark Rectangle
-            bufferBody->fillRect(x * width + 1 + offset, 73 + 1, width - 2, 23, GREEN); // grey box
+    for (int x = 0; x < DATAOBJ.get(FrankData::currentPageNumber, DATAOBJ.get(FrankData::screenOutputChannel)); x++) {
+        bufferBody->drawRect(x * width + offset, 73, width, 25, DARKGREY);          // dark Rectangle
+        bufferBody->fillRect(x * width + 1 + offset, 73 + 1, width - 2, 23, GREEN); // grey box
 
-            if (x == DATAOBJ.get(FrankData::activePage, DATAOBJ.get(FrankData::screenOutputChannel))) {
-                bufferBody->fillRect(x * width + 1 + offset, 73 + 1, width - 2, 23, RED); // Red Block (active)
-            }
+        if (x == DATAOBJ.get(FrankData::activePage, DATAOBJ.get(FrankData::screenOutputChannel))) {
+            bufferBody->fillRect(x * width + 1 + offset, 73 + 1, width - 2, 23, RED); // Red Block (active)
         }
+    }
 }
 
 void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
@@ -516,7 +512,9 @@ void Display::FootSeq() {
 
     // Offset Gate
 
-    const char *data = DATAOBJ.getValueAsStrChannel(FrankData::seqGateLengthOffset, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1); // temporary removed index
+    const char *data = DATAOBJ.getValueAsStrChannel(FrankData::seqGateLengthOffset,
+                                                    DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) -
+                                                        1); // temporary removed index
 
     byte length = strlen(data); // string length
 
@@ -544,7 +542,7 @@ void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t
         updateMidi();
         DATAOBJ.updateClockCounter();
         updateAllOutputs();
-        
+
         for (int16_t i = 0; i < w; i++) {
             int16_t index = j * w + i;
             if (bufferObj->compareBuffer(index)) {
@@ -568,8 +566,10 @@ DispBuffer16::DispBuffer16(uint16_t w, uint16_t h) : Adafruit_GFX(w, h) {
 }
 
 DispBuffer16::~DispBuffer16(void) {
-    if (buffer) free(buffer);
-    if (buffer2) free(buffer2);
+    if (buffer)
+        free(buffer);
+    if (buffer2)
+        free(buffer2);
 }
 
 void DispBuffer16::copyBuffer(uint16_t bufferIndex) {
@@ -583,24 +583,25 @@ int DispBuffer16::compareBuffer(uint16_t bufferIndex) {
 /////////////Stuff from Adafruit_GFX////////////
 void DispBuffer16::drawPixel(int16_t x, int16_t y, uint16_t color) {
     if (buffer) {
-        if ((x < 0) || (y < 0) || (x >= _width) || (y >= _height)) return;
+        if ((x < 0) || (y < 0) || (x >= _width) || (y >= _height))
+            return;
 
         int16_t t;
         switch (rotation) {
-        case 1:
-            t = x;
-            x = WIDTH - 1 - y;
-            y = t;
-            break;
-        case 2:
-            x = WIDTH - 1 - x;
-            y = HEIGHT - 1 - y;
-            break;
-        case 3:
-            t = x;
-            x = y;
-            y = HEIGHT - 1 - t;
-            break;
+            case 1:
+                t = x;
+                x = WIDTH - 1 - y;
+                y = t;
+                break;
+            case 2:
+                x = WIDTH - 1 - x;
+                y = HEIGHT - 1 - y;
+                break;
+            case 3:
+                t = x;
+                x = y;
+                y = HEIGHT - 1 - t;
+                break;
         }
 
         buffer[x + y * WIDTH] = color;

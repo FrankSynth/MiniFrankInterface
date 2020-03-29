@@ -32,7 +32,6 @@ class Channel {
 
     byte gatePin;
 
-
   public:
     Channel(byte outputChannel, byte noteDac, byte noteDacChannel, byte cvDac, byte cvDacChannel, byte triggerPin, byte gatePin)
         : outputChannel(outputChannel), noteDac(noteDac), noteDacChannel(noteDacChannel), cvDac(cvDac), cvDacChannel(cvDacChannel),

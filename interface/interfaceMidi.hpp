@@ -7,6 +7,5 @@
 #include <Arduino.h>
 #include <MIDI.h>
 
-
 void initMidi();
 void updateMidi();

@@ -3,8 +3,7 @@ IndentWidth: 4
 ColumnLimit: 150
 AllowShortFunctionsOnASingleLine: Inline
 AllowShortCaseLabelsOnASingleLine: true
-AllowShortIfStatementsOnASingleLine: Always
-
+IndentCaseLabels: true
 BreakBeforeBraces: Custom
 BraceWrapping:
   BeforeElse: true

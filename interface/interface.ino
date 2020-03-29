@@ -82,7 +82,7 @@ void updateTLC() { // update interrupt
 void setup() {
 
     Serial.begin(115200);
-    
+
     DATAOBJ.init();
 
     PRINTLN("Debug Mode");
@@ -140,7 +140,6 @@ void setup() {
     // Set timer interrupt (display refresh)
     // myTimerLCD.begin(updateDisplay, 17000); // display refresh
     // myTimerLED.begin(updateTLC, 20000);     // display refresh
-
 }
 
 void loop() {
@@ -148,7 +147,7 @@ void loop() {
     static unsigned int screenTimer = millis();
 
     if (millis() > screenTimer + 16) {
-        
+
         cli();
         updateDisplay();
         updateTLC();

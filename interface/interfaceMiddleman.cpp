@@ -27,10 +27,10 @@ void initMiddleman() {
     initOutput(); // init Outputs
     clkLed.init(CLKLED);
     for (byte output = 0; output < OUTPUTS; output++) {
-            outputChannel[output].setTrigger(0);
-            outputChannel[output].setGate(0);
-            previousOutputs[output].triggerActivated = 1;
-            previousOutputs[output].gateActivated = 1;
+        outputChannel[output].setTrigger(0);
+        outputChannel[output].setGate(0);
+        previousOutputs[output].triggerActivated = 1;
+        previousOutputs[output].gateActivated = 1;
     }
 }
 
@@ -90,7 +90,8 @@ void updateNoteOut() {
 
                 // if in rec mode, play last step, not current
                 if (DATAOBJ.get(FrankData::liveRecModePlayback, output)) {
-                    if (DATAOBJ.get(FrankData::play)) DATAOBJ.set(FrankData::liveRecModePlayback, 0, output);
+                    if (DATAOBJ.get(FrankData::play))
+                        DATAOBJ.set(FrankData::liveRecModePlayback, 0, output);
 
                     seqStep = changeByteReverse(seqStep, -1, 0, DATAOBJ.get(FrankData::nbPages, output) * STEPSPERPAGE - 1);
                 }
@@ -115,13 +116,13 @@ void updateNoteOut() {
 
                     int bpmMult = 1; // achtung, doppelte value
                     switch (DATAOBJ.get(FrankData::stepSpeed, output)) {
-                    case 0: bpmMult = 32; break; // 1/16
-                    case 1: bpmMult = 16; break;
-                    case 2: bpmMult = 8; break; // 1/4
-                    case 3: bpmMult = 4; break;
-                    case 4: bpmMult = 2; break;
-                    case 5: bpmMult = 1; break; // 2/1
-                    default:;
+                        case 0: bpmMult = 32; break; // 1/16
+                        case 1: bpmMult = 16; break;
+                        case 2: bpmMult = 8; break; // 1/4
+                        case 3: bpmMult = 4; break;
+                        case 4: bpmMult = 2; break;
+                        case 5: bpmMult = 1; break; // 2/1
+                        default:;
                     }
 
                     // /2 cause of double val, /4 cause of 4*16th per beat
@@ -246,7 +247,8 @@ void updateCVOut() {
 void closeGates() {
 
     // don't close gates if calibration mode is on
-    if (DATAOBJ.get(FrankData::screenCal)) return;
+    if (DATAOBJ.get(FrankData::screenCal))
+        return;
 
     for (byte output = 0; output < OUTPUTS; output++) {
 

@@ -15,9 +15,13 @@
 #define PRINT2(x, y)
 #endif
 
-void Channel::setGate(byte state) { digitalWrite(gatePin, state); }
+void Channel::setGate(byte state) {
+    digitalWrite(gatePin, state);
+}
 
-void Channel::setTrigger(byte state) { digitalWrite(triggerPin, state); }
+void Channel::setTrigger(byte state) {
+    digitalWrite(triggerPin, state);
+}
 
 void Channel::setNote(byte note) {
     unsigned int mV =
@@ -30,7 +34,7 @@ void Channel::setNote(byte note) {
 }
 
 void Channel::setCV(int value) { // 0 - 1024 -> -5V -> 5V
-    unsigned int mV = (unsigned int)(testInt((1023-value) * 4 + (DATAOBJ.get(FrankData::cvCalOffset, outputChannel) - CALOFFSET) * 4, 0, 4095));
+    unsigned int mV = (unsigned int)(testInt((1023 - value) * 4 + (DATAOBJ.get(FrankData::cvCalOffset, outputChannel) - CALOFFSET) * 4, 0, 4095));
     // PRINT("Output CV mv ");
     // PRINTLN(mV);
     setVoltage(cvDac, cvDacChannel, 2, mV);
@@ -77,16 +81,15 @@ void setVoltage(int dacpin, bool channel, bool gain, unsigned int mV) // channel
     SPI.endTransaction();
 }
 
+void clock::setClock(byte state) {
+    digitalWrite(pin, state);
+}
 
-    void clock::setClock(byte state){
-        digitalWrite(pin, state);
-    }
+void ClkLed::init(byte pin) {
+    clkLed = pin;
+    pinMode(pin, OUTPUT);
+}
 
-    void ClkLed::init(byte pin) {
-        clkLed = pin;
-        pinMode(pin, OUTPUT);
-    }
-
-    void ClkLed::setClkLed(byte state) {
-        digitalWrite(clkLed, state);
-    }
+void ClkLed::setClkLed(byte state) {
+    digitalWrite(clkLed, state);
+}
