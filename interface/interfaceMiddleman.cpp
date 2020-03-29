@@ -1,7 +1,7 @@
 #include "interfaceMiddleman.hpp"
 
 // Debug logging
-#define DEBUG 0
+#define DEBUG 1
 
 #if DEBUG == 1
 #define PRINTLN(x) Serial.println(x)
@@ -26,6 +26,12 @@ ClkLed clkLed;
 void initMiddleman() {
     initOutput(); // init Outputs
     clkLed.init(CLKLED);
+    for (byte output = 0; output < OUTPUTS; output++) {
+            outputChannel[output].setTrigger(0);
+            outputChannel[output].setGate(0);
+            previousOutputs[output].triggerActivated = 1;
+            previousOutputs[output].gateActivated = 1;
+    }
 }
 
 void updateAllOutputs() {
@@ -69,7 +75,7 @@ void updateNoteOut() {
             byte seqStep = DATAOBJ.get(FrankData::stepSeq, output);
             float gateDuration = 0.5f;
 
-            //live mode
+            // live mode
             if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
                 if (DATAOBJ.get(FrankData::outputArp, output)) {
                     newNote = DATAOBJ.get(FrankData::liveKeyArpNoteEvaluated, output);
@@ -101,7 +107,9 @@ void updateNoteOut() {
             // only if not a key was released
             if (!DATAOBJ.get(FrankData::liveReleased, output)) {
                 // calc gate closure time if arp or seq mode
-                if (DATAOBJ.get(FrankData::outputArp, output) || DATAOBJ.get(FrankData::outputSource, output)) {
+                if (DATAOBJ.get(FrankData::outputArp, output) == 2 ||
+                    (DATAOBJ.get(FrankData::outputArp, output) == 1 && DATAOBJ.get(FrankData::liveArpTriggeredNewNote, output)) ||
+                    DATAOBJ.get(FrankData::outputSource, output)) {
                     // ratchet calc
                     previousOutputs[output].ratchet = DATAOBJ.get(FrankData::outputRatchet, output);
 
@@ -134,14 +142,18 @@ void updateNoteOut() {
                 // output Trigger and Gate
                 // if seq mode, check gate settings
                 if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
+                    if (DATAOBJ.get(FrankData::outputArp, output) == 0 || DATAOBJ.get(FrankData::liveArpTriggeredNewNote, output)) {
+                        outputChannel[output].setGate(1);
+                        previousOutputs[output].gateActivated = 1;
 
-                    outputChannel[output].setGate(1);
-                    previousOutputs[output].gateActivated = 1;
+                        outputChannel[output].setTrigger(1);
+                        previousOutputs[output].triggerActivated = 1;
+                        previousOutputs[output].triggerTimer = millis();
 
-                    outputChannel[output].setTrigger(1);
-                    previousOutputs[output].triggerActivated = 1;
-                    previousOutputs[output].triggerTimer = millis();
+                        DATAOBJ.set(FrankData::liveArpTriggeredNewNote, 0, output);
+                    }
                 }
+
                 else if (DATAOBJ.get(FrankData::seqGate, DATAOBJ.get(FrankData::outputSource, output) - 1, seqStep) || DATAOBJ.get(FrankData::rec)) {
                     outputChannel[output].setGate(1);
                     previousOutputs[output].gateActivated = 1;
@@ -173,7 +185,7 @@ void reactivateRatchet() {
         if (previousOutputs[output].ratchet && (DATAOBJ.get(FrankData::outputArp, output) || DATAOBJ.get(FrankData::outputSource, output))) {
             if (millis() >= previousOutputs[output].reactivateTime) {
 
-                // PRINT("Ratchet reactivated");
+                PRINTLN("reactivate");
                 // PRINT(", current Time is ");
                 // PRINT(millis());
                 float gateDuration = 0.5f;
@@ -202,6 +214,8 @@ void reactivateRatchet() {
                 previousOutputs[output].triggerTimer = millis();
 
                 previousOutputs[output].ratchet--;
+                PRINT("Ratchet count left ");
+                PRINTLN(previousOutputs[output].ratchet);
             }
         }
     }

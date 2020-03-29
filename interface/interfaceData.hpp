@@ -19,7 +19,7 @@
 typedef struct {
     byte outSource = 0;    // 0 = live, 1 = seq1, 2 = seq2, ...
     byte channel = 0;      // 0 = all, 1 = channel 1, ...
-    byte arp = 0;          // 0 = off, 1 = on
+    byte arp = 0;          // 0 = off, 1 = on, 2 = Latch
     byte arpMode = 0;      // 0 = up, 1 = down, 2 = updown, 3= downup, 4 = upRdownR, 5 = downRupR, 6 = order, 7 = random
     byte cc = 0;           // 0 = vel, 1 = mod, 2 = pitchbend, 3 = aftertouch, 4 = sustain
     byte liveMidiMode = 0; // 0 = latest, 1 = lowest, 2 = highest
@@ -142,6 +142,7 @@ class LiveMidi {
     byte arpDirection = 1;
     byte arpOctaveDirection = 1;
     byte arpRetrigger = 1;
+    byte arpTriggeredNewNote = 0;
     byte arpStepRepeat = 1;
     byte arpRestarted = 1;
     byte recModePlayback = 0;
@@ -308,6 +309,7 @@ class FrankData {
         liveAftertouch,
         liveSustain,
         liveTriggered,
+        liveArpTriggeredNewNote,
         liveReleased,
         liveRecModePlayback,
         liveKeyArpNoteEvaluated,

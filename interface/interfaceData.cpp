@@ -164,6 +164,7 @@ PressedNotesElement *PressedNotesList::getElement(const byte &element) {
 void LiveMidi::keyPressed(const byte &note, const byte &velocity) {
     noteList.appendKey(note, velocity);
     if (arpRetrigger && sustain < 64) {
+        PRINTLN("reset arp");
         arpList.deleteAllKeys();
         arpRetrigger = 0;
         arpStepRepeat = 1;
@@ -1069,6 +1070,9 @@ inline void FrankData::nextArpStep(const byte &array) {
 
         liveMidi[array].arpKey = key;
         liveMidi[array].triggered = 1;
+        if (config.routing[array].arp == 2 || (config.routing[array].arp == 1 && liveMidi[array].keysPressed())) {
+            liveMidi[array].arpTriggeredNewNote = 1;
+        }
     }
 }
 
@@ -1208,6 +1212,7 @@ byte FrankData::get(const frankData &frankDataType, const byte &array) {
     case liveAftertouch: return liveMidi[array].aftertouch;
     case liveSustain: return liveMidi[array].sustain;
     case liveTriggered: return liveMidi[array].triggered;
+    case liveArpTriggeredNewNote: return liveMidi[array].arpTriggeredNewNote;
     case liveReleased: return liveMidi[array].released;
     case liveRecModePlayback: return liveMidi[array].recModePlayback;
     case liveKeyNoteEvaluated: return getLiveKeyEvaluated(array).note;
@@ -1292,11 +1297,14 @@ void FrankData::set(const frankData &frankDataType, const int &data, const byte 
     case outputSource: config.routing[array].outSource = testByte(data, 0, OUTPUTS, clampChange); break;
     case outputChannel: config.routing[array].channel = testByte(data, 0, 16, clampChange); break;
     case outputArp:
-        config.routing[array].arp = testByte(data, 0, 1, clampChange);
+        config.routing[array].arp = testByte(data, 0, 2, clampChange);
         updateArp(array);
         break;
     case outputCc: config.routing[array].cc = testByte(data, 0, 4, clampChange); break;
-    case outputLiveMode: config.routing[array].liveMidiMode = testByte(data, 0, 2, clampChange); break;
+    case outputLiveMode:
+        config.routing[array].liveMidiMode = testByte(data, 0, 2, clampChange);
+        liveMidi[array].triggered = 1;
+        break;
     case outputClock: config.routing[array].clockSpeed = testByte(data, 0, 5, clampChange); break;
     case outputRatchet: config.routing[array].arpRatchet = testByte(data, 0, 3, clampChange); break;
     case outputArpOctave: config.routing[array].arpOctaves = testByte(data, 0, 6, clampChange); break;
@@ -1313,6 +1321,7 @@ void FrankData::set(const frankData &frankDataType, const int &data, const byte 
     case liveAftertouch: liveMidi[array].aftertouch = testByte(data, 0, 127, clampChange); break;
     case liveSustain: liveMidi[array].sustain = testByte(data, 0, 127, clampChange); break;
     case liveTriggered: liveMidi[array].triggered = testByte(data, 0, 1, clampChange); break;
+    case liveArpTriggeredNewNote: liveMidi[array].arpTriggeredNewNote = testByte(data, 0, 1, clampChange); break;
     case liveReleased: liveMidi[array].released = testByte(data, 0, 1, clampChange); break;
     case liveRecModePlayback: liveMidi[array].recModePlayback = testByte(data, 0, 1, clampChange); break;
 
@@ -1730,6 +1739,7 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
         switch (config.routing[channel].arp) {
         case 0: setStr("OFF"); break;
         case 1: setStr("ON"); break;
+        case 2: setStr("Ltch"); break;
         default: setStr("ERR");
         }
         break;
