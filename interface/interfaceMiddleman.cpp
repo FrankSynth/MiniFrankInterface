@@ -56,7 +56,7 @@ void updateNoteOut() {
 
                 outputChannel[output].setNote(newNote);
                 previousOutputs[output].note = newNote;
-                // PRINT("set new Calib Note ");
+                PRINT("set new Calib Note ");
                 PRINTLN(newNote);
                 outputChannel[output].setGate(1);
                 previousOutputs[output].gateActivated = 1;
@@ -224,12 +224,23 @@ void reactivateRatchet() {
 
 void updateCVOut() {
     int newCV = 0;
+
     for (byte output = 0; output < OUTPUTS; output++) {
 
         if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
             if (DATAOBJ.get(FrankData::outputCc, output) == 2) {
-                newCV = (DATAOBJ.getPitchbend(output) + 8192) / 4; // pitchbend is 0 - 16384
-            } else {
+                int pitchbend = DATAOBJ.getPitchbend(output) / 4; // returns -8192 - 8191, now -2048 - 2047
+
+                if (pitchbend > 0) {
+                    pitchbend = map(pitchbend, -2048, 0, -2048 + DATAOBJ.getPitchbendCalLower(output), 0);
+                }
+                else {
+                    pitchbend = map(pitchbend, 0, 2047, 0, 2047 + DATAOBJ.getPitchbendCalUpper(output));
+                }
+
+                newCV = pitchbend + 2048; // 2048 actually is the middle value
+            }
+            else {
                 newCV = DATAOBJ.get(FrankData::outputCcEvaluated, output) * 32;
             }
         }
@@ -242,8 +253,8 @@ void updateCVOut() {
         }
 
         if (newCV != previousOutputs[output].cv) {
-        PRINT("newCV out is ");
-        PRINTLN(newCV);
+            PRINT("newCV out is ");
+            PRINTLN(newCV);
             outputChannel[output].setCV(newCV); // expects 0-4095
             previousOutputs[output].cv = newCV;
         }

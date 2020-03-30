@@ -36,6 +36,11 @@ typedef struct {
     byte noteScaleOffset = 127;
 } structCalibration;
 
+typedef struct {
+    int16_t lowerEnd = 0;
+    int16_t upperEnd = 0;
+} structCalibrationPitchbend;
+
 // Sequence struct holding all values for a sequence, to save it
 typedef struct {
     byte note[LENGTH];
@@ -129,7 +134,7 @@ class LiveMidi {
   public:
     PressedNotesList noteList; // Key List for Live Midi
     byte mod = 0;              // live midi mod
-    int pitchbend = 0;       // live midi pitchbend
+    int pitchbend = 0;         // live midi pitchbend
     byte aftertouch = 0;       // live midi aftertouch
     byte sustain = 0;          // live midi sustain
     byte triggered = 0;        // key was pressed
@@ -242,6 +247,8 @@ class FrankData {
         // calibration, needs value, array
         cvCalOffset,
         noteScaleOffset,
+        pitchbendCalUpper,
+        pitchbendCalLower,
 
         // Seq, needs value, array
         seqTuning,
@@ -325,6 +332,7 @@ class FrankData {
     structStatus stat;
     structSettings config;
     structCalibration cal[OUTPUTS];
+    structCalibrationPitchbend calPitchbend[OUTPUTS];
 
     LiveMidi liveMidi[OUTPUTS];
     Seq seq[OUTPUTS];
@@ -372,6 +380,9 @@ class FrankData {
 
     byte getPitchbendAsByte(const byte &channel);
     int getPitchbend(const byte &channel);
+
+    int getPitchbendCalUpper(const byte &channel);
+    int getPitchbendCalLower(const byte &channel);
 
     void increaseBpm16thCount();
     inline structKey getLiveKeyEvaluated(const byte &array);

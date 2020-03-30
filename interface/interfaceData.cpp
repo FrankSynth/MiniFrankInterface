@@ -1114,6 +1114,13 @@ int FrankData::getPitchbend(const byte &channel) {
     return liveMidi[channel].pitchbend;
 }
 
+int FrankData::getPitchbendCalUpper(const byte &channel) {
+    return calPitchbend[channel].upperEnd;
+}
+int FrankData::getPitchbendCalLower(const byte &channel) {
+    return calPitchbend[channel].lowerEnd;
+}
+
 void FrankData::seqSetAllNotes(const byte &array, const byte &data) {
     seq[array].setNotes(data);
 }
@@ -1391,6 +1398,8 @@ void FrankData::increase(const frankData &frankDataType, const byte &array, cons
     switch (frankDataType) {
         case stepArp: nextArpStep(array); break;
         case stepSeq: increaseSeqStep(array); break;
+        case pitchbendCalLower: calPitchbend[array].lowerEnd = changeInt(calPitchbend[array].lowerEnd, 1, 0, 2048); break;
+        case pitchbendCalUpper: calPitchbend[array].upperEnd = changeInt(calPitchbend[array].upperEnd, 1, -2047, 0); break;
         default: change(frankDataType, 1, array, clampChange);
     }
 }
@@ -1414,6 +1423,8 @@ void FrankData::decrease(const frankData &frankDataType, const byte &array, cons
     switch (frankDataType) {
         case stepArp: nextArpStep(array); break;
         case stepSeq: decreaseSeqStep(array); break;
+        case pitchbendCalLower: calPitchbend[array].lowerEnd = changeInt(calPitchbend[array].lowerEnd, -1, 0, 2048); break;
+        case pitchbendCalUpper: calPitchbend[array].upperEnd = changeInt(calPitchbend[array].upperEnd, -1, -2047, 0); break;
         default: change(frankDataType, -1, array, clampChange);
     }
 }
@@ -1955,6 +1966,7 @@ void FrankData::saveNoteCalibration() {
     int memory = 50; // leave space for menu
 
     EEPROM.put(memory, cal);
+    EEPROM.put(memory + sizeof(cal), calPitchbend);
 }
 
 void FrankData::loadNoteCalibration() {
@@ -1962,6 +1974,7 @@ void FrankData::loadNoteCalibration() {
     int memory = 50; // leave space for menu
 
     EEPROM.get(memory, cal);
+    EEPROM.get(memory + sizeof(cal), calPitchbend);
 }
 
 // utility

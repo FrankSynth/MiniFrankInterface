@@ -34,7 +34,7 @@ class PreviousState {
     byte clockLED = 0;
     byte old16thClockCount = 0;
 
-    PreviousState() { this->old16thClockCount = 0; }
+    PreviousState() {}
 };
 
 // init Middleman
