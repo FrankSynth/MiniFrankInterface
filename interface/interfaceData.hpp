@@ -10,45 +10,44 @@
 #define STEPSPERPAGE 8
 #define OUTPUTS 2 // Number of output lanes
 #define MAXSTRINGSIZE 8
-#define ARPOCTAVECENTEROFFSET (int)3
-#define GATELENGTHOFFSET (int)100
-#define CALOFFSET (int)127
+// #define ARPOCTAVECENTEROFFSET (int)3
+// #define GATELENGTHOFFSET (int)100
+// #define CALOFFSET (int)127
 
 #define DATAOBJ FrankData::getDataObj()
 
 typedef struct {
-    byte outSource = 0;    // 0 = live, 1 = seq1, 2 = seq2, ...
-    byte channel = 0;      // 0 = all, 1 = channel 1, ...
-    byte arp = 0;          // 0 = off, 1 = on, 2 = Latch
-    byte arpMode = 0;      // 0 = up, 1 = down, 2 = updown, 3= downup, 4 = upRdownR, 5 = downRupR, 6 = order, 7 = random
-    byte cc = 0;           // 0 = vel, 1 = mod, 2 = pitchbend, 3 = aftertouch, 4 = sustain
-    byte liveMidiMode = 0; // 0 = latest, 1 = lowest, 2 = highest
-    byte clockSpeed = 2;   // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = 1 bar, 5 = 2 bars
-    byte arpRatchet = 0;   // repeats per step, 1 = 1 repeat (2 notes total), up to 3 repeats
-    byte arpOctaves = 3;   // Octaves 0 = -3, 3 = 0, 6 = +3
-    byte stepSpeed = 2;    // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = 1 bar, 5 = 2 bars
-    byte nbPages = 8;      // nb Pages  1-16
+    byte outSource = 0;     // 0 = live, 1 = seq1, 2 = seq2, ...
+    byte channel = 0;       // 0 = all, 1 = channel 1, ...
+    byte arp = 0;           // 0 = off, 1 = on, 2 = Latch
+    byte arpMode = 0;       // 0 = up, 1 = down, 2 = updown, 3= downup, 4 = upRdownR, 5 = downRupR, 6 = order, 7 = random
+    byte cc = 0;            // 0 = vel, 1 = mod, 2 = pitchbend, 3 = aftertouch, 4 = sustain
+    byte liveMidiMode = 0;  // 0 = latest, 1 = lowest, 2 = highest
+    byte clockSpeed = 2;    // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = 1 bar, 5 = 2 bars
+    byte arpRatchet = 0;    // repeats per step, 1 = 1 repeat (2 notes total), up to 3 repeats
+    int16_t arpOctaves = 0; // Octaves -3 ... 0 ... 3
+    byte stepSpeed = 2;     // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = 1 bar, 5 = 2 bars
+    byte nbPages = 8;       // nb Pages  1-16
 } structOutputRouting;
 
 typedef struct {
-    byte noteCalibration[NOTERANGE] = {127};
-    int cvOffset = 127;
-    byte noteScaleOffset = 127;
+    int16_t noteCalibration[NOTERANGE] = {0};
+    int16_t cvOffset = 0;
+    int16_t noteScaleOffset = 0;
+    int16_t cvLowerLimit = 0;
+    int16_t cvUpperLimit = 0;
+    int16_t cvPitchbendLowerLimit = 0;
+    int16_t cvPitchbendUpperLimit = 0;
 } structCalibration;
-
-typedef struct {
-    int16_t lowerEnd = 0;
-    int16_t upperEnd = 0;
-} structCalibrationPitchbend;
 
 // Sequence struct holding all values for a sequence, to save it
 typedef struct {
     byte note[LENGTH];
     byte cc[LENGTH];
-    byte gate[(LENGTH / 8)]; // optimize data to single bits! middleman seq check, if gate
-    byte gateLength[LENGTH]; //
-    byte tuning;             // tuning offset
-    byte gateLengthOffset;   // 100 = no offset
+    byte gate[(LENGTH / 8)];  // optimize data to single bits! middleman seq check, if gate
+    byte gateLength[LENGTH];  //
+    byte tuning;              // tuning offset
+    int16_t gateLengthOffset; // 100 = no offset
 } structSequence;
 
 // Settings struct for all settings that need to be saved permanently
@@ -88,10 +87,10 @@ typedef struct {
 
     byte noteToCalibrate = 0; // note value that gets calibrated
 
-    byte bpmSync = 0;          // Sync Active
-    byte midiClockCount = 5;   // counts incoming midiclock signals (6 ticks per 16th)
-    byte bpm16thCount = 0;     // general 16th counter for clock outputs
-    unsigned int bpmPot = 120; // sync= 0 ? 0-1023 bpm log : divider /4, /2, 1, *2, *4 ; Range is 0-1023 (not yet implemented)
+    byte bpmSync = 0;        // Sync Active
+    byte midiClockCount = 5; // counts incoming midiclock signals (6 ticks per 16th)
+    byte bpm16thCount = 0;   // general 16th counter for clock outputs
+    uint16_t bpmPot = 120;   // sync= 0 ? 0-1023 bpm log : divider /4, /2, 1, *2, *4 ; Range is 0-1023 (not yet implemented)
 } structStatus;
 
 // Midi Key data
@@ -115,7 +114,7 @@ class PressedNotesElement {
 
 class PressedNotesList {
   public:
-    int size = 0;
+    int16_t size = 0;
 
     PressedNotesElement *pressedNoteElement = NULL;
     void appendKey(const byte &note, const byte &velocity);
@@ -135,7 +134,7 @@ class LiveMidi {
   public:
     PressedNotesList noteList; // Key List for Live Midi
     byte mod = 0;              // live midi mod
-    int pitchbend = 0;         // live midi pitchbend
+    int16_t pitchbend = 0;     // live midi pitchbend
     byte aftertouch = 0;       // live midi aftertouch
     byte sustain = 0;          // live midi sustain
     byte triggered = 0;        // key was pressed
@@ -150,7 +149,7 @@ class LiveMidi {
 
     byte recModePlayback = 0; // status for rec mode playback (last recorded note will be played instead of current step)
 
-    int arpOctave = 0; // current arp octave being played
+    int16_t arpOctave = 0; // current arp octave being played
 
     structKey lastKey;             // always holds the last played key, if no keys are pressed
     structKey arpKey;              // always holds the last played key, if no keys are pressed
@@ -160,7 +159,7 @@ class LiveMidi {
     byte stepArp = 0; // current arp step
     byte stepSeq = 0; // current seq step
 
-    unsigned int channel16thCount = 0; // individual 16th counter for asynchronous playback
+    uint16_t channel16thCount = 0; // individual 16th counter for asynchronous playback
 
     LiveMidi() {
         // initialize with a default key
@@ -194,7 +193,7 @@ class Seq {
     Seq() { init(); }
 
     void init(const byte &note = 24, const byte &gate = 1, const byte &gateLength = 50, const byte &cc = 64, const byte &tuning = 0,
-              const byte &gateLengthOffset = 100); // init sequence to default values
+              const int16_t &gateLengthOffset = 0); // init sequence to default values
 
     // Note
     void setNote(const byte &index, const byte &note); // set note value
@@ -205,22 +204,22 @@ class Seq {
     void increaseNote(const byte &index); // increase note value and return new note, function take care of tuning
     void decreaseNote(const byte &index); // decrease note value and return new note, function take care of tuning
 
-    void changeNotes(const int &change); // change all note values
-    void octaveUp();                     // All notes one octave down (if possible)
-    void octaveDown();                   // All notes one octave down (if possible)
+    void changeNotes(const int16_t &change); // change all note values
+    void octaveUp();                         // All notes one octave down (if possible)
+    void octaveDown();                       // All notes one octave down (if possible)
 
     void setGate(const byte &index, const byte &gate);
     byte getGate(const byte &index);
 
     // GateLength
     void setGateLengths(const byte &gateLength); // set all gates at once
-    void changeGateLengths(const int &change);
+    void changeGateLengths(const int16_t &change);
 
     // Sequence
     void setSequence(structSequence *copySeq); // set all sequence values at once
     structSequence *getSequence();             // return the sequence struct pointer
 
-    int getSequenceSize(); // return the struct size
+    int16_t getSequenceSize(); // return the struct size
 
     // Sequence
     structSequence sequence;
@@ -248,8 +247,11 @@ class FrankData {
         // calibration, needs value, array
         cvCalOffset,
         noteScaleOffset,
-        pitchbendCalUpper,
-        pitchbendCalLower,
+        liveCalNote,
+        cvCalUpper,
+        cvCalLower,
+        cvPitchbendCalUpper,
+        cvPitchbendCalLower,
 
         // Seq, needs value, array
         seqTuning,
@@ -325,7 +327,7 @@ class FrankData {
         liveLatestKey,
         liveHighestKey,
         liveLowestKey,
-        liveCalNote,
+
     };
 
   private:
@@ -334,7 +336,6 @@ class FrankData {
     structStatus stat;
     structSettings config;
     structCalibration cal[OUTPUTS];
-    structCalibrationPitchbend calPitchbend[OUTPUTS];
 
     LiveMidi liveMidi[OUTPUTS];
     Seq seq[OUTPUTS];
@@ -348,7 +349,6 @@ class FrankData {
     // receive MIDI
     void receivedKeyPressed(const byte &channel, const byte &note, const byte &velocity);
     void receivedKeyReleased(const byte &channel, const byte &note);
-    void receivedPitchbend(const byte &channel, const int &pitchbend);
     void receivedMidiClock();
     void receivedMidiSongPosition(unsigned int spp);
     void receivedStart();
@@ -370,10 +370,10 @@ class FrankData {
 
     inline byte getCurrentPageNumber(const byte &array);
     inline const byte getSubscreenMax();
-    inline byte getLiveCcEvaluated(const byte &array);
+    inline int16_t getLiveCcEvaluated(const byte &array);
     inline void setStr(const char *newStr);
 
-    const char *valueToStr(const frankData &frankDataType, const byte &channel);
+    const char *valueToStr(const frankData &frankDataType, const uint16_t &channel);
 
   public:
     void updateClockCounter(const bool newMillis = false);
@@ -381,10 +381,6 @@ class FrankData {
     void decreaseStepCounters(const byte &channel);
 
     byte getPitchbendAsByte(const byte &channel);
-    int getPitchbend(const byte &channel);
-
-    int getPitchbendCalUpper(const byte &channel);
-    int getPitchbendCalLower(const byte &channel);
 
     void increaseBpm16thCount();
     inline structKey getLiveKeyEvaluated(const byte &array);
@@ -392,7 +388,7 @@ class FrankData {
     inline structKey getKeyLowest(const byte &array);
     inline structKey getKeyLatest(const byte &array);
 
-    void setBPMPoti(const unsigned int &bpm);
+    void setBPMPoti(const uint16_t &bpm);
 
     void seqSetAllNotes(const byte &array, const byte &data);
     void seqSetAllGates(const byte &array, const byte &data);
@@ -422,34 +418,34 @@ class FrankData {
     void loadNoteCalibration();
 
   public:
-    byte get(const frankData &frankDataType);
-    byte get(const frankData &frankDataType, const byte &array);
-    byte get(const frankData &frankDataType, const byte &array, const byte &step);
+    int16_t get(const frankData &frankDataType);
+    int16_t get(const frankData &frankDataType, const uint16_t &array);
+    int16_t get(const frankData &frankDataType, const uint16_t &array, const uint16_t &step);
 
-    void set(const frankData &frankDataType, const int &data, const bool &clampChange = 0);
-    void set(const frankData &frankDataType, const int &data, const byte &array, const bool &clampChange = 0);
-    void set(const frankData &frankDataType, const int &data, const byte &array, const byte &step, const bool &clampChange = 0);
+    void set(const frankData &frankDataType, const int16_t &data);
+    void set(const frankData &frankDataType, const int16_t &data, const uint16_t &array);
+    void set(const frankData &frankDataType, const int16_t &data, const uint16_t &array, const uint16_t &step);
 
     void toggle(const frankData &frankdataType);
-    void toggle(const frankData &frankdataType, const byte &array);
-    void toggle(const frankData &frankdataType, const byte &array, const byte &step);
+    void toggle(const frankData &frankdataType, const uint16_t &array);
+    void toggle(const frankData &frankdataType, const uint16_t &array, const uint16_t &step);
 
-    void change(const frankData &frankDataType, const int &amount, const bool &clampChange = 0);
-    void change(const frankData &frankDataType, const int &amount, const byte &array, const bool &clampChange = 0);
-    void change(const frankData &frankDataType, const int &amount, const byte &array, const byte &step, const bool &clampChange = 0);
+    void change(const frankData &frankDataType, const int16_t &amount);
+    void change(const frankData &frankDataType, const int16_t &amount, const uint16_t &array);
+    void change(const frankData &frankDataType, const int16_t &amount, const uint16_t &array, const uint16_t &step);
 
-    void increase(const frankData &frankDataType, const bool &clampChange = 0);
-    void increase(const frankData &frankDataType, const byte &array, const bool &clampChange = 0);
-    void increase(const frankData &frankDataType, const byte &array, const byte &step, const bool &clampChange = 0);
+    void increase(const frankData &frankDataType);
+    void increase(const frankData &frankDataType, const uint16_t &array);
+    void increase(const frankData &frankDataType, const uint16_t &array, const uint16_t &step);
 
-    void decrease(const frankData &frankDataType, const bool &clampChange = 0);
-    void decrease(const frankData &frankDataType, const byte &array, const bool &clampChange = 0);
-    void decrease(const frankData &frankDataType, const byte &array, const byte &step, const bool &clampChange = 0);
+    void decrease(const frankData &frankDataType);
+    void decrease(const frankData &frankDataType, const uint16_t &array);
+    void decrease(const frankData &frankDataType, const uint16_t &array, const uint16_t &step);
 
     const char *getNameAsStr(const frankData &frankDataType);
     const char *getValueAsStr(const frankData &frankDataType);
-    const char *getValueAsStr(const frankData &frankDataType, const byte &step);
-    const char *getValueAsStrChannel(const frankData &frankDataType, const byte &channel);
+    const char *getValueAsStr(const frankData &frankDataType, const uint16_t &step);
+    const char *getValueAsStrChannel(const frankData &frankDataType, const uint16_t &channel);
 
     // singleton
     static FrankData &getDataObj();
@@ -459,17 +455,17 @@ class FrankData {
 };
 
 // utility
-inline byte testByte(const int &value, const byte &minimum = 0, const byte &maximum = 255,
+inline byte testByte(const int16_t &value, const byte &minimum = 0, const byte &maximum = 255,
                      const bool &clampChange = 0); // test byte range and return valid byte
-int testInt(const int &value, const int &minimum, const int &maximum);
+int16_t testInt(const int16_t &value, const int16_t &minimum, const int16_t &maximum);
 inline byte increaseByte(const byte &value, const byte &maximum); // increase byte
 inline byte decreaseByte(const byte &value, const byte &minimum); // decrease byte
-inline byte changeByte(const byte &value, const int &change, const byte &minimum = 0, const byte &maximum = 255,
+inline byte changeByte(const byte &value, const int16_t &change, const byte &minimum = 0, const byte &maximum = 255,
                        const bool &clampChange = 0); // change byte
-inline int changeInt(const int &value, const int &change, const int &minimum, const int &maximum,
-                     const bool &clampChange = 0); // change byte
-byte changeByteReverse(const byte &value, const int &change, const byte &minimum = 0, const byte &maximum = 255);
-inline int changeIntReverse(const int &value, const int &change, const int &minimum, const int &maximum);
+inline int16_t changeInt(const int16_t &value, const int16_t &change, const int16_t &minimum, const int16_t &maximum,
+                         const bool &clampChange = 0); // change byte
+byte changeByteReverse(const byte &value, const int16_t &change, const byte &minimum = 0, const byte &maximum = 255);
+inline int16_t changeIntReverse(const int16_t &value, const int16_t &change, const int16_t &minimum, const int16_t &maximum);
 template <typename T> inline T toggleValue(const T &data);
 template <typename T> inline char *toStr(const T &data);
 

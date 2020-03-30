@@ -48,7 +48,7 @@ void updateNoteOut() {
     // calbiration mode
     if (DATAOBJ.get(FrankData::screenCal)) {
 
-        static unsigned int calTimer = millis();
+        static uint32_t calTimer = millis();
 
         if (millis() > calTimer + 25) {
             for (byte output = 0; output < OUTPUTS; output++) {
@@ -98,11 +98,11 @@ void updateNoteOut() {
 
                 newNote = DATAOBJ.get(FrankData::seqNote, DATAOBJ.get(FrankData::outputSource, output) - 1, seqStep);
 
-                gateDuration = (float)testInt((int)DATAOBJ.get(FrankData::seqGateLength, DATAOBJ.get(FrankData::outputSource, output) - 1, seqStep) +
-                                                  (int)DATAOBJ.get(FrankData::seqGateLengthOffset, DATAOBJ.get(FrankData::outputSource, output) - 1) -
-                                                  GATELENGTHOFFSET,
-                                              0, 100) /
-                               100.0f;
+                gateDuration =
+                    (float)testInt((int16_t)DATAOBJ.get(FrankData::seqGateLength, DATAOBJ.get(FrankData::outputSource, output) - 1, seqStep) +
+                                       DATAOBJ.get(FrankData::seqGateLengthOffset, DATAOBJ.get(FrankData::outputSource, output) - 1),
+                                   0, 100) /
+                    100.0f;
             }
 
             // only if not a key was released
@@ -192,13 +192,11 @@ void reactivateRatchet() {
                 float gateDuration = 0.5f;
                 if (DATAOBJ.get(FrankData::outputSource, output)) {
 
-                    gateDuration =
-                        (float)testInt((int)DATAOBJ.get(FrankData::seqGateLength, DATAOBJ.get(FrankData::outputSource, output) - 1,
-                                                        DATAOBJ.get(FrankData::stepSeq, output)) +
-                                           (int)DATAOBJ.get(FrankData::seqGateLengthOffset, DATAOBJ.get(FrankData::outputSource, output) - 1) -
-                                           GATELENGTHOFFSET,
-                                       0, 100) /
-                        100.0f;
+                    gateDuration = (float)testInt((int16_t)DATAOBJ.get(FrankData::seqGateLength, DATAOBJ.get(FrankData::outputSource, output) - 1,
+                                                                       DATAOBJ.get(FrankData::stepSeq, output)) +
+                                                      DATAOBJ.get(FrankData::seqGateLengthOffset, DATAOBJ.get(FrankData::outputSource, output) - 1),
+                                                  0, 100) /
+                                   100.0f;
                 }
 
                 previousOutputs[output].gateCloseTime = millis() + previousOutputs[output].ratchetOffsetTime * gateDuration;
@@ -229,19 +227,10 @@ void updateCVOut() {
 
         if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
             if (DATAOBJ.get(FrankData::outputCc, output) == 2) {
-                int pitchbend = DATAOBJ.getPitchbend(output) / 4; // returns -8192 - 8191, now -2048 - 2047
-
-                if (pitchbend > 0) {
-                    pitchbend = map(pitchbend, -2048, 0, -2048 + DATAOBJ.getPitchbendCalLower(output), 0);
-                }
-                else {
-                    pitchbend = map(pitchbend, 0, 2047, 0, 2047 + DATAOBJ.getPitchbendCalUpper(output));
-                }
-
-                newCV = pitchbend + 2048; // 2048 actually is the middle value
+                newCV = DATAOBJ.get(FrankData::outputCcEvaluated, output) / 4; // returns -8192 - 8191, now -2048 - 2047
             }
             else {
-                newCV = DATAOBJ.get(FrankData::outputCcEvaluated, output) * 32;
+                newCV = map(DATAOBJ.get(FrankData::outputCcEvaluated, output), 0, 127, -2048, 2047);
             }
         }
         else {
@@ -255,7 +244,7 @@ void updateCVOut() {
         if (newCV != previousOutputs[output].cv) {
             PRINT("newCV out is ");
             PRINTLN(newCV);
-            outputChannel[output].setCV(newCV); // expects 0-4095
+            outputChannel[output].setCV(newCV); // expects -2048 - 2047
             previousOutputs[output].cv = newCV;
         }
     }
@@ -344,7 +333,7 @@ void updateClockOut() {
     for (byte output = 0; output < OUTPUTS; output++) {
         if (previousOutputs[output].clockPulseActivated) {
 
-            if (millis() - timer[output] >= DATAOBJ.get(FrankData::pulseLength)) {
+            if (millis() - timer[output] >= (uint16_t)DATAOBJ.get(FrankData::pulseLength)) {
                 outputClock[output].setClock(0);
                 previousOutputs[output].clockPulseActivated = 0;
             }
@@ -355,7 +344,7 @@ void updateClockOut() {
 void closeTriggers() {
     for (byte output = 0; output < OUTPUTS; output++) {
         if (previousOutputs[output].triggerActivated) {
-            if (millis() - previousOutputs[output].triggerTimer >= DATAOBJ.get(FrankData::pulseLength)) {
+            if (millis() - previousOutputs[output].triggerTimer >= (uint16_t)DATAOBJ.get(FrankData::pulseLength)) {
                 outputChannel[output].setTrigger(0);
                 previousOutputs[output].triggerActivated = 0;
                 // PRINTLN("Trigger closed");
