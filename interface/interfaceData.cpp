@@ -1472,7 +1472,7 @@ void FrankData::toggle(const frankData &frankDataType) {
                 saveMenuSettings();
             }
             else {
-                stat.screen.mainMenu = ;
+                stat.screen.mainMenu = 0;
                 stat.screen.config = 0;
                 stat.screen.routing = 1;
                 stat.screen.calibration = 0;

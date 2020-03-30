@@ -76,7 +76,7 @@ void Display::drawBody() {
         DATAOBJ.get(FrankData::screenRouting) == 1) { // Load Config Template
         BodyTemplateMenu();
     }
-    else if (DATAOBJ.get(FrankData::screenCal) == 1) {
+    else if (DATAOBJ.get(FrankData::screenCal) == 1 || DATAOBJ.get(FrankData::screenCalCv) == 1) {
 
         BodyTemplateCal();
     }
@@ -535,24 +535,35 @@ void Display::FootSeq() {
 
 void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t w, int16_t h) {
     const uint16_t *buffer = bufferObj->getBuffer();
-    lcd.startWrite();
-    for (int16_t j = 0; j < h; j++, y++) {
+    
+    byte first = 1;
 
+    for (int16_t j = 0; j < h; j++, y++) {
         // update midi, clocks, outputs while in loop, so no delays occur
         updateMidi();
         DATAOBJ.updateClockCounter();
         updateAllOutputs();
-
         for (int16_t i = 0; i < w; i++) {
             int16_t index = j * w + i;
+
             if (bufferObj->compareBuffer(index)) {
+                if (first){
+                    lcd.startWrite();
+                    first = 0;
+                }
                 lcd.writePixel(x + i, y, pgm_read_word(&buffer[index]));
                 bufferObj->copyBuffer(index);
             }
         }
     }
-    lcd.endWrite();
+
+
+    if(!first){
+
+        lcd.endWrite();
+    }
 }
+
 
 // Display Buffer based on the adafruit canvas, with 2 sepereate buffers for comparison
 DispBuffer16::DispBuffer16(uint16_t w, uint16_t h) : Adafruit_GFX(w, h) {
@@ -646,5 +657,5 @@ void TLC5916::init(byte pin) {
     pinMode(pin, OUTPUT);
     digitalWrite(pin, LOW);
 
-    sendByte(0); // set to Black
+    //sendByte(0); // set to Black
 }

@@ -143,8 +143,9 @@ void inputControls::rotate(byte id, byte dir) {
         case SUBSCREEN:
             if (dir) {
 
-                if (DATAOBJ.get(SUBSCREEN) == 0 && DATAOBJ.get(FrankData::screenConfig) == 1) {
+                if (DATAOBJ.get(SUBSCREEN) == 1 && DATAOBJ.get(FrankData::screenConfig) == 1) {
                     DATAOBJ.toggle(FrankData::screenConfig);
+                    DATAOBJ.set(FrankData::screenSubScreen, 0);
                 }
                 else {
                     DATAOBJ.increase(SUBSCREEN);
@@ -154,6 +155,7 @@ void inputControls::rotate(byte id, byte dir) {
 
                 if (DATAOBJ.get(FrankData::screenSubScreen) == 0 && DATAOBJ.get(FrankData::screenConfig) == 0) {
                     DATAOBJ.toggle(FrankData::screenConfig);
+                    DATAOBJ.set(FrankData::screenSubScreen,1);
                 }
                 else {
                     DATAOBJ.decrease(FrankData::screenSubScreen);
