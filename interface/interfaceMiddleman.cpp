@@ -56,7 +56,7 @@ void updateNoteOut() {
 
                 outputChannel[output].setNote(newNote);
                 previousOutputs[output].note = newNote;
-                PRINT("set new Calib Note ");
+                // PRINT("set new Calib Note ");
                 PRINTLN(newNote);
                 outputChannel[output].setGate(1);
                 previousOutputs[output].gateActivated = 1;
@@ -171,8 +171,8 @@ void updateNoteOut() {
             if (newNote != previousOutputs[output].note) {
                 outputChannel[output].setNote(newNote);
                 previousOutputs[output].note = newNote;
-                PRINT("set new Note ");
-                PRINTLN(newNote);
+                // PRINT("set new Note ");
+                // PRINTLN(newNote);
             }
 
             DATAOBJ.set(FrankData::liveTriggered, 0, output);
@@ -186,7 +186,7 @@ void reactivateRatchet() {
         if (previousOutputs[output].ratchet && (DATAOBJ.get(FrankData::outputArp, output) || DATAOBJ.get(FrankData::outputSource, output))) {
             if (millis() >= previousOutputs[output].reactivateTime) {
 
-                PRINTLN("reactivate");
+                // PRINTLN("reactivate");
                 // PRINT(", current Time is ");
                 // PRINT(millis());
                 float gateDuration = 0.5f;
@@ -215,30 +215,36 @@ void reactivateRatchet() {
                 previousOutputs[output].triggerTimer = millis();
 
                 previousOutputs[output].ratchet--;
-                PRINT("Ratchet count left ");
-                PRINTLN(previousOutputs[output].ratchet);
+                // PRINT("Ratchet count left ");
+                // PRINTLN(previousOutputs[output].ratchet);
             }
         }
     }
 }
 
 void updateCVOut() {
-    byte newCV = 0;
+    int newCV = 0;
     for (byte output = 0; output < OUTPUTS; output++) {
 
         if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
-            newCV = DATAOBJ.get(FrankData::outputCcEvaluated, output);
+            if (DATAOBJ.get(FrankData::outputCc, output) == 2) {
+                newCV = (DATAOBJ.getPitchbend(output) + 8192) / 4; // pitchbend is 0 - 16384
+            } else {
+                newCV = DATAOBJ.get(FrankData::outputCcEvaluated, output) * 32;
+            }
         }
         else {
             byte currentStep = DATAOBJ.get(FrankData::stepSeq, output);
             if (currentStep != previousOutputs[output].stepSeq) {
                 previousOutputs[output].stepSeq = currentStep;
-                newCV = DATAOBJ.get(FrankData::seqCc, DATAOBJ.get(FrankData::outputSource, output) - 1, currentStep);
+                newCV = DATAOBJ.get(FrankData::seqCc, DATAOBJ.get(FrankData::outputSource, output) - 1, currentStep) * 32;
             }
         }
 
         if (newCV != previousOutputs[output].cv) {
-            outputChannel[output].setCV(newCV * 8); // expects 0-1023
+        PRINT("newCV out is ");
+        PRINTLN(newCV);
+            outputChannel[output].setCV(newCV); // expects 0-4095
             previousOutputs[output].cv = newCV;
         }
     }

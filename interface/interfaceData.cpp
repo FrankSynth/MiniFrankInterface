@@ -166,7 +166,6 @@ PressedNotesElement *PressedNotesList::getElement(const byte &element) {
 void LiveMidi::keyPressed(const byte &note, const byte &velocity) {
     noteList.appendKey(note, velocity);
     if (arpRetrigger && sustain < 64) {
-        PRINTLN("reset arp");
         arpList.deleteAllKeys();
         arpRetrigger = 0;
         arpStepRepeat = 1;
@@ -478,6 +477,10 @@ void FrankData::receivedKeyReleased(const byte &channel, const byte &note) {
     }
 }
 
+void FrankData::receivedPitchbend(const byte &channel, const int &pitchbend) {
+    liveMidi[channel].pitchbend = pitchbend;
+}
+
 void FrankData::init() {
     byte testByte = 0;
     byte checkByte = 2;
@@ -546,7 +549,6 @@ void FrankData::reset() {
         liveMidi[out].reset();
         liveMidi[out].updateArpArray(config.routing[out].arpMode);
     }
-    // set(play, 0);
 }
 
 void FrankData::increaseMidiClock() {
@@ -712,16 +714,16 @@ inline void FrankData::calcBPM() {
     if (stat.bpmSync) {
         static unsigned long bpm16thTimer = 0;
         static unsigned long averagingStartTime = millis();
-        static double averageTimer = 0;
+        static float averageTimer = 0;
         static byte counter = 0;
 
-        averageTimer += 60000000.0f / (double)(micros() - bpm16thTimer + 1.0);
+        averageTimer += 60000000.0f / (float)(micros() - bpm16thTimer + 1.0);
         bpm16thTimer = micros();
         counter++;
 
         if (millis() > averagingStartTime + 1000) {
             averageTimer = averageTimer / 4.0 - averageTimer / 500. + 0.5;
-            set(bpm, (int)(averageTimer / (double)counter + 0.5));
+            set(bpm, (int)(averageTimer / (float)counter + 0.5));
             averageTimer = 0;
             counter = 0;
             averagingStartTime = millis();
@@ -774,9 +776,7 @@ inline byte FrankData::getCurrentPageNumber(const byte &array) { // number of pa
 }
 
 // Singleton
-// FrankData *FrankData::mainData = nullptr;
 FrankData &FrankData::getDataObj() {
-    // if (mainData == nullptr) mainData = new FrankData();
     static FrankData mainData;
     return mainData;
 }
@@ -1099,11 +1099,19 @@ inline byte FrankData::getLiveCcEvaluated(const byte &array) {
     switch (config.routing[array].cc) {
         case 0: return config.routing[array].arp ? liveMidi[array].arpKey.velocity : getLiveKeyEvaluated(array).velocity;
         case 1: return liveMidi[array].mod;
-        case 2: return liveMidi[array].pitchbend;
+        case 2: return getPitchbendAsByte(array);
         case 3: return liveMidi[array].aftertouch;
         case 4: return liveMidi[array].sustain;
         default: PRINTLN("FrankData getLiveCcEvaluated, no case found"); return 0;
     }
+}
+
+byte FrankData::getPitchbendAsByte(const byte &channel) {
+    return (byte)(liveMidi[channel].pitchbend / 128 + 64);
+}
+
+int FrankData::getPitchbend(const byte &channel) {
+    return liveMidi[channel].pitchbend;
 }
 
 void FrankData::seqSetAllNotes(const byte &array, const byte &data) {
@@ -1158,10 +1166,6 @@ void FrankData::updateArp(const byte &array) {
 }
 
 // Screen config
-void FrankData::resetSubScreen() {
-    stat.screen.subscreen = FrankData::screenNote;
-}
-
 inline const byte FrankData::getSubscreenMax() {
     return config.routing[stat.screen.channel].outSource ? stat.screen.subScreenMaxSeq : stat.screen.subScreenMaxLive;
 }
@@ -1217,7 +1221,7 @@ byte FrankData::get(const frankData &frankDataType, const byte &array) {
         case noteScaleOffset: return cal[array].noteScaleOffset;
 
         case liveMod: return liveMidi[array].mod;
-        case livePitchbend: return liveMidi[array].pitchbend;
+        case livePitchbend: return getPitchbendAsByte(array);
         case liveAftertouch: return liveMidi[array].aftertouch;
         case liveSustain: return liveMidi[array].sustain;
         case liveTriggered: return liveMidi[array].triggered;

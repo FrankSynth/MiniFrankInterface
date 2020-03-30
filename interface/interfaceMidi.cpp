@@ -375,7 +375,7 @@ void midiAfterTouch(const byte &channel, const byte &midiData) {
 void midiPitchBend(const byte &channel, int value) {
     for (byte x = 0; x < OUTPUTS; x++) {
         if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
-            DATAOBJ.set(FrankData::livePitchbend, (byte)value, x);
+            DATAOBJ.receivedPitchbend(channel, value);
         }
     }
 }

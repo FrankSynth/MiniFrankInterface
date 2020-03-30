@@ -129,7 +129,7 @@ class LiveMidi {
   public:
     PressedNotesList noteList; // Key List for Live Midi
     byte mod = 0;              // live midi mod
-    byte pitchbend = 64;       // live midi pitchbend
+    int pitchbend = 0;       // live midi pitchbend
     byte aftertouch = 0;       // live midi aftertouch
     byte sustain = 0;          // live midi sustain
     byte triggered = 0;        // key was pressed
@@ -319,12 +319,6 @@ class FrankData {
         liveCalNote,
     };
 
-    // idea for further enumerators
-    enum subscreenStates : byte { screenNote, screenGate, screenCv, screenLive, screenArp };
-    enum midiSourceStates : byte { din, usb };
-    enum directionStates : byte { reverse, forward };
-    enum beatStates : byte { sixteenth, eighth, quarter, half, bar, doublebar };
-
   private:
     FrankData() {}
 
@@ -344,6 +338,7 @@ class FrankData {
     // receive MIDI
     void receivedKeyPressed(const byte &channel, const byte &note, const byte &velocity);
     void receivedKeyReleased(const byte &channel, const byte &note);
+    void receivedPitchbend(const byte &channel, const int &pitchbend);
     void receivedMidiClock();
     void receivedMidiSongPosition(unsigned int spp);
     void receivedStart();
@@ -356,7 +351,6 @@ class FrankData {
     void increaseMidiClock();
     void setBpm16thCount(unsigned int spp);
     byte getBpm16thCount();
-    // inline void resetClock();
     inline void calcBPM();
     inline void increaseSeqStep(const byte &array);
     inline void decreaseSeqStep(const byte &array);
@@ -376,6 +370,9 @@ class FrankData {
     void increaseStepCounters(const byte &channel);
     void decreaseStepCounters(const byte &channel);
 
+    byte getPitchbendAsByte(const byte &channel);
+    int getPitchbend(const byte &channel);
+
     void increaseBpm16thCount();
     inline structKey getLiveKeyEvaluated(const byte &array);
     inline structKey getKeyHighest(const byte &array);
@@ -383,8 +380,6 @@ class FrankData {
     inline structKey getKeyLatest(const byte &array);
 
     void setBPMPoti(const unsigned int &bpm);
-
-    void resetSubScreen(); // switch menu max 3 menu pages
 
     void seqSetAllNotes(const byte &array, const byte &data);
     void seqSetAllGates(const byte &array, const byte &data);

@@ -10,7 +10,7 @@
 class PreviousOutputs {
   public:
     byte note = 0;
-    byte cv = 0;
+    int cv = 0;
     byte ratchet = 0;
     byte gateActivated = 0;
     unsigned long gateCloseTime = 0;

@@ -34,7 +34,7 @@ void Channel::setNote(byte note) {
 }
 
 void Channel::setCV(int value) { // 0 - 1024 -> -5V -> 5V
-    unsigned int mV = (unsigned int)(testInt((1023 - value) * 4 + (DATAOBJ.get(FrankData::cvCalOffset, outputChannel) - CALOFFSET) * 4, 0, 4095));
+    unsigned int mV = (unsigned int)(testInt((4095 - value) + (DATAOBJ.get(FrankData::cvCalOffset, outputChannel) - CALOFFSET) * 4, 0, 4095));
     // PRINT("Output CV mv ");
     // PRINTLN(mV);
     setVoltage(cvDac, cvDacChannel, 2, mV);
