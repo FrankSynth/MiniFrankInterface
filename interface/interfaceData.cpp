@@ -1191,6 +1191,7 @@ byte FrankData::get(const frankData &frankDataType) {
         case screenSubScreen: return stat.screen.subscreen;
         case screenRouting: return stat.screen.routing;
         case screenCal: return stat.screen.calibration;
+        case screenCalCv: return stat.screen.calibrationCv;
 
         case liveCalNote: return stat.noteToCalibrate;
         case bpm: return stat.bpm;
@@ -1294,6 +1295,7 @@ void FrankData::set(const frankData &frankDataType, const int &data, const bool 
         case screenSubScreen: stat.screen.subscreen = testByte(data, 0, getSubscreenMax(), clampChange); break;
         case screenRouting: stat.screen.routing = testByte(data, 0, 1, clampChange); break;
         case screenCal: stat.screen.calibration = testByte(data, 0, 1, clampChange); break;
+        case screenCalCv: stat.screen.calibrationCv = testByte(data, 0, 1, clampChange); break;
 
         case liveCalNote: stat.noteToCalibrate = testByte(data, 0, NOTERANGE - 1, clampChange); break;
         case bpm: stat.bpm = testByte(data, 0, 255, clampChange); break;
@@ -1454,38 +1456,42 @@ void FrankData::toggle(const frankData &frankDataType) {
             config.routing[stat.screen.channel].arp = toggleValue(config.routing[stat.screen.channel].arp);
             updateArp(stat.screen.channel);
             break;
-        case screenMainMenu:
-            if (stat.screen.mainMenu || stat.screen.config || stat.screen.routing || stat.screen.calibration) {
-                stat.screen.mainMenu = 0;
-                stat.screen.config = 0;
-                stat.screen.routing = 0;
-                stat.screen.calibration = 0;
-                saveMenuSettings();
-            }
-            else {
-                stat.screen.mainMenu = 1;
-                stat.screen.config = 0;
-                stat.screen.routing = 0;
-                stat.screen.calibration = 0;
-            }
-            break;
+        case screenMainMenu: stat.screen.mainMenu = toggleValue(stat.screen.mainMenu); break;
         case screenConfig:
             stat.screen.config = toggleValue(stat.screen.config);
             if (stat.screen.config == 0)
                 saveMenuSettings();
-
             break;
         case screenRouting:
-            stat.screen.mainMenu = 0;
-            stat.screen.config = 0;
-            stat.screen.routing = !stat.screen.routing;
-            stat.screen.calibration = 0;
+            if (stat.screen.mainMenu || stat.screen.config || stat.screen.routing || stat.screen.calibration || stat.screen.calibrationCv) {
+                stat.screen.mainMenu = 0;
+                stat.screen.config = 0;
+                stat.screen.routing = 0;
+                stat.screen.calibration = 0;
+                stat.screen.calibrationCv = 0;
+                saveMenuSettings();
+            }
+            else {
+                stat.screen.mainMenu = ;
+                stat.screen.config = 0;
+                stat.screen.routing = 1;
+                stat.screen.calibration = 0;
+                stat.screen.calibrationCv = 0;
+            }
             break;
         case screenCal:
             stat.screen.mainMenu = 0;
             stat.screen.config = 0;
             stat.screen.routing = 0;
             stat.screen.calibration = 1;
+            stat.screen.calibrationCv = 0;
+            break;
+        case screenCalCv:
+            stat.screen.mainMenu = 0;
+            stat.screen.config = 0;
+            stat.screen.routing = 0;
+            stat.screen.calibration = 0;
+            stat.screen.calibrationCv = 1;
             break;
 
         case seqResetGates: seqResetAllGates(config.routing[stat.screen.channel].outSource - 1); break;
@@ -1548,7 +1554,7 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
         case seqOctaveUp: setStr("OctUp"); break;
         case seqOctaveDown: setStr("OctDn"); break;
 
-        case midiSource: setStr("Src"); break;
+        case midiSource: setStr("Midi"); break;
         case nbPages: setStr("Pages"); break;
         case direction: setStr("Fw/Rv"); break;
         case displayBrightness: setStr("ScBr"); break;
@@ -1579,7 +1585,8 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
         case screenConfig: setStr("Conf"); break;
         case screenMainMenu: setStr("Main"); break;
         case screenSubScreen: setStr("Sub"); break;
-        case screenCal: setStr("Cal"); break;
+        case screenCal: setStr("calN"); break;
+        case screenCalCv: setStr("calCv"); break;
         case screenRouting: setStr("MIDI"); break;
 
         case stepSeq: setStr("Step"); break;
@@ -1687,6 +1694,8 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
         case resetStepCounters:
         case screenRouting:
         case screenCal:
+        case screenCalCv:
+        case screenMainMenu:
         case seqResetGates:
         case seqResetGateLengths:
         case seqResetCC:
@@ -1698,7 +1707,6 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const byte &ch
 
         case screenOutputChannel:
         case screenConfig:
-        case screenMainMenu:
         case screenSubScreen:
 
         case displayBrightness:

@@ -67,6 +67,7 @@ typedef struct {
     byte subscreen = 0;              // subscreen -> current displayed screen .. note, gate, cv (seq) ; live, appregiator (live)
     byte calibration = 0;            // calibration screen
     byte calibrateNote = 0;          // Note calibration screen
+    byte calibrationCv = 0;          // Note calibration screen
     byte routing = 0;                // routing screen
     const byte subScreenMaxSeq = 2;  // Number of subscreens for seq mode
     const byte subScreenMaxLive = 0; // Number of subscreens for live mode
@@ -292,6 +293,7 @@ class FrankData {
         screenMainMenu,
         screenSubScreen,
         screenCal,
+        screenCalCv,
         screenRouting,
 
         // structStatus, needs value
