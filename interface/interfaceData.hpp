@@ -187,7 +187,7 @@ class Seq {
   public:
     Seq() { init(); }
 
-    void init(const byte &note = 12, const byte &gate = 1, const byte &gateLength = 50, const byte &cc = 64, const byte &tuning = 0,
+    void init(const byte &note = 24, const byte &gate = 1, const byte &gateLength = 50, const byte &cc = 64, const byte &tuning = 0,
               const byte &gateLengthOffset = 100); // init sequence to default values
 
     // Note

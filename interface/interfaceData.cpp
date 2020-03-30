@@ -1129,7 +1129,7 @@ void FrankData::seqAllOctaveDown(const byte &array) {
 }
 
 void FrankData::seqResetAllNotes(const byte &array) {
-    seq[array].setNotes(0);
+    seq[array].setNotes(24);
 }
 void FrankData::seqResetAllGates(const byte &array) {
     seq[array].setGateLengths(50);
@@ -1145,8 +1145,8 @@ void FrankData::seqCopy(const byte &source, const byte &destination) {
 
 void FrankData::resetAllStepCounter() {
     for (byte out = 0; out < OUTPUTS; out++) {
-        liveMidi[out].stepSeq = config.routing[out].nbPages * STEPSPERPAGE - 1;
-        liveMidi[out].channel16thCount = liveMidi[out].stepSeq * 16 - 1;
+        liveMidi[out].stepSeq = 0;
+        liveMidi[out].channel16thCount = 0;
     }
 }
 
