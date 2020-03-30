@@ -97,7 +97,6 @@ void setup() {
     digitalWrite(5, LOW);
 
     lcd.displayBrightness(200);
-
     initMidi();
     initMiddleman();
     tlc.init(7);
@@ -109,7 +108,7 @@ void setup() {
     delay(10u);
 
     // Start Connection to the uC
-    Serial3.begin(115200);
+    Serial3.begin(110000);
 
     // SayHello to the uC
     byte send = B01010101;
