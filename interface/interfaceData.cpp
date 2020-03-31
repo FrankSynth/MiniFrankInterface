@@ -482,13 +482,13 @@ void FrankData::receivedKeyReleased(const byte &channel, const byte &note) {
 
 void FrankData::init() {
     byte testByte = 0;
-    byte checkByte = 2;
+    byte checkByte = 1; // change this to cause a memory reset
     if (EEPROM.get(0, testByte) == checkByte) {
         loadNoteCalibration();
         loadAllMenuSettings();
     }
     else {
-        memset(cal, 127, sizeof(cal));
+        memset(cal, 0, sizeof(cal));
         saveNoteCalibration();
         saveMenuSettings();
         EEPROM.update(0, checkByte);
@@ -1178,10 +1178,11 @@ int16_t FrankData::get(const frankData &frankDataType) {
         case screenMainMenu: return stat.screen.mainMenu;
         case screenSubScreen: return stat.screen.subscreen;
         case screenRouting: return stat.screen.routing;
-        case screenCal: return stat.screen.calibration;
+        case screenCalNote: return stat.screen.calibration;
         case screenCalCv: return stat.screen.calibrationCv;
 
         case liveCalNote: return stat.noteToCalibrate;
+        case liveCalCv: return stat.cvToCalibrate;
         case bpm: return stat.bpm;
         case play: return stat.play;
         case rec: return stat.rec;
@@ -1214,10 +1215,14 @@ int16_t FrankData::get(const frankData &frankDataType, const uint16_t &array) {
         case liveKeysPressed: return liveMidi[array].keysPressed();
 
         case cvCalOffset: return cal[array].cvOffset;
+        case cvCalLower: return cal[array].cvLowerLimit;
+        case cvCalUpper: return cal[array].cvUpperLimit;
+        case cvPitchbendCalLower: return cal[array].cvPitchbendLowerLimit;
+        case cvPitchbendCalUpper: return cal[array].cvPitchbendUpperLimit;
         case noteScaleOffset: return cal[array].noteScaleOffset;
 
         case liveMod: return liveMidi[array].mod;
-        case livePitchbend: return getPitchbendAsByte(array);
+        case livePitchbend: return liveMidi[array].pitchbend;
         case liveAftertouch: return liveMidi[array].aftertouch;
         case liveSustain: return liveMidi[array].sustain;
         case liveTriggered: return liveMidi[array].triggered;
@@ -1244,6 +1249,7 @@ int16_t FrankData::get(const frankData &frankDataType, const uint16_t &array) {
         case seqGateLengthOffset: return seq[array].sequence.gateLengthOffset;
 
         case liveCalNote: return stat.noteToCalibrate;
+        case liveCalCv: return stat.cvToCalibrate;
 
         case none: return (int16_t)0;
 
@@ -1282,10 +1288,11 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data) {
         case screenMainMenu: stat.screen.mainMenu = testByte(data, 0, 1, true); break;
         case screenSubScreen: stat.screen.subscreen = testByte(data, 0, getSubscreenMax(), true); break;
         case screenRouting: stat.screen.routing = testByte(data, 0, 1, true); break;
-        case screenCal: stat.screen.calibration = testByte(data, 0, 1, true); break;
+        case screenCalNote: stat.screen.calibration = testByte(data, 0, 1, true); break;
         case screenCalCv: stat.screen.calibrationCv = testByte(data, 0, 1, true); break;
 
         case liveCalNote: stat.noteToCalibrate = testByte(data, 0, NOTERANGE - 1, true); break;
+        case liveCalCv: stat.cvToCalibrate = testInt(data, -1, 2); break;
         case bpm: stat.bpm = testByte(data, 0, 255, true); break;
         case play: stat.play = testByte(data, 0, 1, true); break;
         case rec: stat.rec = testByte(data, 0, 1, true); break;
@@ -1326,6 +1333,10 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data, const u
             break;
 
         case cvCalOffset: cal[array].cvOffset = testInt(data, -500, 500); break;
+        case cvCalLower: cal[array].cvLowerLimit = testInt(data, 0, 1000); break;
+        case cvCalUpper: cal[array].cvUpperLimit = testInt(data, -1000, 0); break;
+        case cvPitchbendCalLower: cal[array].cvPitchbendLowerLimit = testInt(data, 0, 1000); break;
+        case cvPitchbendCalUpper: cal[array].cvPitchbendUpperLimit = testInt(data, -1000, 0); break;
         case noteScaleOffset: cal[array].noteScaleOffset = testInt(data, -100, 100); break;
 
         case liveMod: liveMidi[array].mod = testByte(data, 0, 127, true); break;
@@ -1343,6 +1354,7 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data, const u
         case nbPages: config.routing[array].nbPages = testByte(data, 1, PAGES, true); break;
 
         case liveCalNote: stat.noteToCalibrate = testByte(data, 0, NOTERANGE - 1, true); break;
+        case liveCalCv: stat.cvToCalibrate = testInt(data, -1, 2); break;
 
         case seqTuning: seq[array].sequence.tuning = testByte(data, 0, 13, true); break;
         // case seqRatchet: seq[array].sequence.ratchet = testByte(data, 0, 3, true); break;
@@ -1388,10 +1400,6 @@ void FrankData::increase(const frankData &frankDataType, const uint16_t &array) 
     switch (frankDataType) {
         case stepArp: nextArpStep(array); break;
         case stepSeq: increaseSeqStep(array); break;
-        case cvCalLower: cal[array].cvLowerLimit = changeInt(cal[array].cvLowerLimit, 1, 0, 2048); break;
-        case cvCalUpper: cal[array].cvUpperLimit = changeInt(cal[array].cvUpperLimit, 1, -2047, 0); break;
-        case cvPitchbendCalLower: cal[array].cvPitchbendLowerLimit = changeInt(cal[array].cvPitchbendLowerLimit, 1, 0, 2048); break;
-        case cvPitchbendCalUpper: cal[array].cvPitchbendUpperLimit = changeInt(cal[array].cvPitchbendUpperLimit, 1, -2047, 0); break;
         default: change(frankDataType, 1, array);
     }
 }
@@ -1415,10 +1423,6 @@ void FrankData::decrease(const frankData &frankDataType, const uint16_t &array) 
     switch (frankDataType) {
         case stepArp: nextArpStep(array); break;
         case stepSeq: decreaseSeqStep(array); break;
-        case cvCalLower: cal[array].cvLowerLimit = changeInt(cal[array].cvLowerLimit, -1, 0, 2048); break;
-        case cvCalUpper: cal[array].cvUpperLimit = changeInt(cal[array].cvUpperLimit, -1, -2047, 0); break;
-        case cvPitchbendCalLower: cal[array].cvPitchbendLowerLimit = changeInt(cal[array].cvPitchbendLowerLimit, -1, 0, 2048); break;
-        case cvPitchbendCalUpper: cal[array].cvPitchbendUpperLimit = changeInt(cal[array].cvPitchbendUpperLimit, -1, -2047, 0); break;
         default: change(frankDataType, -1, array);
     }
 }
@@ -1471,7 +1475,7 @@ void FrankData::toggle(const frankData &frankDataType) {
                 stat.screen.calibrationCv = 0;
             }
             break;
-        case screenCal:
+        case screenCalNote:
             stat.screen.mainMenu = 0;
             stat.screen.config = 0;
             stat.screen.routing = 0;
@@ -1518,6 +1522,7 @@ void FrankData::toggle(const frankData &frankdataType, const uint16_t &array) {
         case seqResetNotes: seqResetAllNotes(array); break;
         case seqResetGateLengths: seqResetAllGateLengths(array); break;
         case seqResetCC: seqResetAllCC(array); break;
+        case resetStepCounters: resetAllStepCounter(); break;
         default: PRINTLN("FrankData toggle(frankData frankDataType, const byte &array), no case found");
     }
 }
@@ -1581,7 +1586,7 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
         case screenConfig: setStr("Conf"); break;
         case screenMainMenu: setStr("Main"); break;
         case screenSubScreen: setStr("Sub"); break;
-        case screenCal: setStr("calN"); break;
+        case screenCalNote: setStr("calN"); break;
         case screenCalCv: setStr("calCv"); break;
         case screenRouting: setStr("MIDI"); break;
 
@@ -1608,6 +1613,7 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
         case liveKeyArpNoteEvaluated:
         case liveCalNote:
         case liveKeyNoteEvaluated: setStr("Note"); break;
+        case liveCalCv: setStr("CV"); break;
         case liveKeyArpVelEvaluated:
         case liveKeyVelEvaluated: setStr("Vel"); break;
         case saveCal: setStr("Save"); break;
@@ -1615,6 +1621,10 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
         case noteCalOffset: setStr("NCal"); break;
         case cvCalOffset: setStr("CvCal"); break;
         case noteScaleOffset: setStr("NSCal"); break;
+        case cvCalLower: setStr("CV Lo"); break;
+        case cvCalUpper: setStr("CV Hi"); break;
+        case cvPitchbendCalLower: setStr("PB Lo"); break;
+        case cvPitchbendCalUpper: setStr("PB Hi"); break;
 
         case resetStepCounters: setStr("RsStep"); break;
 
@@ -1689,7 +1699,7 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const uint16_t
 
         case resetStepCounters:
         case screenRouting:
-        case screenCal:
+        case screenCalNote:
         case screenCalCv:
         case screenMainMenu:
         case seqResetGates:
@@ -1700,6 +1710,14 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const uint16_t
         case saveCal:
         case seqResetNotes: setStr("@"); break;
         case noteCalOffset: setStr(toStr(get(frankDataType, channel, stat.noteToCalibrate))); break;
+        case liveCalCv:
+            switch (stat.cvToCalibrate) {
+                case -1: setStr("-5V"); break;
+                case 0: setStr("0V"); break;
+                case 1: setStr("5V"); break;
+                case 2: setStr("PB"); break;
+            }
+            break;
 
         case screenOutputChannel:
         case screenConfig:
@@ -1716,6 +1734,10 @@ const char *FrankData::valueToStr(const frankData &frankDataType, const uint16_t
         case load:
         case save: setStr(toStr(get(frankDataType) + 1)); break;
 
+        case cvCalLower:
+        case cvCalUpper:
+        case cvPitchbendCalLower:
+        case cvPitchbendCalUpper:
         case noteScaleOffset:
         case cvCalOffset: setStr(toStr(get(frankDataType, channel))); break;
 
@@ -1903,7 +1925,6 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType, const uint1
         case seqGate:
         case seqGateLength:
         case seqCc:
-            // case seqVelocity: setStr(toStr(get(frankDataType, config.routing[stat.screen.channel].outSource - 1, step))); break;
 
         case none: setStr(""); break;
 
@@ -1928,8 +1949,7 @@ void FrankData::loadSequence(const byte &saveSlot, const byte &sequence) {
         return;
     }
 
-    int memory = 0;
-    memory = saveSlot * sizeof(structSequence) + 300; // leave space for menu and calibration
+    int memory = saveSlot * sizeof(structSequence) + 450; // leave space for menu and calibration
 
     EEPROM.get(memory, seq[sequence].sequence);
 }
@@ -1945,8 +1965,7 @@ void FrankData::saveSequence(const byte &saveSlot, const byte &sequence) {
         return;
     }
 
-    int memory = 0;
-    memory = saveSlot * sizeof(structSequence) + 300; // leave space for menu and calibration
+    int memory = saveSlot * sizeof(structSequence) + 450; // leave space for menu and calibration
 
     EEPROM.put(memory, seq[sequence].sequence);
 }

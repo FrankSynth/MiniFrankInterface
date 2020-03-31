@@ -37,7 +37,7 @@ void Channel::setCV(int value) { // 0 - 2048 -> -5V -> 5V
     int16_t calOffset = DATAOBJ.get(FrankData::cvCalOffset, outputChannel);
 
     if (DATAOBJ.get(FrankData::outputCc, outputChannel) == 2) {
-        if (value > calOffset) {
+        if (value < 0) {
             value =
                 map(value, -2048, 0, DATAOBJ.get(FrankData::cvPitchbendCalLower, outputChannel) + DATAOBJ.get(FrankData::cvCalLower, outputChannel),
                     2048 + calOffset);
@@ -48,7 +48,7 @@ void Channel::setCV(int value) { // 0 - 2048 -> -5V -> 5V
         }
     }
     else {
-        if (value > calOffset) {
+        if (value < 0) {
             value = map(value, -2048, 0, DATAOBJ.get(FrankData::cvCalLower, outputChannel), 2048 + calOffset);
         }
         else {
@@ -57,8 +57,8 @@ void Channel::setCV(int value) { // 0 - 2048 -> -5V -> 5V
     }
 
     unsigned int mV = (unsigned int)testInt((4095 - value), 0, 4095);
-    // PRINT("Output CV mv ");
-    // PRINTLN(mV);
+    PRINT("Output CV mv ");
+    PRINTLN(value);
     setVoltage(cvDac, cvDacChannel, 2, mV);
 }
 

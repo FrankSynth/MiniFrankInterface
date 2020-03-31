@@ -46,7 +46,7 @@ void updateAllOutputs() {
 void updateNoteOut() {
 
     // calbiration mode
-    if (DATAOBJ.get(FrankData::screenCal)) {
+    if (DATAOBJ.get(FrankData::screenCalNote)) {
 
         static uint32_t calTimer = millis();
 
@@ -221,29 +221,68 @@ void reactivateRatchet() {
 }
 
 void updateCVOut() {
-    int newCV = 0;
+
+    // calbiration mode
+    if (DATAOBJ.get(FrankData::screenCalCv)) {
+
+        static uint32_t calTimer = millis();
+
+        if (millis() > calTimer + 25) {
+            for (byte output = 0; output < OUTPUTS; output++) {
+                int newCV = 0;
+
+                if (DATAOBJ.get(FrankData::liveCalCv) == 2) {
+                    newCV = DATAOBJ.get(FrankData::livePitchbend, output) / 4; // returns -8192 - 8191, now -2048 - 2047
+                }
+                else {
+                    newCV = testInt(DATAOBJ.get(FrankData::liveCalCv) * 2048, -2048, 2047);
+                }
+                // PRINT("New Calib CV");
+                // PRINTLN(newCV);
+                outputChannel[output].setCV(newCV); // expects -2048 - 2047
+            }
+            calTimer = millis();
+        }
+        return;
+    }
 
     for (byte output = 0; output < OUTPUTS; output++) {
+        int newCV = 0;
 
         if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
             if (DATAOBJ.get(FrankData::outputCc, output) == 2) {
                 newCV = DATAOBJ.get(FrankData::outputCcEvaluated, output) / 4; // returns -8192 - 8191, now -2048 - 2047
             }
             else {
-                newCV = map(DATAOBJ.get(FrankData::outputCcEvaluated, output), 0, 127, -2048, 2047);
+                newCV = DATAOBJ.get(FrankData::outputCcEvaluated, output);
+                if (newCV < 64) {
+                    newCV = map(newCV, 0, 64, -2048, 0);
+                }
+                else {
+                    newCV = map(newCV, 64, 127, 0, 2047);
+                }
             }
         }
         else {
             byte currentStep = DATAOBJ.get(FrankData::stepSeq, output);
-            if (currentStep != previousOutputs[output].stepSeq) {
+            if (currentStep != previousOutputs[output].stepSeq || !DATAOBJ.get(FrankData::play)) {
                 previousOutputs[output].stepSeq = currentStep;
-                newCV = DATAOBJ.get(FrankData::seqCc, DATAOBJ.get(FrankData::outputSource, output) - 1, currentStep) * 32;
+                newCV = DATAOBJ.get(FrankData::seqCc, DATAOBJ.get(FrankData::outputSource, output) - 1, currentStep);
+                if (newCV < 64) {
+                    newCV = map(newCV, 0, 64, -2048, 0);
+                }
+                else {
+                    newCV = map(newCV, 64, 127, 0, 2047);
+                }
+            }
+            else {
+                continue;
             }
         }
 
         if (newCV != previousOutputs[output].cv) {
-            PRINT("newCV out is ");
-            PRINTLN(newCV);
+            // PRINT("newCV out is ");
+            // PRINTLN(newCV);
             outputChannel[output].setCV(newCV); // expects -2048 - 2047
             previousOutputs[output].cv = newCV;
         }
@@ -253,7 +292,7 @@ void updateCVOut() {
 void closeGates() {
 
     // don't close gates if calibration mode is on
-    if (DATAOBJ.get(FrankData::screenCal))
+    if (DATAOBJ.get(FrankData::screenCalNote))
         return;
 
     for (byte output = 0; output < OUTPUTS; output++) {
@@ -299,7 +338,7 @@ void closeGates() {
 
 void updateClockOut() {
 
-    static unsigned long timer[2] = {0};
+    static uint32_t timer[2] = {0};
 
     if (!(DATAOBJ.get(FrankData::bpm16thCount) == previousState.old16thClockCount)) {
         previousState.old16thClockCount = DATAOBJ.get(FrankData::bpm16thCount);

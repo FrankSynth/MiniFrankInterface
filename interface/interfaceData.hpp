@@ -85,7 +85,8 @@ typedef struct {
 
     byte pulseLength = 20; // pulse length in ms
 
-    byte noteToCalibrate = 0; // note value that gets calibrated
+    byte noteToCalibrate = 0;  // note value that gets calibrated
+    int16_t cvToCalibrate = 0; // cv value * 2048 that gets calibrated
 
     byte bpmSync = 0;        // Sync Active
     byte midiClockCount = 5; // counts incoming midiclock signals (6 ticks per 16th)
@@ -248,6 +249,7 @@ class FrankData {
         cvCalOffset,
         noteScaleOffset,
         liveCalNote,
+        liveCalCv,
         cvCalUpper,
         cvCalLower,
         cvPitchbendCalUpper,
@@ -294,7 +296,7 @@ class FrankData {
         screenConfig,
         screenMainMenu,
         screenSubScreen,
-        screenCal,
+        screenCalNote,
         screenCalCv,
         screenRouting,
 

@@ -3,7 +3,7 @@
 #include "interfaceMidi.hpp"
 #include <string.h>
 
-#define DEBUG 1
+#define DEBUG 0
 
 #if DEBUG == 1
 #define PRINTLN(x) Serial.println(x)
@@ -72,11 +72,11 @@ void Display::updateDisplay() {
 void Display::drawBody() {
     bufferBody->fillScreen(BACKGROUND); // resetBuffer
 
-    if (DATAOBJ.get(FrankData::screenMainMenu) == 1 || DATAOBJ.get(FrankData::screenConfig) == 1 ||
-        DATAOBJ.get(FrankData::screenRouting) == 1) { // Load Config Template
+    if (DATAOBJ.get(FrankData::screenMainMenu) == 1 || DATAOBJ.get(FrankData::screenConfig) == 1 || DATAOBJ.get(FrankData::screenRouting) == 1 ||
+        DATAOBJ.get(FrankData::screenCalCv) == 1) { // Load Config Template
         BodyTemplateMenu();
     }
-    else if (DATAOBJ.get(FrankData::screenCal) == 1 || DATAOBJ.get(FrankData::screenCalCv) == 1) {
+    else if (DATAOBJ.get(FrankData::screenCalNote) == 1) {
 
         BodyTemplateCal();
     }
@@ -384,6 +384,9 @@ void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
                     mapping(dataField) == FrankData::midiSource || mapping(dataField) == FrankData::outputChannel ||
                     mapping(dataField) == FrankData::outputClock || mapping(dataField) == FrankData::outputCc ||
                     mapping(dataField) == FrankData::nbPages || mapping(dataField) == FrankData::outputRatchet ||
+                    mapping(dataField) == FrankData::cvCalLower || mapping(dataField) == FrankData::cvCalUpper ||
+                    mapping(dataField) == FrankData::cvPitchbendCalLower || mapping(dataField) == FrankData::cvPitchbendCalUpper ||
+                    mapping(dataField) == FrankData::cvCalOffset ||
                     DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) == 0) {
                     data = DATAOBJ.getValueAsStrChannel(mapping(dataField), DATAOBJ.get(FrankData::screenOutputChannel));
                 }
@@ -535,7 +538,7 @@ void Display::FootSeq() {
 
 void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t w, int16_t h) {
     const uint16_t *buffer = bufferObj->getBuffer();
-    
+
     byte first = 1;
 
     for (int16_t j = 0; j < h; j++, y++) {
@@ -547,7 +550,7 @@ void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t
             int16_t index = j * w + i;
 
             if (bufferObj->compareBuffer(index)) {
-                if (first){
+                if (first) {
                     lcd.startWrite();
                     first = 0;
                 }
@@ -557,13 +560,11 @@ void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t
         }
     }
 
-
-    if(!first){
+    if (!first) {
 
         lcd.endWrite();
     }
 }
-
 
 // Display Buffer based on the adafruit canvas, with 2 sepereate buffers for comparison
 DispBuffer16::DispBuffer16(uint16_t w, uint16_t h) : Adafruit_GFX(w, h) {
@@ -657,5 +658,5 @@ void TLC5916::init(byte pin) {
     pinMode(pin, OUTPUT);
     digitalWrite(pin, LOW);
 
-    //sendByte(0); // set to Black
+    // sendByte(0); // set to Black
 }

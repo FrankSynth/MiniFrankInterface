@@ -77,6 +77,13 @@ void inputControls::rotate(byte id, byte dir) {
             }
             break;
 
+        case FrankData::screenCalCv:
+        case FrankData::screenCalNote:
+        case FrankData::screenMainMenu:
+        case FrankData::screenOutputChannel:
+        case FrankData::screenConfig:
+        case FrankData::saveCal: break;
+
         // Type, Channel;
         case FrankData::outputArpOctave:
         case FrankData::outputClock:
@@ -95,6 +102,11 @@ void inputControls::rotate(byte id, byte dir) {
         case FrankData::nbPages:
 
         case FrankData::cvCalOffset:
+        case FrankData::cvCalLower:
+        case FrankData::cvCalUpper:
+        case FrankData::cvPitchbendCalLower:
+        case FrankData::cvPitchbendCalUpper:
+
         case FrankData::liveCalNote:
         case FrankData::noteScaleOffset:
 
@@ -155,7 +167,7 @@ void inputControls::rotate(byte id, byte dir) {
 
                 if (DATAOBJ.get(FrankData::screenSubScreen) == 0 && DATAOBJ.get(FrankData::screenConfig) == 0) {
                     DATAOBJ.toggle(FrankData::screenConfig);
-                    DATAOBJ.set(FrankData::screenSubScreen,1);
+                    DATAOBJ.set(FrankData::screenSubScreen, 1);
                 }
                 else {
                     DATAOBJ.decrease(FrankData::screenSubScreen);
