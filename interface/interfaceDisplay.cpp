@@ -35,6 +35,7 @@ void Display::initLCD(byte w, byte h, byte rotation) {
 }
 
 void Display::displayBrightness(byte brightness) {
+    brightness = map(brightness, 0, 100, 5, 255);
     analogWrite(LCD_BL, brightness);
 }
 
@@ -81,19 +82,19 @@ void Display::drawBody() {
         BodyTemplateCal();
     }
 
-    else if (DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) == 0) { // Live Mode
+    else if (DATAOBJ.get(FrankData::outputSource, CHANNEL) == 0) { // Live Mode
         BodyTemplateLive();
     }
-    else if (DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) > 0) { // Seq Mode
+    else if (DATAOBJ.get(FrankData::outputSource, CHANNEL) > 0) { // Seq Mode
         BodyTemplateSeq();
     }
 }
 
 void Display::drawFoot() {
-    if (DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) == 0) { // Live Mode
+    if (DATAOBJ.get(FrankData::outputSource, CHANNEL) == 0) { // Live Mode
         FootLive();
     }
-    else if (DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) > 0) { // Seq Mode
+    else if (DATAOBJ.get(FrankData::outputSource, CHANNEL) > 0) { // Seq Mode
         FootSeq();
     }
 }
@@ -127,7 +128,7 @@ void Display::BodyTemplateLive() { // has 1 dataFields + GateSignal
 
                     bufferBody->setTextColor(WHITE, GREY); // font Color
 
-                    const char *data = DATAOBJ.getValueAsStr(mapping(dataField)); // temporary removed index
+                    const char *data = DATAOBJ.getValueAsStr(mapping(dataField), CHANNEL); // temporary removed index
 
                     if ((byte)data[0] == 64) {
 
@@ -161,10 +162,10 @@ void Display::BodyTemplateLive() { // has 1 dataFields + GateSignal
     // byte note = 1;
     byte note;
 
-    if (DATAOBJ.get(FrankData::outputArp, DATAOBJ.get(FrankData::screenOutputChannel)))
-        note = DATAOBJ.get(FrankData::liveKeyArpNoteEvaluated, DATAOBJ.get(FrankData::screenOutputChannel));
+    if (DATAOBJ.get(FrankData::outputArp, CHANNEL))
+        note = DATAOBJ.get(FrankData::liveKeyArpNoteEvaluated, CHANNEL);
     else
-        note = DATAOBJ.get(FrankData::liveKeyNoteEvaluated, DATAOBJ.get(FrankData::screenOutputChannel));
+        note = DATAOBJ.get(FrankData::liveKeyNoteEvaluated, CHANNEL);
 
     bufferBody->setFont(&FreeSansBold18pt7b);
     bufferBody->setCursor(100, 38);
@@ -210,7 +211,7 @@ void Display::BodyTemplateCal() { // has 1 dataFields + GateSignal
 
                     bufferBody->setTextColor(WHITE, GREY); // font Color
 
-                    const char *data = DATAOBJ.getValueAsStr(mapping(dataField));
+                    const char *data = DATAOBJ.getValueAsStr(mapping(dataField), CHANNEL);
 
                     if ((byte)data[0] == 64) {
 
@@ -260,13 +261,13 @@ void Display::BodyTemplateSeq() { // has 2x4 dataField
         for (int y = 0; y < 2; y++) {
             byte dataField = x + y * 4; // current DataField
 
-            byte dataFieldIndex = x + y * 4 + DATAOBJ.get(FrankData::activePage, DATAOBJ.get(FrankData::screenOutputChannel)) * 8; // current index
+            byte dataFieldIndex = x + y * 4 + DATAOBJ.get(FrankData::activePage, CHANNEL) * 8; // current index
 
             /////Draw the squares/////
             bufferBody->drawRect(x * 40, y * 36 - 1 + y, 40, 38, DARKGREY); //
 
             /////Draw red bar for the ActiveDataField (STEP) /////
-            if (DATAOBJ.get(FrankData::stepOnPage, DATAOBJ.get(FrankData::screenOutputChannel)) == (x + y * 4)) {
+            if (DATAOBJ.get(FrankData::stepOnPage, CHANNEL) == (x + y * 4)) {
                 bufferBody->fillRect(x * 40 + 1, y * 35 + 32 + y, 38, 4, RED); // red bar for active Step
             }
 
@@ -280,8 +281,7 @@ void Display::BodyTemplateSeq() { // has 2x4 dataField
             // Data is NOTE type
             if (mapping(dataField) == NOTE) {
                 // Note Value
-                byte note = DATAOBJ.get(FrankData::seqNote, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1,
-                                        dataFieldIndex);
+                byte note = DATAOBJ.get(FrankData::seqNote, SEQCHANNEL, dataFieldIndex);
                 bufferBody->setFont(&FreeSansBold12pt7b);
                 bufferBody->setCursor(x * 40 + 7, y * 35 + 27 + y);
                 bufferBody->print(valueToNote(note));
@@ -297,12 +297,12 @@ void Display::BodyTemplateSeq() { // has 2x4 dataField
 
             // Data is default type (123456789, max 3 digits)
             else {
-                if (DATAOBJ.get(mapping(dataField), DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1,
+                if (DATAOBJ.get(mapping(dataField), SEQCHANNEL,
                                 dataFieldIndex) < 10) { // 1 digit
                     bufferBody->setFont(&FreeSansBold12pt7b);
                     bufferBody->setCursor(x * 40 + 12, y * 35 + 25);
                 }
-                else if (DATAOBJ.get(mapping(dataField), DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1,
+                else if (DATAOBJ.get(mapping(dataField), SEQCHANNEL,
                                      dataFieldIndex) < 100) { // 2digit
                     bufferBody->setFont(&FreeSansBold12pt7b);
                     bufferBody->setCursor(x * 40 + 6, y * 35 + 25);
@@ -311,27 +311,25 @@ void Display::BodyTemplateSeq() { // has 2x4 dataField
                     bufferBody->setFont(&FreeSansBold9pt7b);
                     bufferBody->setCursor(x * 40 + 4, y * 35 + 24);
                 }
-                bufferBody->print(DATAOBJ.get(mapping(dataField),
-                                              DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1,
+                bufferBody->print(DATAOBJ.get(mapping(dataField), SEQCHANNEL,
                                               dataFieldIndex)); // print value
             }
 
-            if (DATAOBJ.get(FrankData::seqGate, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1,
-                            dataFieldIndex)) {
+            if (DATAOBJ.get(FrankData::seqGate, SEQCHANNEL, dataFieldIndex)) {
                 bufferBody->drawRect(x * 40 + 1, y * 36 + y, 38, 36, GREYWHITE); // Blue Gate on Rectangle
             }
         }
     }
 
     ///// PageBlocks /////
-    byte width = 160 / DATAOBJ.get(FrankData::currentPageNumber, DATAOBJ.get(FrankData::screenOutputChannel));                // block width
-    byte offset = (160 - DATAOBJ.get(FrankData::currentPageNumber, DATAOBJ.get(FrankData::screenOutputChannel)) * width) / 2; // center blocks
+    byte width = 160 / DATAOBJ.get(FrankData::currentPageNumber, CHANNEL);                // block width
+    byte offset = (160 - DATAOBJ.get(FrankData::currentPageNumber, CHANNEL) * width) / 2; // center blocks
 
-    for (int x = 0; x < DATAOBJ.get(FrankData::currentPageNumber, DATAOBJ.get(FrankData::screenOutputChannel)); x++) {
+    for (int x = 0; x < DATAOBJ.get(FrankData::currentPageNumber, CHANNEL); x++) {
         bufferBody->drawRect(x * width + offset, 73, width, 25, DARKGREY);          // dark Rectangle
         bufferBody->fillRect(x * width + 1 + offset, 73 + 1, width - 2, 23, GREEN); // grey box
 
-        if (x == DATAOBJ.get(FrankData::activePage, DATAOBJ.get(FrankData::screenOutputChannel))) {
+        if (x == DATAOBJ.get(FrankData::activePage, CHANNEL)) {
             bufferBody->fillRect(x * width + 1 + offset, 73 + 1, width - 2, 23, RED); // Red Block (active)
         }
     }
@@ -362,50 +360,21 @@ void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
                 bufferBody->print(string);                                   // print value to display
 
                 /////Data/////
-
                 bufferBody->setTextColor(WHITE, GREY); // font Color
 
-                // vll.. kann man alle werte auf string mappen damit wir int, sowie strings hier printen können, müsste
-                // aber in der datenklasse passieren, vll getDataString?
-
-                /*
-                                ===== what does the next line mean/should do?
-                                 "index" is a external function, thus a bad variable name,
-                                 because if not defined differently, it is known as a function pointer.
-
-                          */
-                // char *data = toStr(mapping(dataField), index); // string buffer
                 const char *data;
 
-                // Achtung hier wird gebastelt::::
-
-                // alle werte pro output channel
-                if (mapping(dataField) == FrankData::outputSource || mapping(dataField) == FrankData::stepSpeed ||
-                    mapping(dataField) == FrankData::midiSource || mapping(dataField) == FrankData::outputChannel ||
-                    mapping(dataField) == FrankData::outputClock || mapping(dataField) == FrankData::outputCc ||
-                    mapping(dataField) == FrankData::nbPages || mapping(dataField) == FrankData::outputRatchet ||
-                    mapping(dataField) == FrankData::cvCalLower || mapping(dataField) == FrankData::cvCalUpper ||
-                    mapping(dataField) == FrankData::cvPitchbendCalLower || mapping(dataField) == FrankData::cvPitchbendCalUpper ||
-                    mapping(dataField) == FrankData::cvCalOffset ||
-                    DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) == 0) {
-                    data = DATAOBJ.getValueAsStrChannel(mapping(dataField), DATAOBJ.get(FrankData::screenOutputChannel));
+                switch (mapping(dataField)) {
+                    case FrankData::seqGateLengthOffset:
+                    case FrankData::seqTuning: data = DATAOBJ.getValueAsStr(mapping(dataField), SEQCHANNEL); break;
+                    default: data = DATAOBJ.getValueAsStr(mapping(dataField), CHANNEL);
                 }
-
-                // alle werte pro sequenz
-                else {
-                    data = DATAOBJ.getValueAsStrChannel(mapping(dataField),
-                                                        DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1);
-                }
-
-                // ab hier ist alles wieder okay...
 
                 byte length = strlen(data); // string length
                 if ((byte)data[0] == 64) {
-
                     bufferBody->fillCircle(posX + 20, posY + 35, 7, WHITE);
                 }
                 else {
-
                     if (length == 4) { // 3 Digit
                         bufferBody->setFont(&FreeSansBold9pt7b);
                         bufferBody->setCursor(posX + 20 - 19, posY + 40 + y);
@@ -444,12 +413,12 @@ void Display::drawHead() {
     bufferHead->setCursor(52, 4);
     bufferHead->print("CL: ");
     bufferHead->setCursor(71, 4);
-    bufferHead->print(DATAOBJ.getValueAsStrChannel(FrankData::outputClock, DATAOBJ.get(FrankData::screenOutputChannel)));
+    bufferHead->print(DATAOBJ.getValueAsStr(FrankData::outputClock, CHANNEL));
     bufferHead->setCursor(100, 4);
     bufferHead->print("SP: ");
 
     bufferHead->setCursor(119, 4);
-    bufferHead->print(DATAOBJ.getValueAsStrChannel(FrankData::stepSpeed, DATAOBJ.get(FrankData::screenOutputChannel)));
+    bufferHead->print(DATAOBJ.getValueAsStr(FrankData::stepSpeed, CHANNEL));
 
     if (DATAOBJ.get(FrankData::rec)) {
         bufferHead->fillCircle(150, 7, 3, RED);
@@ -466,14 +435,14 @@ void Display::FootLive() {
     bufferFoot->setTextColor(WHITE, COLORTHEME);
     bufferFoot->print("OUT:");
 
-    bufferFoot->print(DATAOBJ.get(FrankData::screenOutputChannel) + 1);
+    bufferFoot->print(CHANNEL + 1);
 
     bufferFoot->setCursor(48, 4);
-    bufferFoot->print(DATAOBJ.getValueAsStr(FrankData::midiSource));
+    bufferFoot->print(DATAOBJ.getValueAsStr(FrankData::midiSource, CHANNEL));
 
     bufferFoot->setCursor(76, 4);
     bufferFoot->print("CH:");
-    bufferFoot->print(DATAOBJ.getValueAsStr(FrankData::outputChannel));
+    bufferFoot->print(DATAOBJ.getValueAsStr(FrankData::outputChannel, CHANNEL));
 
     bufferFoot->setCursor(117, 4);
     bufferFoot->print("CC:");
@@ -491,7 +460,7 @@ void Display::FootSeq() {
     // OUT CHannel
     bufferFoot->setCursor(4, 4);
     bufferFoot->print("OUT:");
-    bufferFoot->print(DATAOBJ.get(FrankData::screenOutputChannel) + 1);
+    bufferFoot->print(CHANNEL + 1);
 
     // STOP PLAY
     bufferFoot->setCursor(45, 4);
@@ -510,14 +479,11 @@ void Display::FootSeq() {
     // Tuning
     bufferFoot->setCursor(87, 4);
     bufferFoot->print("TUNE:");
-    bufferFoot->print(
-        tuningToChar(DATAOBJ.get(FrankData::seqTuning, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1)));
+    bufferFoot->print(tuningToChar(DATAOBJ.get(FrankData::seqTuning, SEQCHANNEL)));
 
     // Offset Gate
 
-    const char *data = DATAOBJ.getValueAsStrChannel(FrankData::seqGateLengthOffset,
-                                                    DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) -
-                                                        1); // temporary removed index
+    const char *data = DATAOBJ.getValueAsStr(FrankData::seqGateLengthOffset, SEQCHANNEL);
 
     byte length = strlen(data); // string length
 

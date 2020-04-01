@@ -50,7 +50,7 @@ void updateDisplay() { // update interrupt
 
 void updateTLC() { // update interrupt
     static byte sendOld = 0;
-    byte source = DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel));
+    byte source = DATAOBJ.get(FrankData::outputSource, CHANNEL);
     if (source) { // seq modus an?
         byte send = 0;
         for (int x = 0; x < 2; x++) {

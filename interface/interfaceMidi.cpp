@@ -147,8 +147,6 @@ void dinMidiSystemReset() {
 // run once at startup
 void initMidi() {
 
-    // data = getDataObject();
-
     PRINTLN("Init Midi");
 
     // set USB handles
