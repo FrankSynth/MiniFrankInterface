@@ -376,7 +376,7 @@ class FrankData {
     void setStr(const char *newStr);
 
   public:
-    void updateClockCounter(const bool newMillis = false);
+    void updateClockCounter(const bool restartCounter = false);
     void increaseStepCounters(const byte &channel);
     void decreaseStepCounters(const byte &channel);
 

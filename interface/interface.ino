@@ -83,6 +83,9 @@ void setup() {
 
     Serial.begin(115200);
 
+    analogReadAveraging(32);
+    analogReadResolution(11);
+
     DATAOBJ.init();
 
     PRINTLN("Debug Mode");

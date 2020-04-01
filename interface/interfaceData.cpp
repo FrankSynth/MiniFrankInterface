@@ -429,17 +429,18 @@ void FrankData::receivedKeyPressed(const byte &channel, const byte &note, const 
             updateArp(x);
 
             if (stat.rec && x == stat.screen.channel && config.routing[x].outSource > 0) {
-                set(FrankData::seqNote, note, config.routing[x].outSource - 1, liveMidi[x].stepSeq);
+                seq[config.routing[x].outSource - 1].sequence.note[liveMidi[x].stepSeq] = note;
 
-                // if output cc is velocity, take newest velocity
+                // if output cc is velocity, take new velocity
                 if (config.routing[x].cc == 0) {
-                    set(frankData::seqCc, velocity, config.routing[x].outSource - 1, liveMidi[x].stepSeq);
+                    seq[config.routing[x].outSource - 1].sequence.cc[liveMidi[x].stepSeq] = velocity;
                 }
+                // else take the momentary cc values depending on outputCC
                 else if (config.routing[x].cc == 2) {
-                    set(frankData::seqCc, getPitchbendAsByte(x), config.routing[x].outSource - 1, liveMidi[x].stepSeq);
+                    seq[config.routing[x].outSource - 1].sequence.cc[liveMidi[x].stepSeq] = getPitchbendAsByte(x);
                 }
                 else {
-                    set(frankData::seqCc, getLiveCcEvaluated(x), config.routing[x].outSource - 1, liveMidi[x].stepSeq);
+                    seq[config.routing[x].outSource - 1].sequence.cc[liveMidi[x].stepSeq] = getLiveCcEvaluated(x);
                 }
 
                 if (!stat.play) {
@@ -502,7 +503,7 @@ void FrankData::receivedStart() {
             liveMidi[out].arpOctave = 0;
             liveMidi[out].arpDirection = 0;
         }
-        set(play, 1);
+        stat.play = 1;
     }
 }
 void FrankData::receivedContinue() {
@@ -514,13 +515,12 @@ void FrankData::receivedContinue() {
             liveMidi[out].arpOctave = 0;
             liveMidi[out].arpDirection = 0;
         }
-        set(play, 1);
+        stat.play = 1;
     }
 }
 void FrankData::receivedStop() {
     if (stat.bpmSync) {
-
-        set(play, 0);
+        stat.play = 0;
     }
 }
 
@@ -668,20 +668,21 @@ void FrankData::decreaseStepCounters(const byte &channel) {
     // PRINTLN(liveMidi[1].channel16thCount);
 }
 
-void FrankData::updateClockCounter(const bool newMillis) {
+// call with argument bool "true" to restart time counter
+void FrankData::updateClockCounter(const bool restartCounter) {
 
     if (!stat.bpmSync) {
         static unsigned long timer = millis();
-        if (newMillis) {
+        if (restartCounter) {
             timer = millis();
         }
         else {
-
-            if (stat.bpmPot == 0)
-                stat.bpmPot = 1;
-            if (millis() >= timer + 15000.0 / stat.bpm) {
-                increaseBpm16thCount();
-                timer = millis();
+            if (stat.bpm != 0) {
+                // count time for 16ths, 1 bpm would count every 15 seconds
+                if (millis() >= timer + 15000.0 / stat.bpm) {
+                    increaseBpm16thCount();
+                    timer = millis();
+                }
             }
         }
     }
@@ -700,7 +701,7 @@ void FrankData::calcBPM() {
 
         if (millis() > averagingStartTime + 1000) {
             averageTimer = averageTimer / 4.0 - averageTimer / 500. + 0.5;
-            set(bpm, (int)(averageTimer / (float)counter + 0.5));
+            stat.bpm = testInt((int)(averageTimer / (float)counter + 0.5), 1, 1000);
             averageTimer = 0;
             counter = 0;
             averagingStartTime = millis();
@@ -1282,7 +1283,7 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data) {
         case bpmPoti:
             stat.bpmPot = testInt(data, 0, 2047);
             if (!stat.bpmSync)
-                stat.bpm = data / 4;
+                stat.bpm = map(stat.bpmPot, 0, 2047, 0, 280);
             break;
         case load:
         case save: stat.loadSaveSlot = testByte(data, 0, SAVESLOTS - 1); break;
