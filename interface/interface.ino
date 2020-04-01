@@ -172,6 +172,7 @@ void loop() {
     // activate middleman
     updateAllOutputs();
 
+    // read BPM knob
     cntrl.readBPMSpeed();
 }
 

@@ -239,6 +239,8 @@ void inputControls::readSeq() {
 
 void inputControls::readBPMSpeed() {
     static elapsedMillis timer;
+    if (DATAOBJ.get(FrankData::bpmSync))
+        return;
     if (timer > 10) {
         timer = 0;
         DATAOBJ.set(FrankData::bpmPoti, 2047 - analogRead(BPMPOT));
