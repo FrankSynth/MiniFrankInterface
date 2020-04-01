@@ -54,9 +54,11 @@ typedef struct {
 
 // Settings struct for all settings that need to be saved permanently
 typedef struct {
-    byte midiSource = 1;                  // active MidiDevice (usb -> 1, din -> 0)
-    byte direction = 1;                   // 0 -> reverse ; 1 -> forward
-    byte displayBrightness = 200;         // 0-255;
+    byte midiSource = 1;         // active MidiDevice (usb -> 1, din -> 0)
+    byte direction = 1;          // 0 -> reverse ; 1 -> forward
+    byte displayBrightness = 70; // 0-100;
+    uint16_t pulseLength = 20;   // pulse length in ms
+
     structOutputRouting routing[OUTPUTS]; // hold settings for that many outputs
 } structSettings;
 
@@ -84,8 +86,6 @@ typedef struct {
     byte play = 1;      // play stop
     byte rec = 0;       // Rec Active
     byte error = 0;     // ErrorFlag
-
-    byte pulseLength = 20; // pulse length in ms
 
     byte noteToCalibrate = 0; // note value that gets calibrated
     int8_t cvToCalibrate = 0; // cv value * 2048 that gets calibrated

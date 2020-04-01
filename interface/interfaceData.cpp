@@ -1170,7 +1170,7 @@ int16_t FrankData::get(const frankData &frankDataType) {
         case bpm16thCount: return stat.bpm16thCount;
         case save:
         case load: return stat.loadSaveSlot;
-        case pulseLength: return stat.pulseLength;
+        case pulseLength: return config.pulseLength;
 
         case none: return (int16_t)0;
         default: PRINTLN("FrankData get(frankData frankDataType), no case found"); return 0;
@@ -1286,7 +1286,7 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data) {
             break;
         case load:
         case save: stat.loadSaveSlot = testByte(data, 0, SAVESLOTS - 1); break;
-        case pulseLength: stat.pulseLength = testByte(data, 0, 255); break;
+        case pulseLength: config.pulseLength = testInt(data, 0, 1000); break;
         case none: break;
         default: PRINTLN("FrankData set(frankData frankDataType, byte data  ), no case found");
     }
@@ -1422,9 +1422,15 @@ void FrankData::decrease(const frankData &frankDataType, const byte &array, cons
 }
 
 void FrankData::toggle(const frankData &frankDataType) {
+    // save toggle values, instead of simply resetting to default
     static int16_t bufferedRatchet[OUTPUTS] = {0, 0};
     static int16_t bufferedStepSpeed[OUTPUTS] = {2, 2};
+    static int16_t bufferedClockSpeed[OUTPUTS] = {2, 2};
+    static int16_t bufferedArpOctaves[OUTPUTS] = {0, 0};
+    static int16_t bufferedArpMode[OUTPUTS] = {0, 0};
     static int16_t bufferedGateLengthOffset[OUTPUTS] = {0, 0};
+    static int16_t bufferedLiveMode[OUTPUTS] = {0, 0};
+    static int16_t bufferedOutputSource[OUTPUTS] = {0, 0};
     int16_t temp;
 
     switch (frankDataType) {
@@ -1478,21 +1484,46 @@ void FrankData::toggle(const frankData &frankDataType) {
             config.routing[stat.screen.channel].arpRatchet = bufferedRatchet[stat.screen.channel];
             bufferedRatchet[stat.screen.channel] = temp;
             break;
+        case outputArpMode:
+            temp = config.routing[stat.screen.channel].arpMode;
+            config.routing[stat.screen.channel].arpMode = bufferedArpMode[stat.screen.channel];
+            bufferedArpMode[stat.screen.channel] = temp;
+            break;
+        case outputArpOctave:
+            temp = config.routing[stat.screen.channel].arpOctaves;
+            config.routing[stat.screen.channel].arpOctaves = bufferedArpOctaves[stat.screen.channel];
+            bufferedArpOctaves[stat.screen.channel] = temp;
+            break;
+        case outputLiveMode:
+            temp = config.routing[stat.screen.channel].liveMidiMode;
+            config.routing[stat.screen.channel].liveMidiMode = bufferedLiveMode[stat.screen.channel];
+            bufferedLiveMode[stat.screen.channel] = temp;
+            break;
         case stepSpeed:
             temp = config.routing[stat.screen.channel].stepSpeed;
             config.routing[stat.screen.channel].stepSpeed = bufferedStepSpeed[stat.screen.channel];
             bufferedStepSpeed[stat.screen.channel] = temp;
             break;
+        case outputClock:
+            temp = config.routing[stat.screen.channel].clockSpeed;
+            config.routing[stat.screen.channel].clockSpeed = bufferedClockSpeed[stat.screen.channel];
+            bufferedClockSpeed[stat.screen.channel] = temp;
+            break;
+        case outputSource:
+            temp = config.routing[stat.screen.channel].outSource;
+            config.routing[stat.screen.channel].outSource = bufferedOutputSource[stat.screen.channel];
+            bufferedOutputSource[stat.screen.channel] = temp;
+            break;
 
         case seqGateLengthOffset:
             temp = seq[config.routing[stat.screen.channel].outSource - 1].sequence.gateLengthOffset;
-            seq[config.routing[stat.screen.channel].outSource - 1].sequence.gateLengthOffset =
-                bufferedGateLengthOffset[config.routing[stat.screen.channel].outSource - 1];
-            bufferedGateLengthOffset[config.routing[stat.screen.channel].outSource - 1] = temp;
+            seq[config.routing[stat.screen.channel].outSource - 1].sequence.gateLengthOffset = bufferedGateLengthOffset[stat.screen.channel];
+            bufferedGateLengthOffset[stat.screen.channel] = temp;
             break;
         case seqTuning: seq[config.routing[stat.screen.channel].outSource - 1].sequence.tuning = 0; break;
 
         case nbPages: config.routing[stat.screen.channel].nbPages = 8; break;
+        case pulseLength: config.pulseLength = 20; break;
 
         case seqResetGates: seqResetAllGates(config.routing[stat.screen.channel].outSource - 1); break;
         case seqResetNotes: seqResetAllNotes(config.routing[stat.screen.channel].outSource - 1); break;
@@ -1500,7 +1531,9 @@ void FrankData::toggle(const frankData &frankDataType) {
         case seqResetCC: seqResetAllCC(config.routing[stat.screen.channel].outSource - 1); break;
         case seqOctaveUp: seqAllOctaveUp(config.routing[stat.screen.channel].outSource - 1); break;
         case seqOctaveDown: seqAllOctaveDown(config.routing[stat.screen.channel].outSource - 1); break;
-        case copySeq: seqCopy(config.routing[stat.screen.channel].outSource - 1, !(config.routing[stat.screen.channel].outSource - 1)); break;
+        case copySeq:
+            seqCopy(config.routing[stat.screen.channel].outSource - 1, !(config.routing[stat.screen.channel].outSource - 1));
+            break; // works only for two seq objects
 
         case resetStepCounters: resetAllStepCounter(); break;
 
@@ -1527,7 +1560,7 @@ void FrankData::toggle(const frankData &frankdataType, const byte &array) {
         case seqResetNotes: seqResetAllNotes(array); break;
         case seqResetGateLengths: seqResetAllGateLengths(array); break;
         case seqResetCC: seqResetAllCC(array); break;
-        case copySeq: seqCopy(array, !array); break;
+        case copySeq: seqCopy(array, !array); break; // works only for two seq objects
         case resetStepCounters: resetAllStepCounter(); break;
         default: PRINTLN("FrankData toggle(frankData frankDataType, const byte &array), no case found");
     }
