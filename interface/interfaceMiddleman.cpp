@@ -48,9 +48,9 @@ void updateNoteOut() {
     // calbiration mode
     if (DATAOBJ.get(FrankData::screenCalNote)) {
 
-        static uint32_t calTimer = millis();
+        static elapsedMillis calTimer;
 
-        if (millis() > calTimer + 25) {
+        if (calTimer > 25) {
             for (byte output = 0; output < OUTPUTS; output++) {
                 byte newNote = DATAOBJ.get(FrankData::liveCalNote);
 
@@ -61,7 +61,7 @@ void updateNoteOut() {
                 outputChannel[output].setGate(1);
                 previousOutputs[output].gateActivated = 1;
             }
-            calTimer = millis();
+            calTimer = 0;
         }
         return;
     }
@@ -149,7 +149,7 @@ void updateNoteOut() {
 
                         outputChannel[output].setTrigger(1);
                         previousOutputs[output].triggerActivated = 1;
-                        previousOutputs[output].triggerTimer = millis();
+                        previousOutputs[output].triggerTimer = 0;
 
                         DATAOBJ.set(FrankData::liveArpTriggeredNewNote, 0, output);
                     }
@@ -162,7 +162,7 @@ void updateNoteOut() {
                     if (DATAOBJ.get(FrankData::play)) {
                         outputChannel[output].setTrigger(1);
                         previousOutputs[output].triggerActivated = 1;
-                        previousOutputs[output].triggerTimer = millis();
+                        previousOutputs[output].triggerTimer = 0;
                     }
                 }
             }
@@ -210,7 +210,7 @@ void reactivateRatchet() {
 
                 outputChannel[output].setTrigger(1);
                 previousOutputs[output].triggerActivated = 1;
-                previousOutputs[output].triggerTimer = millis();
+                previousOutputs[output].triggerTimer = 0;
 
                 previousOutputs[output].ratchet--;
                 // PRINT("Ratchet count left ");
@@ -225,9 +225,9 @@ void updateCVOut() {
     // calbiration mode
     if (DATAOBJ.get(FrankData::screenCalCv)) {
 
-        static uint32_t calTimer = millis();
+        static elapsedMillis calTimer;
 
-        if (millis() > calTimer + 25) {
+        if (calTimer > 25) {
             for (byte output = 0; output < OUTPUTS; output++) {
                 int newCV = 0;
 
@@ -241,7 +241,7 @@ void updateCVOut() {
                 // PRINTLN(newCV);
                 outputChannel[output].setCV(newCV); // expects -2048 - 2047
             }
-            calTimer = millis();
+            calTimer = 0;
         }
         return;
     }
@@ -338,7 +338,7 @@ void closeGates() {
 
 void updateClockOut() {
 
-    static uint32_t timer[2] = {0};
+    static elapsedMillis timer[2];
 
     if (!(DATAOBJ.get(FrankData::bpm16thCount) == previousState.old16thClockCount)) {
         previousState.old16thClockCount = DATAOBJ.get(FrankData::bpm16thCount);
@@ -358,12 +358,14 @@ void updateClockOut() {
 
         for (byte output = 0; output < OUTPUTS; output++) {
 
-            if (!previousOutputs[output].clockPulseActivated) {
+            if (DATAOBJ.get(FrankData::bpm16thCount) != previousOutputs[output].clockPulseStep) {
 
                 if ((int)(DATAOBJ.get(FrankData::bpm16thCount)) % (int)pow(2, (int)DATAOBJ.get(FrankData::outputClock, output)) == 0) {
                     outputClock[output].setClock(1);
                     previousOutputs[output].clockPulseActivated = 1;
-                    timer[output] = millis();
+                    previousOutputs[output].clockPulseStep = DATAOBJ.get(FrankData::bpm16thCount);
+
+                    timer[output] = 0;
                 }
             }
         }
@@ -372,7 +374,7 @@ void updateClockOut() {
     for (byte output = 0; output < OUTPUTS; output++) {
         if (previousOutputs[output].clockPulseActivated) {
 
-            if (millis() - timer[output] >= (uint16_t)DATAOBJ.get(FrankData::pulseLength)) {
+            if (timer[output] >= (uint16_t)DATAOBJ.get(FrankData::pulseLength)) {
                 outputClock[output].setClock(0);
                 previousOutputs[output].clockPulseActivated = 0;
             }
@@ -383,7 +385,7 @@ void updateClockOut() {
 void closeTriggers() {
     for (byte output = 0; output < OUTPUTS; output++) {
         if (previousOutputs[output].triggerActivated) {
-            if (millis() - previousOutputs[output].triggerTimer >= (uint16_t)DATAOBJ.get(FrankData::pulseLength)) {
+            if (previousOutputs[output].triggerTimer >= (uint16_t)DATAOBJ.get(FrankData::pulseLength)) {
                 outputChannel[output].setTrigger(0);
                 previousOutputs[output].triggerActivated = 0;
                 // PRINTLN("Trigger closed");

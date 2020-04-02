@@ -101,7 +101,7 @@ FrankData::frankData mappingMenuPush[] = {NONE,
                                           FrankData::screenCalNote /*CalibrationMenu*/,
                                           NONE,
                                           NONE,
-                                          NONE,
+                                          FrankData::pulseLength,
                                           NONE,
                                           FrankData::screenRouting,
                                           PLAY}; // Menu Mapping

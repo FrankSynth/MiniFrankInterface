@@ -84,7 +84,7 @@ void setup() {
     Serial.begin(115200);
 
     analogReadAveraging(32);
-    analogReadResolution(11);
+    analogReadResolution(10);
 
     DATAOBJ.init();
 
@@ -115,12 +115,12 @@ void setup() {
 
     // SayHello to the uC
     byte send = B01010101;
-    long timer = millis();
+    elapsedMillis timer;
     byte timeout = 0;
     while (!Serial3.available() && !timeout) { // send hello until uC response (max 2seconds)
         Serial3.write(send);
 
-        if (millis() - timer > 2000) {
+        if (timer > 2000) {
             timeout = 1;                      // we timed out
             DATAOBJ.set(FrankData::error, 1); // set error status
             PRINTLN("uC : connection failed (timeout)");
@@ -146,16 +146,16 @@ void setup() {
 
 void loop() {
 
-    static unsigned int screenTimer = millis();
+    static elapsedMillis screenTimer;
 
-    if (millis() > screenTimer + 16) {
+    if (screenTimer > 16) {
 
         cli();
         updateDisplay();
         updateTLC();
         sei();
 
-        screenTimer = millis();
+        screenTimer = 0;
     }
 
     // NEW Midi Signal

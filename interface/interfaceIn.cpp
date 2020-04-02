@@ -243,7 +243,7 @@ void inputControls::readBPMSpeed() {
         return;
     if (timer > 10) {
         timer = 0;
-        DATAOBJ.set(FrankData::bpmPoti, 2047 - analogRead(BPMPOT));
+        DATAOBJ.set(FrankData::bpmPoti, 1023 - analogRead(BPMPOT));
     }
 }
 

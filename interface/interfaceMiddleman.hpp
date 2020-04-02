@@ -20,9 +20,10 @@ class PreviousOutputs {
     byte stepSeq = 0;
 
     byte clockPulseActivated = 0;
+    byte clockPulseStep = 100;
 
     byte triggerActivated = 0;
-    unsigned long triggerTimer = 0;
+    elapsedMillis triggerTimer;
 
   public:
     PreviousOutputs() {}

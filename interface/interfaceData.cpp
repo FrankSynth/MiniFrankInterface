@@ -672,16 +672,16 @@ void FrankData::decreaseStepCounters(const byte &channel) {
 void FrankData::updateClockCounter(const bool restartCounter) {
 
     if (!stat.bpmSync) {
-        static unsigned long timer = millis();
+        static elapsedMillis timer;
         if (restartCounter) {
-            timer = millis();
+            timer = 0;
         }
         else {
             if (stat.bpm != 0) {
                 // count time for 16ths, 1 bpm would count every 15 seconds
-                if (millis() >= timer + 15000.0 / stat.bpm) {
+                if (timer >= 15000.0 / stat.bpm) {
                     increaseBpm16thCount();
-                    timer = millis();
+                    timer = 0;
                 }
             }
         }
@@ -691,7 +691,7 @@ void FrankData::updateClockCounter(const bool restartCounter) {
 void FrankData::calcBPM() {
     if (stat.bpmSync) {
         static unsigned long bpm16thTimer = 0;
-        static unsigned long averagingStartTime = millis();
+        static elapsedMillis averagingStartTime;
         static float averageTimer = 0;
         static byte counter = 0;
 
@@ -699,12 +699,12 @@ void FrankData::calcBPM() {
         bpm16thTimer = micros();
         counter++;
 
-        if (millis() > averagingStartTime + 1000) {
+        if (averagingStartTime > 1000) {
             averageTimer = averageTimer / 4.0 - averageTimer / 500. + 0.5;
             stat.bpm = testInt((int)(averageTimer / (float)counter + 0.5), 1, 1000);
             averageTimer = 0;
             counter = 0;
-            averagingStartTime = millis();
+            averagingStartTime = 0;
         }
     }
 }
@@ -1281,9 +1281,14 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data) {
             updateClockCounter(true);
             break;
         case bpmPoti:
-            stat.bpmPot = testInt(data, 0, 2047);
-            if (!stat.bpmSync)
-                stat.bpm = map(stat.bpmPot, 0, 2047, 0, 280);
+            stat.bpmPot = testInt(data, 0, 1023);
+            if (!stat.bpmSync) {
+
+                if (stat.bpmPot < 512)
+                    stat.bpm = map(stat.bpmPot, 0, 511, 0, 119);
+                else
+                    stat.bpm = map(stat.bpmPot, 512, 1023, 120, 280);
+            }
             break;
         case load:
         case save: stat.loadSaveSlot = testByte(data, 0, SAVESLOTS - 1); break;
