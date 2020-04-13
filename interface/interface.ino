@@ -146,6 +146,17 @@ void setup() {
 
 void loop() {
 
+    static elapsedMillis performanceTimer;
+    static uint16_t counter = 0;
+    counter++;
+
+    if (performanceTimer > 1000) {
+        PRINT("repeats: ");
+        PRINTLN(counter);
+        counter = 0;
+        performanceTimer = 0;
+    }
+
     static elapsedMillis screenTimer;
 
     if (screenTimer > 16) {
@@ -165,10 +176,15 @@ void loop() {
     while (Serial3.available()) {
         readSerial3();
     }
-
-    // count all clocks forward if not synced
-    DATAOBJ.updateClockCounter();
-
+    if (DATAOBJ.get(FrankData::liveNewMidiClock)) {
+        if (DATAOBJ.get(FrankData::liveMidiUpdateWaitTimer) > 500)
+            DATAOBJ.set(FrankData::liveNewMidiClock, 0);
+        PRINTLN("waited");
+    }
+    else {
+        // count all clocks forward if not synced
+        DATAOBJ.updateClockCounter();
+    }
     // activate middleman
     updateAllOutputs();
 

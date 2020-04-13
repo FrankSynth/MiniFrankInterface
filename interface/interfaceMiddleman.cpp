@@ -114,7 +114,7 @@ void updateNoteOut() {
                     // ratchet calc
                     previousOutputs[output].ratchet = DATAOBJ.get(FrankData::outputRatchet, output);
 
-                    int bpmMult = 1; // achtung, doppelte value
+                    int bpmMult; // achtung, doppelte value
                     switch (DATAOBJ.get(FrankData::stepSpeed, output)) {
                         case 0: bpmMult = 32; break; // 1/16
                         case 1: bpmMult = 16; break;
@@ -122,7 +122,7 @@ void updateNoteOut() {
                         case 3: bpmMult = 4; break;
                         case 4: bpmMult = 2; break;
                         case 5: bpmMult = 1; break; // 2/1
-                        default:;
+                        default: bpmMult = 1;
                     }
 
                     // /2 cause of double val, /4 cause of 4*16th per beat
@@ -314,7 +314,8 @@ void closeGates() {
                     }
                 }
                 else if (DATAOBJ.get(FrankData::outputArp, output)) {
-                    if (millis() >= previousOutputs[output].gateCloseTime) {
+                    if (millis() >= previousOutputs[output].gateCloseTime ||
+                        (DATAOBJ.get(FrankData::outputArp, output) == 1 && !DATAOBJ.get(FrankData::liveKeysPressed, output))) {
                         outputChannel[output].setGate(0);
                         previousOutputs[output].gateActivated = 0;
                         // PRINT("close gate, arp/seq, on output ");

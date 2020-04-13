@@ -170,6 +170,7 @@ void LiveMidi::keyPressed(const byte &note, const byte &velocity) {
         arpRetrigger = 0;
         arpStepRepeat = 1;
         arpRestarted = 1;
+        arp16thCount = 0;
     }
     else {
         arpRetrigger = 0;
@@ -184,12 +185,10 @@ void LiveMidi::keyReleased(const byte &note) {
     if (noteList.size == 1) {
         lastKey.note = noteList.getElement(0)->note;
         lastKey.velocity = noteList.getElement(0)->velocity;
+        arpRetrigger = 1;
     }
 
     noteList.deleteKey(note);
-    if (noteList.size == 0) {
-        arpRetrigger = 1;
-    }
 }
 
 // bool, are any keys pressed
@@ -451,6 +450,10 @@ void FrankData::receivedKeyPressed(const byte &channel, const byte &note, const 
 
             if (config.routing[x].outSource == 0) {
                 liveMidi[x].triggered = 1;
+                if (liveMidi[x].arpRestarted) {
+                    liveMidi[x].arpOffsetTime = millis() - stat.last16thTime;
+                    nextArpStep(x);
+                }
             }
         }
     }
@@ -465,6 +468,11 @@ void FrankData::receivedKeyReleased(const byte &channel, const byte &note) {
         if (config.routing[x].outSource == 0) {
             liveMidi[x].released = 1;
             liveMidi[x].triggered = 1;
+        }
+        if (config.routing[x].arp == 1) {
+
+            liveMidi[x].arpList.deleteKey(note);
+            liveMidi[x].updateArpArray(config.routing[x].arpMode);
         }
     }
 }
@@ -488,8 +496,13 @@ void FrankData::receivedMidiClock() {
     increaseMidiClock();
 }
 void FrankData::receivedMidiSongPosition(unsigned int spp) {
-    stat.midiClockCount = 5;
-    stat.bpm16thCount = (spp % 16) - 1;
+    stat.midiClockCount = 0;
+    stat.bpm16thCount = (spp % 16);
+    for (byte out = 0; out < OUTPUTS; out++) {
+        liveMidi[out].stepSeq = (spp / (int)pow(2, (int)(config.routing[out].stepSpeed) + 1)) % (config.routing[out].nbPages * STEPSPERPAGE);
+        liveMidi[out].channel16thCount =
+            (spp / (int)pow(2, (int)(config.routing[out].stepSpeed) + 1)) % (config.routing[out].nbPages * STEPSPERPAGE * 16);
+    }
 }
 void FrankData::receivedStart() {
     if (stat.bpmSync) {
@@ -511,7 +524,6 @@ void FrankData::receivedContinue() {
 
         for (byte out = 0; out < OUTPUTS; out++) {
             liveMidi[out].stepArp = liveMidi[out].arpList.size - 1;
-            liveMidi[out].channel16thCount = 0;
             liveMidi[out].arpOctave = 0;
             liveMidi[out].arpDirection = 0;
         }
@@ -541,7 +553,8 @@ void FrankData::reset() {
 
 void FrankData::increaseMidiClock() {
     if (stat.bpmSync) {
-
+        stat.receivedNewMidiClock = 1;
+        stat.midiUpdateWaitTimer = 0;
         stat.midiClockCount++;
         if (stat.midiClockCount == 6) {
             stat.midiClockCount = 0;
@@ -550,11 +563,27 @@ void FrankData::increaseMidiClock() {
     }
 }
 
+// uint32_t FrankData::getArpStepTime(const byte &array) {
+//     double bpmMult; // achtung, doppelte value
+//     switch (config.routing[array].stepSpeed) {
+//         case 0: bpmMult = 4.; break; // 1/16
+//         case 1: bpmMult = 2.; break;
+//         case 2: bpmMult = 1.; break; // 1/4
+//         case 3: bpmMult = 0.5; break;
+//         case 4: bpmMult = 0.25; break;
+//         case 5: bpmMult = 0.125; break; // 2/1
+//         default: bpmMult = 1.;
+//     }
+
+//     return (uint32_t)((double)60000000. / ((double)stat.bpm * bpmMult));
+// }
+
 void FrankData::increaseBpm16thCount() {
     stat.bpm16thCount++;
     if (stat.bpm16thCount == 32) {
         stat.bpm16thCount = 0;
     }
+    stat.last16thTime = millis();
     calcBPM();
     for (byte out = 0; out < OUTPUTS; out++) {
         if ((int)liveMidi[out].channel16thCount == ((int)config.routing[out].nbPages * STEPSPERPAGE * 16) - 1) {
@@ -566,8 +595,8 @@ void FrankData::increaseBpm16thCount() {
     }
 
     for (byte out = 0; out < OUTPUTS; out++) {
+
         if ((int)stat.bpm16thCount % (int)pow(2, (int)(config.routing[out].stepSpeed)) == 0) {
-            nextArpStep(out);
 
             if (stat.play) {
                 if (config.direction) {
@@ -672,16 +701,49 @@ void FrankData::decreaseStepCounters(const byte &channel) {
 void FrankData::updateClockCounter(const bool restartCounter) {
 
     if (!stat.bpmSync) {
-        static elapsedMillis timer;
+        static elapsedMicros timer;
         if (restartCounter) {
             timer = 0;
         }
         else {
             if (stat.bpm != 0) {
                 // count time for 16ths, 1 bpm would count every 15 seconds
-                if (timer >= 15000.0 / stat.bpm) {
+                uint32_t bpmTiming = 15000000 / stat.bpm;
+                if (timer >= bpmTiming) {
                     increaseBpm16thCount();
-                    timer = 0;
+                    timer -= bpmTiming;
+                }
+            }
+        }
+    }
+
+    for (byte out = 0; out < OUTPUTS; out++) {
+
+        if (config.routing[out].arp && config.routing[out].outSource == 0) {
+
+            static byte checkArpStep[OUTPUTS] = {0, 0};
+            static byte lastBpm16thCount[OUTPUTS] = {255, 255};
+            static elapsedMillis arpTimer = 0;
+
+            if (lastBpm16thCount[out] != stat.bpm16thCount) {
+
+                liveMidi[out].arp16thCount++;
+                lastBpm16thCount[out] = stat.bpm16thCount;
+
+                if (liveMidi[out].arp16thCount) {
+                    if (liveMidi[out].arp16thCount % (int)pow(2, (int)(config.routing[out].stepSpeed)) == 0) {
+                        checkArpStep[out] = 1;
+                        liveMidi[out].arp16thCount = 0;
+                        arpTimer = 0;
+                    }
+                }
+            }
+
+            if (checkArpStep[out]) {
+
+                if (arpTimer >= liveMidi[out].arpOffsetTime) {
+                    nextArpStep(out);
+                    checkArpStep[out] = 0;
                 }
             }
         }
@@ -695,7 +757,7 @@ void FrankData::calcBPM() {
         static float averageTimer = 0;
         static byte counter = 0;
 
-        averageTimer += 60000000.0f / (float)(micros() - bpm16thTimer + 1.0);
+        averageTimer += 60000000.0 / (double)(micros() - bpm16thTimer + 1.0);
         bpm16thTimer = micros();
         counter++;
 
@@ -1172,6 +1234,8 @@ int16_t FrankData::get(const frankData &frankDataType) {
         case save:
         case load: return stat.loadSaveSlot;
         case pulseLength: return config.pulseLength;
+        case liveNewMidiClock: return stat.receivedNewMidiClock;
+        case liveMidiUpdateWaitTimer: return stat.midiUpdateWaitTimer;
 
         case none: return (int16_t)0;
         default: PRINTLN("FrankData get(frankData frankDataType), no case found"); return 0;
@@ -1293,6 +1357,7 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data) {
         case load:
         case save: stat.loadSaveSlot = testByte(data, 0, SAVESLOTS - 1); break;
         case pulseLength: config.pulseLength = testInt(data, 0, 1000); break;
+        case liveNewMidiClock: stat.receivedNewMidiClock = testInt(data, 0, 1); break;
         case none: break;
         default: PRINTLN("FrankData set(frankData frankDataType, byte data  ), no case found");
     }

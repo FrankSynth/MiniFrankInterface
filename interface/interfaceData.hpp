@@ -93,7 +93,12 @@ typedef struct {
     byte bpmSync = 0;        // Sync Active
     byte midiClockCount = 5; // counts incoming midiclock signals (6 ticks per 16th)
     byte bpm16thCount = 0;   // general 16th counter for clock outputs
-    uint16_t bpmPot = 120;   // sync= 0 ? 0-1023 bpm log : divider /4, /2, 1, *2, *4 ; Range is 0-1023 (not yet implemented)
+
+    byte receivedNewMidiClock = 0;
+    elapsedMicros midiUpdateWaitTimer = 0;
+
+    uint32_t last16thTime = 0;
+    uint16_t bpmPot = 120; // sync= 0 ? 0-1023 bpm log : divider /4, /2, 1, *2, *4 ; Range is 0-1023 (not yet implemented)
 } structStatus;
 
 // Midi Key data
@@ -149,6 +154,8 @@ class LiveMidi {
     byte arpTriggeredNewNote = 0; // Arp has a new step to send out via middleman
     byte arpStepRepeat = 1;       // arp repeats step, for upRdownR, etc
     byte arpRestarted = 1;        // arp was reset
+    uint32_t arpOffsetTime = 0;
+    byte arp16thCount = 0;
 
     byte recModePlayback = 0; // status for rec mode playback (last recorded note will be played instead of current step)
 
@@ -330,6 +337,8 @@ class FrankData {
         liveLatestKey,
         liveHighestKey,
         liveLowestKey,
+        liveNewMidiClock,
+        liveMidiUpdateWaitTimer,
 
     };
 
@@ -368,6 +377,7 @@ class FrankData {
     void nextArpStep(const byte &array);
     void increaseArpOct(const byte &array);
     void decreaseArpOct(const byte &array);
+    // uint32_t getArpStepTime(const byte &array);
 
     byte getCurrentPageNumber(const byte &array);
     const byte getSubscreenMax();
