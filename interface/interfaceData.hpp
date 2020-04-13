@@ -10,9 +10,8 @@
 #define STEPSPERPAGE 8
 #define OUTPUTS 2 // Number of output lanes
 #define MAXSTRINGSIZE 8
-// #define ARPOCTAVECENTEROFFSET (int)3
-// #define GATELENGTHOFFSET (int)100
-// #define CALOFFSET (int)127
+
+#define MIDIARPUPDATEDELAY 500 // in micros
 
 #define DATAOBJ FrankData::getDataObj()
 #define CHANNEL DATAOBJ.get(FrankData::screenOutputChannel)
@@ -94,8 +93,7 @@ typedef struct {
     byte midiClockCount = 5; // counts incoming midiclock signals (6 ticks per 16th)
     byte bpm16thCount = 0;   // general 16th counter for clock outputs
 
-    byte receivedNewMidiClock = 0;
-    elapsedMicros midiUpdateWaitTimer = 0;
+    // byte receivedNewMidiDataArp = 0;
 
     uint32_t last16thTime = 0;
     uint16_t bpmPot = 120; // sync= 0 ? 0-1023 bpm log : divider /4, /2, 1, *2, *4 ; Range is 0-1023 (not yet implemented)
@@ -165,6 +163,7 @@ class LiveMidi {
     structKey arpKey;              // always holds the last played key, if no keys are pressed
     PressedNotesList arpList;      // Key List for arpeggiator
     structKey arpArray[NOTERANGE]; // sorted array for arpeggiator
+    elapsedMicros midiUpdateWaitTimer = 0;
 
     byte stepArp = 0; // current arp step
     byte stepSeq = 0; // current seq step
@@ -337,7 +336,7 @@ class FrankData {
         liveLatestKey,
         liveHighestKey,
         liveLowestKey,
-        liveNewMidiClock,
+        // liveNewMidiDataArp,
         liveMidiUpdateWaitTimer,
 
     };
@@ -377,7 +376,6 @@ class FrankData {
     void nextArpStep(const byte &array);
     void increaseArpOct(const byte &array);
     void decreaseArpOct(const byte &array);
-    // uint32_t getArpStepTime(const byte &array);
 
     byte getCurrentPageNumber(const byte &array);
     const byte getSubscreenMax();

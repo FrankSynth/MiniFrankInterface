@@ -176,15 +176,10 @@ void loop() {
     while (Serial3.available()) {
         readSerial3();
     }
-    if (DATAOBJ.get(FrankData::liveNewMidiClock)) {
-        if (DATAOBJ.get(FrankData::liveMidiUpdateWaitTimer) > 500)
-            DATAOBJ.set(FrankData::liveNewMidiClock, 0);
-        PRINTLN("waited");
-    }
-    else {
-        // count all clocks forward if not synced
-        DATAOBJ.updateClockCounter();
-    }
+
+    // count all clocks forward if not synced
+    DATAOBJ.updateClockCounter();
+
     // activate middleman
     updateAllOutputs();
 

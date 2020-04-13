@@ -427,6 +427,7 @@ void FrankData::receivedKeyPressed(const byte &channel, const byte &note, const 
             liveMidi[x].keyPressed(note, velocity);
             updateArp(x);
 
+            // seq rec
             if (stat.rec && x == stat.screen.channel && config.routing[x].outSource > 0) {
                 seq[config.routing[x].outSource - 1].sequence.note[liveMidi[x].stepSeq] = note;
 
@@ -448,11 +449,16 @@ void FrankData::receivedKeyPressed(const byte &channel, const byte &note, const 
                 }
             }
 
+            // live midi
             if (config.routing[x].outSource == 0) {
                 liveMidi[x].triggered = 1;
                 if (liveMidi[x].arpRestarted) {
                     liveMidi[x].arpOffsetTime = millis() - stat.last16thTime;
                     nextArpStep(x);
+                }
+                if (config.routing[x].arp && stat.bpmSync) {
+
+                    liveMidi[x].midiUpdateWaitTimer = 0;
                 }
             }
         }
@@ -553,30 +559,20 @@ void FrankData::reset() {
 
 void FrankData::increaseMidiClock() {
     if (stat.bpmSync) {
-        stat.receivedNewMidiClock = 1;
-        stat.midiUpdateWaitTimer = 0;
+
         stat.midiClockCount++;
         if (stat.midiClockCount == 6) {
+
+            for (byte out = 0; out < OUTPUTS; out++) {
+                if (config.routing[out].arp)
+                    liveMidi[out].midiUpdateWaitTimer = 0;
+            }
+
             stat.midiClockCount = 0;
             increaseBpm16thCount();
         }
     }
 }
-
-// uint32_t FrankData::getArpStepTime(const byte &array) {
-//     double bpmMult; // achtung, doppelte value
-//     switch (config.routing[array].stepSpeed) {
-//         case 0: bpmMult = 4.; break; // 1/16
-//         case 1: bpmMult = 2.; break;
-//         case 2: bpmMult = 1.; break; // 1/4
-//         case 3: bpmMult = 0.5; break;
-//         case 4: bpmMult = 0.25; break;
-//         case 5: bpmMult = 0.125; break; // 2/1
-//         default: bpmMult = 1.;
-//     }
-
-//     return (uint32_t)((double)60000000. / ((double)stat.bpm * bpmMult));
-// }
 
 void FrankData::increaseBpm16thCount() {
     stat.bpm16thCount++;
@@ -584,17 +580,19 @@ void FrankData::increaseBpm16thCount() {
         stat.bpm16thCount = 0;
     }
     stat.last16thTime = millis();
+
     calcBPM();
     for (byte out = 0; out < OUTPUTS; out++) {
+    }
+
+    for (byte out = 0; out < OUTPUTS; out++) {
+
         if ((int)liveMidi[out].channel16thCount == ((int)config.routing[out].nbPages * STEPSPERPAGE * 16) - 1) {
             liveMidi[out].channel16thCount = 0;
         }
         else {
             liveMidi[out].channel16thCount++;
         }
-    }
-
-    for (byte out = 0; out < OUTPUTS; out++) {
 
         if ((int)stat.bpm16thCount % (int)pow(2, (int)(config.routing[out].stepSpeed)) == 0) {
 
@@ -1233,9 +1231,9 @@ int16_t FrankData::get(const frankData &frankDataType) {
         case bpm16thCount: return stat.bpm16thCount;
         case save:
         case load: return stat.loadSaveSlot;
-        case pulseLength: return config.pulseLength;
-        case liveNewMidiClock: return stat.receivedNewMidiClock;
-        case liveMidiUpdateWaitTimer: return stat.midiUpdateWaitTimer;
+        case pulseLength:
+            return config.pulseLength;
+            // case liveNewMidiDataArp: return stat.receivedNewMidiDataArp;
 
         case none: return (int16_t)0;
         default: PRINTLN("FrankData get(frankData frankDataType), no case found"); return 0;
@@ -1279,6 +1277,7 @@ int16_t FrankData::get(const frankData &frankDataType, const byte &array) {
         case liveLatestKey: return liveMidi[array].getKeyLatest().note;
         case liveLowestKey: return liveMidi[array].getKeyLowest().note;
         case liveHighestKey: return liveMidi[array].getKeyHighest().note;
+        case liveMidiUpdateWaitTimer: return liveMidi[array].midiUpdateWaitTimer;
 
         case nbPages: return config.routing[array].nbPages;
         case stepArp: return liveMidi[array].stepArp;
@@ -1357,7 +1356,6 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data) {
         case load:
         case save: stat.loadSaveSlot = testByte(data, 0, SAVESLOTS - 1); break;
         case pulseLength: config.pulseLength = testInt(data, 0, 1000); break;
-        case liveNewMidiClock: stat.receivedNewMidiClock = testInt(data, 0, 1); break;
         case none: break;
         default: PRINTLN("FrankData set(frankData frankDataType, byte data  ), no case found");
     }

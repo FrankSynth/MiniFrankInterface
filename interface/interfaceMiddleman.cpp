@@ -78,6 +78,8 @@ void updateNoteOut() {
             // live mode
             if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
                 if (DATAOBJ.get(FrankData::outputArp, output)) {
+                    if (DATAOBJ.get(FrankData::liveMidiUpdateWaitTimer, output) < MIDIARPUPDATEDELAY)
+                        continue;
                     newNote = DATAOBJ.get(FrankData::liveKeyArpNoteEvaluated, output);
                 }
                 else {
@@ -250,6 +252,11 @@ void updateCVOut() {
         int newCV = 0;
 
         if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
+            if (DATAOBJ.get(FrankData::outputArp, output) && DATAOBJ.get(FrankData::outputCc, output) == 0) {
+                if (DATAOBJ.get(FrankData::liveMidiUpdateWaitTimer, output) < MIDIARPUPDATEDELAY)
+                    continue;
+            }
+
             if (DATAOBJ.get(FrankData::outputCc, output) == 2) {
                 newCV = DATAOBJ.get(FrankData::outputCcEvaluated, output) / 4; // returns -8192 - 8191, now -2048 - 2047
             }
