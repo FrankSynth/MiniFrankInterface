@@ -111,7 +111,7 @@ void setup() {
     delay(10u);
 
     // Start Connection to the uC
-    Serial3.begin(110000);
+    Serial3.begin(115200);
 
     // SayHello to the uC
     byte send = B01010101;
