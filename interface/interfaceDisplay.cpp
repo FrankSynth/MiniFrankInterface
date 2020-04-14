@@ -47,7 +47,6 @@ void Display::initBuffer() {
 }
 
 void Display::drawBuffer() {
-    DebugTimer test("drawBuffer");
     drawHead();
     drawFoot();
     drawBody();
@@ -72,7 +71,6 @@ void Display::updateDisplay() {
 }
 
 void Display::drawBody() {
-    DebugTimer test("drawBody");
 
     bufferBody->fillScreen(BACKGROUND); // resetBuffer
 
@@ -94,7 +92,6 @@ void Display::drawBody() {
 }
 
 void Display::drawFoot() {
-    DebugTimer test("drawFoot");
 
     if (DATAOBJ.get(FrankData::outputSource, CHANNEL) == 0) { // Live Mode
         FootLive();
@@ -404,7 +401,6 @@ void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
 }
 
 void Display::drawHead() {
-    DebugTimer test("drawHead");
 
     // setup
     bufferHead->fillScreen(COLORTHEME); // all Black
@@ -516,13 +512,13 @@ void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t
     byte first = 1;
 
     for (int16_t j = 0; j < h; j++, y++) {
-        // update midi, clocks, outputs while in loop, so no delays occur
-        interrupts();
-        updateMidi();
-        DATAOBJ.updateClockCounter();
-        updateAllOutputs();
-        noInterrupts();
         for (int16_t i = 0; i < w; i++) {
+            // update midi, clocks, outputs while in loop, so no delays occur
+            interrupts();
+            updateMidi();
+            DATAOBJ.updateClockCounter();
+            updateAllOutputs();
+            noInterrupts();
             int16_t index = j * w + i;
 
             if (bufferObj->compareBuffer(index)) {
