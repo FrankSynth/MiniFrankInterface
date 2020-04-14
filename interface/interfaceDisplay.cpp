@@ -47,6 +47,7 @@ void Display::initBuffer() {
 }
 
 void Display::drawBuffer() {
+    DebugTimer test("drawBuffer");
     drawHead();
     drawFoot();
     drawBody();
@@ -71,6 +72,8 @@ void Display::updateDisplay() {
 }
 
 void Display::drawBody() {
+    DebugTimer test("drawBody");
+
     bufferBody->fillScreen(BACKGROUND); // resetBuffer
 
     if (DATAOBJ.get(FrankData::screenMainMenu) == 1 || DATAOBJ.get(FrankData::screenConfig) == 1 || DATAOBJ.get(FrankData::screenRouting) == 1 ||
@@ -91,6 +94,8 @@ void Display::drawBody() {
 }
 
 void Display::drawFoot() {
+    DebugTimer test("drawFoot");
+
     if (DATAOBJ.get(FrankData::outputSource, CHANNEL) == 0) { // Live Mode
         FootLive();
     }
@@ -399,6 +404,8 @@ void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
 }
 
 void Display::drawHead() {
+    DebugTimer test("drawHead");
+
     // setup
     bufferHead->fillScreen(COLORTHEME); // all Black
     bufferHead->setTextColor(WHITE, COLORTHEME);
@@ -503,7 +510,7 @@ void Display::FootSeq() {
 }
 
 void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t w, int16_t h) {
-    DebugTimer test("writeRGBMap");
+    // DebugTimer test("writeRGBMap");
     const uint16_t *buffer = bufferObj->getBuffer();
 
     byte first = 1;
