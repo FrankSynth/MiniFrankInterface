@@ -59,7 +59,6 @@ void Display::drawBuffer() {
 }
 
 void Display::refresh() {
-    DebugTimer test("Display Update");
     displayBrightness(DATAOBJ.get(FrankData::displayBrightness)); // set display Brightness
     drawBuffer();
     updateDisplay();

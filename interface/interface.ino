@@ -162,7 +162,7 @@ void loop() {
     if (screenTimer > 16) {
 
         cli();
-        updateDisplay();
+        // updateDisplay();
         updateTLC();
         sei();
 
