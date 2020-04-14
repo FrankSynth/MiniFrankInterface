@@ -514,9 +514,7 @@ void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t
         DebugTimer test("writeRGBMap Row");
         Serial.print("j: ");
         Serial.println(j);
-        Serial.print("w: ");
-        Serial.println(w);
-        // update midi, clocks, outputs while in loop, so no delays occur
+        // update midi,clocks, outputs while in loop, so no delays occur
         // interrupts();
         // updateMidi();
         // DATAOBJ.updateClockCounter();
@@ -524,6 +522,11 @@ void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t
         // noInterrupts();
         for (int16_t i = 0; i < w; i++) {
             int16_t index = j * w + i;
+            if (j == 74) {
+
+                Serial.print("i: ");
+                Serial.println(i);
+            }
 
             if (bufferObj->compareBuffer(index)) {
 
