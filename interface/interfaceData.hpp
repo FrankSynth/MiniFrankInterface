@@ -11,7 +11,7 @@
 #define OUTPUTS 2 // Number of output lanes
 #define MAXSTRINGSIZE 8
 
-#define MIDIARPUPDATEDELAY 2 // in micros
+#define MIDIARPUPDATEDELAY 3 // in millis
 
 #define DATAOBJ FrankData::getDataObj()
 #define CHANNEL DATAOBJ.get(FrankData::screenOutputChannel)
@@ -95,7 +95,7 @@ typedef struct {
 
     // byte receivedNewMidiDataArp = 0;
 
-    uint32_t last16thTime = 0;
+    // uint32_t last16thTime = 0;
     uint16_t bpmPot = 120; // sync= 0 ? 0-1023 bpm log : divider /4, /2, 1, *2, *4 ; Range is 0-1023 (not yet implemented)
 } structStatus;
 

@@ -147,12 +147,22 @@ void setup() {
 void loop() {
 
     // static elapsedMillis performanceTimer;
-    // static uint16_t counter = 0;
+    // static elapsedMillis loopTimer;
+    // static uint32_t counter = 0;
+    // static uint32_t loopTime = 0;
     // counter++;
+
+    // if (loopTimer > loopTime) {
+    //     loopTime = loopTimer;
+    // }
+    // loopTimer = 0;
 
     // if (performanceTimer > 1000) {
     //     PRINT("repeats: ");
-    //     PRINTLN(counter);
+    //     PRINT(counter);
+    //     PRINT(", longest loop: ");
+    //     PRINTLN(loopTime);
+    //     loopTime = 0;
     //     counter = 0;
     //     performanceTimer = 0;
     // }
@@ -161,19 +171,13 @@ void loop() {
 
     if (screenTimer > 16) {
 
-        // cli();
-        noInterrupts();
         updateDisplay();
         updateTLC();
-        interrupts();
-        // sei();
 
         screenTimer = 0;
     }
 
     // NEW Midi Signal
-
-    updateMidi();
 
     //   Read uC UART Data
     while (Serial3.available()) {
@@ -181,6 +185,7 @@ void loop() {
         readSerial3();
     }
 
+    updateMidi();
     // count all clocks forward if not synced
 
     DATAOBJ.updateClockCounter();

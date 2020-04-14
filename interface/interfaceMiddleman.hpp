@@ -13,9 +13,9 @@ class PreviousOutputs {
     int cv = 0;
     byte ratchet = 0;
     byte gateActivated = 0;
-    unsigned long gateCloseTime = 0;
-    unsigned long reactivateTime = 0;
-    unsigned long ratchetOffsetTime = 0;
+    uint32_t gateCloseTime = 0;
+    uint32_t reactivateTime = 0;
+    uint32_t ratchetOffsetTime = 0;
 
     byte stepSeq = 0;
 
@@ -23,7 +23,7 @@ class PreviousOutputs {
     byte clockPulseStep = 100;
 
     byte triggerActivated = 0;
-    elapsedMillis triggerTimer;
+    elapsedMillis triggerTimer = 0;
 
   public:
     PreviousOutputs() {}

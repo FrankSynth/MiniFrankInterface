@@ -508,38 +508,29 @@ void Display::FootSeq() {
 void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t w, int16_t h) {
     const uint16_t *buffer = bufferObj->getBuffer();
 
-    byte first = 1;
-
     for (int16_t j = 0; j < h; j++, y++) {
-        Serial.print("j: ");
-        Serial.print(j);
-        Serial.print(", y: ");
-        Serial.println(y);
-        DebugTimer test("writeRGBMap Row");
+        byte first = 1;
         // update midi,clocks, outputs while in loop, so no delays occur
-        // interrupts();
-        // updateMidi();
-        // DATAOBJ.updateClockCounter();
-        // updateAllOutputs();
-        // noInterrupts();
+        updateMidi();
+        DATAOBJ.updateClockCounter();
+        updateAllOutputs();
         for (int16_t i = 0; i < w; i++) {
             int16_t index = j * w + i;
 
             if (bufferObj->compareBuffer(index)) {
 
-                // if (first) {
-                //     lcd.startWrite();
-                //     first = 0;
-                // }
-                // lcd.writePixel(x + i, y, pgm_read_word(&buffer[index]));
+                if (first) {
+                    lcd.startWrite();
+                    first = 0;
+                }
+                lcd.writePixel(x + i, y, pgm_read_word(&buffer[index]));
                 bufferObj->copyBuffer(index);
             }
         }
-    }
+        if (!first) {
 
-    if (!first) {
-
-        lcd.endWrite();
+            lcd.endWrite();
+        }
     }
 }
 
@@ -561,11 +552,11 @@ DispBuffer16::~DispBuffer16(void) {
         free(buffer2);
 }
 
-void DispBuffer16::copyBuffer(uint16_t bufferIndex) {
+inline void DispBuffer16::copyBuffer(uint16_t bufferIndex) {
     buffer2[bufferIndex] = buffer[bufferIndex];
 }
 
-inline int DispBuffer16::compareBuffer(uint16_t bufferIndex) {
+inline bool DispBuffer16::compareBuffer(uint16_t bufferIndex) {
 
     return (buffer2[bufferIndex] != buffer[bufferIndex]);
 }

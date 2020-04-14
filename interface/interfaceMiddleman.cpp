@@ -35,13 +35,12 @@ void initMiddleman() {
 }
 
 void updateAllOutputs() {
-
-    updateClockOut();
     updateNoteOut();
-    updateCVOut();
     reactivateRatchet();
+    updateCVOut();
     closeGates();
     closeTriggers();
+    updateClockOut();
 }
 
 void updateNoteOut() {
@@ -71,7 +70,7 @@ void updateNoteOut() {
     for (byte output = 0; output < OUTPUTS; output++) {
 
         if (DATAOBJ.get(FrankData::liveTriggered, output)) {
-
+            PRINTLN("new note triggered");
             byte newNote;
             byte seqStep = DATAOBJ.get(FrankData::stepSeq, output);
             float gateDuration = 0.5f;
@@ -181,8 +180,8 @@ void updateNoteOut() {
 
             // output Note
             if (newNote != previousOutputs[output].note) {
-                outputChannel[output].setNote(newNote);
                 previousOutputs[output].note = newNote;
+                outputChannel[output].setNote(newNote);
                 // PRINT("set new Note ");
                 // PRINTLN(newNote);
             }
@@ -196,6 +195,8 @@ void updateNoteOut() {
 void reactivateRatchet() {
     for (byte output = 0; output < OUTPUTS; output++) {
         if (previousOutputs[output].ratchet && (DATAOBJ.get(FrankData::outputArp, output) || DATAOBJ.get(FrankData::outputSource, output))) {
+            PRINTLN("reactivate ratchet");
+
             if (millis() >= previousOutputs[output].reactivateTime) {
 
                 // PRINTLN("reactivate");
@@ -269,9 +270,21 @@ void updateCVOut() {
 
             if (DATAOBJ.get(FrankData::outputCc, output) == 2) {
                 newCV = DATAOBJ.get(FrankData::outputCcEvaluated, output) / 4; // returns -8192 - 8191, now -2048 - 2047
+                // if (newCV == previousOutputs[output].cv) {
+                //     return;
+                // }
+                // else {
+                //     previousOutputs[output].cv = newCV;
+                // }
             }
             else {
                 newCV = DATAOBJ.get(FrankData::outputCcEvaluated, output);
+                // if (newCV == previousOutputs[output].cv) {
+                //     return;
+                // }
+                // else {
+                //     previousOutputs[output].cv = newCV;
+                // }
                 if (newCV < 64) {
                     newCV = map(newCV, 0, 64, -2048, 0);
                 }
@@ -285,6 +298,12 @@ void updateCVOut() {
             if (currentStep != previousOutputs[output].stepSeq || !DATAOBJ.get(FrankData::play)) {
                 previousOutputs[output].stepSeq = currentStep;
                 newCV = DATAOBJ.get(FrankData::seqCc, DATAOBJ.get(FrankData::outputSource, output) - 1, currentStep);
+                // if (newCV == previousOutputs[output].cv) {
+                //     return;
+                // }
+                // else {
+                //     previousOutputs[output].cv = newCV;
+                // }
                 if (newCV < 64) {
                     newCV = map(newCV, 0, 64, -2048, 0);
                 }
@@ -298,10 +317,8 @@ void updateCVOut() {
         }
 
         if (newCV != previousOutputs[output].cv) {
-            // PRINT("newCV out is ");
-            // PRINTLN(newCV);
-            outputChannel[output].setCV(newCV); // expects -2048 - 2047
             previousOutputs[output].cv = newCV;
+            outputChannel[output].setCV(newCV); // expects -2048 - 2047
         }
     }
 }
@@ -392,7 +409,7 @@ void updateClockOut() {
     for (byte output = 0; output < OUTPUTS; output++) {
         if (previousOutputs[output].clockPulseActivated) {
 
-            if (timer[output] >= (uint16_t)DATAOBJ.get(FrankData::pulseLength)) {
+            if (timer[output] >= (uint32_t)DATAOBJ.get(FrankData::pulseLength)) {
                 outputClock[output].setClock(0);
                 previousOutputs[output].clockPulseActivated = 0;
             }
@@ -403,7 +420,7 @@ void updateClockOut() {
 void closeTriggers() {
     for (byte output = 0; output < OUTPUTS; output++) {
         if (previousOutputs[output].triggerActivated) {
-            if (previousOutputs[output].triggerTimer >= (uint16_t)DATAOBJ.get(FrankData::pulseLength)) {
+            if (previousOutputs[output].triggerTimer >= (uint32_t)DATAOBJ.get(FrankData::pulseLength)) {
                 outputChannel[output].setTrigger(0);
                 previousOutputs[output].triggerActivated = 0;
                 // PRINTLN("Trigger closed");
