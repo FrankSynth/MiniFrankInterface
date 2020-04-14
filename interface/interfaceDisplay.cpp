@@ -511,7 +511,7 @@ void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t
     byte first = 1;
 
     for (int16_t j = 0; j < h; j++, y++) {
-        DebugTimer test("writeRGBMap Row");
+        // DebugTimer test("writeRGBMap Row");
         // update midi, clocks, outputs while in loop, so no delays occur
         // interrupts();
         // updateMidi();
@@ -520,13 +520,13 @@ void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t
         // noInterrupts();
         for (int16_t i = 0; i < w; i++) {
             int16_t index = j * w + i;
+            Serial.println(index);
 
             if (bufferObj->compareBuffer(index)) {
 
-                Serial.print("difference in buffer at ");
-                Serial.println(index);
+                // Serial.print("difference in buffer at ");
                 if (first) {
-                    Serial.println("first");
+                    // Serial.println("first");
                     lcd.startWrite();
                     first = 0;
                 }
