@@ -11,7 +11,7 @@
 #define OUTPUTS 2 // Number of output lanes
 #define MAXSTRINGSIZE 8
 
-#define MIDIARPUPDATEDELAY 500 // in micros
+#define MIDIARPUPDATEDELAY 2 // in micros
 
 #define DATAOBJ FrankData::getDataObj()
 #define CHANNEL DATAOBJ.get(FrankData::screenOutputChannel)
@@ -163,7 +163,7 @@ class LiveMidi {
     structKey arpKey;              // always holds the last played key, if no keys are pressed
     PressedNotesList arpList;      // Key List for arpeggiator
     structKey arpArray[NOTERANGE]; // sorted array for arpeggiator
-    elapsedMicros midiUpdateWaitTimer = 0;
+    elapsedMillis midiUpdateWaitTimer = 0;
 
     byte stepArp = 0; // current arp step
     byte stepSeq = 0; // current seq step
@@ -485,3 +485,21 @@ const char *tuningToChar(const byte &tuning);
 
 int sort_desc(const void *cmp1, const void *cmp2);
 int sort_asc(const void *cmp1, const void *cmp2);
+
+class DebugTimer {
+    elapsedMicros timer;
+    const char *name;
+
+  public:
+    DebugTimer(const char *string) {
+        timer = 0;
+        name = string;
+    }
+    ~DebugTimer() {
+        Serial.print("perf ");
+        Serial.print(name);
+        Serial.print(": ");
+        Serial.print(timer);
+        Serial.println(" micros");
+    }
+};

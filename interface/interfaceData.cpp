@@ -166,6 +166,7 @@ PressedNotesElement *PressedNotesList::getElement(const byte &element) {
 void LiveMidi::keyPressed(const byte &note, const byte &velocity) {
     noteList.appendKey(note, velocity);
     if (arpRetrigger && sustain < 64) {
+        PRINTLN("retrigger");
         arpList.deleteAllKeys();
         arpRetrigger = 0;
         arpStepRepeat = 1;
@@ -257,6 +258,7 @@ void LiveMidi::reset() {
 }
 
 void LiveMidi::updateArpArray(const byte &arpSettings) {
+
     copyArpListToArray();
 
     if (arpSettings < 6)
@@ -453,13 +455,11 @@ void FrankData::receivedKeyPressed(const byte &channel, const byte &note, const 
             if (config.routing[x].outSource == 0) {
                 liveMidi[x].triggered = 1;
                 if (liveMidi[x].arpRestarted) {
-                    liveMidi[x].arpOffsetTime = millis() - stat.last16thTime;
-                    nextArpStep(x);
+                    liveMidi[x].arpOffsetTime = millis() - stat.last16thTime + 1;
+                    // if (bpmSync)
+                    // nextArpStep(x);
                 }
-                if (config.routing[x].arp && stat.bpmSync) {
-
-                    liveMidi[x].midiUpdateWaitTimer = 0;
-                }
+                liveMidi[x].midiUpdateWaitTimer = 0;
             }
         }
     }
@@ -471,14 +471,15 @@ void FrankData::receivedKeyReleased(const byte &channel, const byte &note) {
             liveMidi[x].keyReleased(note);
         }
 
-        if (config.routing[x].outSource == 0) {
-            liveMidi[x].released = 1;
+        if (config.routing[x].outSource == 0 && config.routing[x].arp == 0) {
             liveMidi[x].triggered = 1;
+            liveMidi[x].released = 1;
         }
         if (config.routing[x].arp == 1) {
 
             liveMidi[x].arpList.deleteKey(note);
             liveMidi[x].updateArpArray(config.routing[x].arpMode);
+            liveMidi[x].midiUpdateWaitTimer = 0;
         }
     }
 }
@@ -518,9 +519,10 @@ void FrankData::receivedStart() {
         for (byte out = 0; out < OUTPUTS; out++) {
             liveMidi[out].stepSeq = config.routing[out].nbPages * STEPSPERPAGE - 1;
             liveMidi[out].channel16thCount = liveMidi[out].stepSeq * 16 - 1;
-            liveMidi[out].stepArp = liveMidi[out].arpList.size - 1;
-            liveMidi[out].arpOctave = 0;
-            liveMidi[out].arpDirection = 0;
+            liveMidi[out].arpRetrigger = 1;
+
+            // liveMidi[out].arpOctave = 0;
+            // liveMidi[out].arpDirection = 0;
         }
         stat.play = 1;
     }
@@ -529,9 +531,10 @@ void FrankData::receivedContinue() {
     if (stat.bpmSync) {
 
         for (byte out = 0; out < OUTPUTS; out++) {
-            liveMidi[out].stepArp = liveMidi[out].arpList.size - 1;
-            liveMidi[out].arpOctave = 0;
-            liveMidi[out].arpDirection = 0;
+            PRINTLN("continue");
+            liveMidi[out].arpRetrigger = 1;
+            // liveMidi[out].arpOctave = 0;
+            // liveMidi[out].arpDirection = 0;
         }
         stat.play = 1;
     }
@@ -539,6 +542,9 @@ void FrankData::receivedContinue() {
 void FrankData::receivedStop() {
     if (stat.bpmSync) {
         stat.play = 0;
+        for (byte out = 0; out < OUTPUTS; out++) {
+            liveMidi[out].arpRetrigger = 1;
+        }
     }
 }
 
@@ -558,15 +564,16 @@ void FrankData::reset() {
 }
 
 void FrankData::increaseMidiClock() {
+
     if (stat.bpmSync) {
 
         stat.midiClockCount++;
         if (stat.midiClockCount == 6) {
 
-            for (byte out = 0; out < OUTPUTS; out++) {
-                if (config.routing[out].arp)
-                    liveMidi[out].midiUpdateWaitTimer = 0;
-            }
+            // for (byte out = 0; out < OUTPUTS; out++) {
+            // if (config.routing[out].arp)
+            // liveMidi[out].midiUpdateWaitTimer = 0;
+            // }
 
             stat.midiClockCount = 0;
             increaseBpm16thCount();
@@ -722,6 +729,17 @@ void FrankData::updateClockCounter(const bool restartCounter) {
             static byte checkArpStep[OUTPUTS] = {0, 0};
             static byte lastBpm16thCount[OUTPUTS] = {255, 255};
             static elapsedMillis arpTimer = 0;
+            static byte restartedArp = 0;
+
+            if (!restartedArp && liveMidi[out].arpRestarted) {
+                restartedArp = 1;
+                checkArpStep[out] = 1;
+                arpTimer = liveMidi[out].arpOffsetTime;
+                PRINTLN("restart");
+            }
+
+            if (restartedArp && !liveMidi[out].arpRestarted)
+                restartedArp = 0;
 
             if (lastBpm16thCount[out] != stat.bpm16thCount) {
 
@@ -739,7 +757,8 @@ void FrankData::updateClockCounter(const bool restartCounter) {
 
             if (checkArpStep[out]) {
 
-                if (arpTimer >= liveMidi[out].arpOffsetTime) {
+                if (arpTimer > liveMidi[out].arpOffsetTime + MIDIARPUPDATEDELAY) {
+
                     nextArpStep(out);
                     checkArpStep[out] = 0;
                 }
@@ -750,13 +769,13 @@ void FrankData::updateClockCounter(const bool restartCounter) {
 
 void FrankData::calcBPM() {
     if (stat.bpmSync) {
-        static unsigned long bpm16thTimer = 0;
+        static elapsedMicros bpm16thTimer;
         static elapsedMillis averagingStartTime;
         static float averageTimer = 0;
         static byte counter = 0;
 
-        averageTimer += 60000000.0 / (double)(micros() - bpm16thTimer + 1.0);
-        bpm16thTimer = micros();
+        averageTimer += 60000000.0 / bpm16thTimer;
+        bpm16thTimer = 0;
         counter++;
 
         if (averagingStartTime > 1000) {
@@ -906,6 +925,13 @@ void FrankData::decreaseArpOct(const byte &array) {
 void FrankData::nextArpStep(const byte &array) {
 
     if (config.routing[array].outSource == 0 && config.routing[array].arp) {
+        if (config.routing[array].arp == 1 && !liveMidi[array].keysPressed()) {
+            return;
+        }
+        if (liveMidi[array].arpRestarted) {
+            PRINT("restarted arp ");
+            PRINTLN(array);
+        }
 
         switch (config.routing[array].arpMode) {
             case 1: // down
@@ -1092,6 +1118,8 @@ void FrankData::nextArpStep(const byte &array) {
         }
 
         byte step = liveMidi[array].stepArp;
+        PRINT("Arp Step ");
+        PRINTLN(step);
         structKey key;
 
         if (config.routing[array].arpMode == 7) {
@@ -1117,9 +1145,7 @@ void FrankData::nextArpStep(const byte &array) {
 
         liveMidi[array].arpKey = key;
         liveMidi[array].triggered = 1;
-        if (config.routing[array].arp == 2 || (config.routing[array].arp == 1 && liveMidi[array].keysPressed())) {
-            liveMidi[array].arpTriggeredNewNote = 1;
-        }
+        liveMidi[array].arpTriggeredNewNote = 1;
     }
 }
 
@@ -1342,6 +1368,8 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data) {
         case bpmSync:
             stat.bpmSync = testByte(data, 0, 1);
             updateClockCounter(true);
+            PRINTLN("check set bpm sync");
+
             break;
         case bpmPoti:
             stat.bpmPot = testInt(data, 0, 1023);
@@ -1406,6 +1434,7 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data, const b
 
         case liveCalNote: stat.noteToCalibrate = testByte(data, 0, NOTERANGE - 1); break;
         case liveCalCv: stat.cvToCalibrate = testInt(data, -1, 2); break;
+        case liveMidiUpdateWaitTimer: liveMidi[array].midiUpdateWaitTimer = data;
 
         case seqTuning: seq[array].sequence.tuning = testByte(data, 0, 13); break;
         case seqGateLengthOffset: seq[array].sequence.gateLengthOffset = testInt(data, -100, 100); break;

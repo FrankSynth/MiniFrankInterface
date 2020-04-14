@@ -35,6 +35,7 @@ void initMiddleman() {
 }
 
 void updateAllOutputs() {
+
     updateClockOut();
     updateNoteOut();
     updateCVOut();
@@ -78,9 +79,18 @@ void updateNoteOut() {
             // live mode
             if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
                 if (DATAOBJ.get(FrankData::outputArp, output)) {
-                    if (DATAOBJ.get(FrankData::liveMidiUpdateWaitTimer, output) < MIDIARPUPDATEDELAY)
+                    if (DATAOBJ.get(FrankData::outputArp, output) == 1 && !DATAOBJ.get(FrankData::liveKeysPressed, output)) {
+                        DATAOBJ.set(FrankData::liveTriggered, 0, output);
+                        DATAOBJ.set(FrankData::liveArpTriggeredNewNote, 0, output);
                         continue;
+                    }
+                    if (DATAOBJ.get(FrankData::outputArp, output) == 1) {
+                        if (DATAOBJ.get(FrankData::liveMidiUpdateWaitTimer, output) < MIDIARPUPDATEDELAY)
+                            continue;
+                    }
                     newNote = DATAOBJ.get(FrankData::liveKeyArpNoteEvaluated, output);
+
+                    // DATAOBJ.set(FrankData::liveMidiUpdateWaitTimer, 0, output);
                 }
                 else {
                     newNote = DATAOBJ.get(FrankData::liveKeyNoteEvaluated, output);
