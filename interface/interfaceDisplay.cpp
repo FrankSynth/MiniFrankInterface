@@ -522,7 +522,11 @@ void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t
             int16_t index = j * w + i;
 
             if (bufferObj->compareBuffer(index)) {
+
+                Serial.print("difference in buffer at ");
+                Serial.println(index);
                 if (first) {
+                    Serial.println("first");
                     lcd.startWrite();
                     first = 0;
                 }
