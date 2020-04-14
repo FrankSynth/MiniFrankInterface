@@ -161,10 +161,12 @@ void loop() {
 
     if (screenTimer > 16) {
 
-        cli();
-        // updateDisplay();
+        // cli();
+        noInterrupts();
+        updateDisplay();
         updateTLC();
-        sei();
+        interrupts();
+        // sei();
 
         screenTimer = 0;
     }
