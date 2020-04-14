@@ -525,17 +525,15 @@ void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t
         for (int16_t i = 0; i < w; i++) {
             int16_t index = j * w + i;
 
-            // if (bufferObj->compareBuffer(index)) {
+            if (bufferObj->compareBuffer(index)) {
 
-            //     // Serial.print("difference in buffer at ");
-            //     if (first) {
-            //         // Serial.println("first");
-            //         lcd.startWrite();
-            //         first = 0;
-            //     }
-            //     lcd.writePixel(x + i, y, pgm_read_word(&buffer[index]));
-            //     bufferObj->copyBuffer(index);
-            // }
+                // if (first) {
+                //     lcd.startWrite();
+                //     first = 0;
+                // }
+                // lcd.writePixel(x + i, y, pgm_read_word(&buffer[index]));
+                bufferObj->copyBuffer(index);
+            }
         }
     }
 
@@ -568,6 +566,7 @@ void DispBuffer16::copyBuffer(uint16_t bufferIndex) {
 }
 
 inline int DispBuffer16::compareBuffer(uint16_t bufferIndex) {
+
     return (buffer2[bufferIndex] != buffer[bufferIndex]);
 }
 
