@@ -512,8 +512,6 @@ void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t
 
     for (int16_t j = 0; j < h; j++, y++) {
         DebugTimer test("writeRGBMap Row");
-        Serial.print("j: ");
-        Serial.println(j);
         // update midi,clocks, outputs while in loop, so no delays occur
         // interrupts();
         // updateMidi();
@@ -522,6 +520,7 @@ void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t
         // noInterrupts();
         for (int16_t i = 0; i < w; i++) {
             int16_t index = j * w + i;
+            elapsedMicros timer = 0;
             if (j == 74) {
 
                 Serial.print("i: ");
@@ -538,6 +537,11 @@ void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t
                 }
                 lcd.writePixel(x + i, y, pgm_read_word(&buffer[index]));
                 bufferObj->copyBuffer(index);
+            }
+            if (j == 74) {
+
+                Serial.print("time: ");
+                Serial.println(timer);
             }
         }
     }
