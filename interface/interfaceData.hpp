@@ -93,6 +93,8 @@ typedef struct {
     byte midiClockCount = 5; // counts incoming midiclock signals (6 ticks per 16th)
     byte bpm16thCount = 0;   // general 16th counter for clock outputs
 
+    byte receivedNewSPP = 1;
+
     // byte receivedNewMidiDataArp = 0;
 
     // uint32_t last16thTime = 0;
@@ -148,10 +150,10 @@ class LiveMidi {
 
     byte arpDirection = 1;        // arp direction for updown etc, 1 = up
     byte arpOctaveDirection = 1;  // arp octave direction for updown etc, 1 = up
-    byte arpRetrigger = 1;        // clears Arp Array on next iteration
+    byte arpRetrigger = 0;        // clears Arp Array on next iteration
     byte arpTriggeredNewNote = 0; // Arp has a new step to send out via middleman
     byte arpStepRepeat = 1;       // arp repeats step, for upRdownR, etc
-    byte arpRestarted = 1;        // arp was reset
+    byte arpRestarted = 0;        // arp was reset
     uint32_t arpOffsetTime = 0;
     byte arp16thCount = 0;
 

@@ -78,7 +78,8 @@ void updateNoteOut() {
             // live mode
             if (DATAOBJ.get(FrankData::outputSource, output) == 0) {
                 if (DATAOBJ.get(FrankData::outputArp, output)) {
-                    if (DATAOBJ.get(FrankData::outputArp, output) == 1 && !DATAOBJ.get(FrankData::liveKeysPressed, output)) {
+                    if (DATAOBJ.get(FrankData::outputArp, output) == 1 && !DATAOBJ.get(FrankData::liveKeysPressed, output) &&
+                        DATAOBJ.get(FrankData::liveSustain, output) < 64) {
                         DATAOBJ.set(FrankData::liveTriggered, 0, output);
                         DATAOBJ.set(FrankData::liveArpTriggeredNewNote, 0, output);
                         continue;
@@ -333,10 +334,30 @@ void closeGates() {
 
         if (previousOutputs[output].gateActivated) {
 
-            if (DATAOBJ.get(FrankData::liveSustain, output) < 64) {
+            if (DATAOBJ.get(FrankData::outputArp, output) == 1) {
+                if (millis() >= previousOutputs[output].gateCloseTime ||
+                    (!DATAOBJ.get(FrankData::liveKeysPressed, output) && DATAOBJ.get(FrankData::liveSustain, output) < 64)) {
+                    outputChannel[output].setGate(0);
+                    previousOutputs[output].gateActivated = 0;
+                }
+            }
+            else {
 
-                if (DATAOBJ.get(FrankData::outputSource, output)) {
-                    if (DATAOBJ.get(FrankData::play)) {
+                if (DATAOBJ.get(FrankData::liveSustain, output) < 64) {
+
+                    if (DATAOBJ.get(FrankData::outputSource, output)) {
+                        if (DATAOBJ.get(FrankData::play)) {
+                            if (millis() >= previousOutputs[output].gateCloseTime) {
+                                outputChannel[output].setGate(0);
+                                previousOutputs[output].gateActivated = 0;
+                                // PRINT("close gate, arp/seq, on output ");
+                                // PRINT(output + 1);
+                                // PRINT(", time is ");
+                                // PRINTLN(millis());
+                            }
+                        }
+                    }
+                    else if (DATAOBJ.get(FrankData::outputArp, output)) {
                         if (millis() >= previousOutputs[output].gateCloseTime) {
                             outputChannel[output].setGate(0);
                             previousOutputs[output].gateActivated = 0;
@@ -346,25 +367,14 @@ void closeGates() {
                             // PRINTLN(millis());
                         }
                     }
-                }
-                else if (DATAOBJ.get(FrankData::outputArp, output)) {
-                    if (millis() >= previousOutputs[output].gateCloseTime ||
-                        (DATAOBJ.get(FrankData::outputArp, output) == 1 && !DATAOBJ.get(FrankData::liveKeysPressed, output))) {
+                    else if (!DATAOBJ.get(FrankData::liveKeysPressed, output)) {
                         outputChannel[output].setGate(0);
                         previousOutputs[output].gateActivated = 0;
-                        // PRINT("close gate, arp/seq, on output ");
+                        // PRINT("close gate, live, on output ");
                         // PRINT(output + 1);
                         // PRINT(", time is ");
                         // PRINTLN(millis());
                     }
-                }
-                else if (!DATAOBJ.get(FrankData::liveKeysPressed, output)) {
-                    outputChannel[output].setGate(0);
-                    previousOutputs[output].gateActivated = 0;
-                    // PRINT("close gate, live, on output ");
-                    // PRINT(output + 1);
-                    // PRINT(", time is ");
-                    // PRINTLN(millis());
                 }
             }
         }
