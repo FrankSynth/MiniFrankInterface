@@ -510,29 +510,8 @@ void FrankData::receivedMidiSongPosition(unsigned int spp) {
     stat.receivedNewSPP = 1;
 
     for (byte out = 0; out < OUTPUTS; out++) {
-        // PRINT("spp: ");
-        // PRINT(spp);
-        // PRINT(", out: ");
-        // PRINT(out);
         liveMidi[out].stepSeq = (spp / (int)pow(2, (int)(config.routing[out].stepSpeed))) % (config.routing[out].nbPages * STEPSPERPAGE);
-        // liveMidi[out].stepSeq = spp % (pow(2, (int)(config.routing[out].stepSpeed) * config.routing[out].nbPages);
         liveMidi[out].channel16thCount = spp % 128;
-        // PRINT(", stepspeed: ");
-        const char *temp;
-        switch (config.routing[out].stepSpeed) {
-            case 0: temp = "1/16"; break;
-            case 1: temp = "1/8"; break;
-            case 2: temp = "1/4"; break;
-            case 3: temp = "1/2"; break;
-            case 4: temp = "1"; break;
-            case 5: temp = "2"; break;
-            default: temp = "";
-        }
-        // PRINT(temp);
-        // PRINT(", stepseq: ");
-        // PRINT(liveMidi[out].stepSeq);
-        // PRINT(", channel16thCount: ");
-        // PRINTLN(liveMidi[out].channel16thCount);
     }
 }
 void FrankData::receivedStart() {
@@ -1556,8 +1535,12 @@ void FrankData::increase(const frankData &frankDataType, const byte &array, cons
         case seqNote:
             seq[array].increaseNote(step);
             if (!stat.play) {
-                liveMidi[stat.screen.channel].triggered = 1;
-                liveMidi[stat.screen.channel].recModePlayback = 0;
+                for (byte x = 0; x < OUTPUTS; x++) {
+                    if (config.routing[x].outSource) {
+                        liveMidi[x].triggered = 1;
+                        liveMidi[x].recModePlayback = 0;
+                    }
+                }
             }
             break;
         default: change(frankDataType, 1, array, step);
@@ -1579,8 +1562,12 @@ void FrankData::decrease(const frankData &frankDataType, const byte &array, cons
         case seqNote:
             seq[array].decreaseNote(step);
             if (!stat.play) {
-                liveMidi[stat.screen.channel].triggered = 1;
-                liveMidi[stat.screen.channel].recModePlayback = 0;
+                for (byte x = 0; x < OUTPUTS; x++) {
+                    if (config.routing[x].outSource) {
+                        liveMidi[x].triggered = 1;
+                        liveMidi[x].recModePlayback = 0;
+                    }
+                }
             }
             break;
         default: change(frankDataType, -1, array, step);
@@ -2114,7 +2101,8 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType, const byte 
         case outputCcEvaluated:
             if (config.routing[channel].cc == 2) {
                 setStr(toStr(getLiveCcEvaluated(channel) / 64));
-            } else {
+            }
+            else {
                 setStr(toStr(getLiveCcEvaluated(channel)));
             }
             break;

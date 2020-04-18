@@ -89,8 +89,6 @@ void updateNoteOut() {
                             continue;
                     }
                     newNote = DATAOBJ.get(FrankData::liveKeyArpNoteEvaluated, output);
-
-                    // DATAOBJ.set(FrankData::liveMidiUpdateWaitTimer, 0, output);
                 }
                 else {
                     newNote = DATAOBJ.get(FrankData::liveKeyNoteEvaluated, output);
