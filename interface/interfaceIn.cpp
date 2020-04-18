@@ -129,7 +129,16 @@ void inputControls::rotate(byte id, byte dir) {
             }
 
             break;
+            // Calibration:
+        case FrankData::outputCcEvaluated:
+            if (dir) {
+                DATAOBJ.increase(FrankData::outputCc, CHANNEL);
+            }
+            else {
+                DATAOBJ.decrease(FrankData::outputCc, CHANNEL);
+            }
 
+            break;
         case FrankData::seqTuning:
 
             if (dir) {

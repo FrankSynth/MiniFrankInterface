@@ -1438,8 +1438,6 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data) {
         case bpmSync:
             stat.bpmSync = testByte(data, 0, 1);
             updateClockCounter(true);
-            PRINTLN("check set bpm sync");
-
             break;
         case bpmPoti:
             stat.bpmPot = testInt(data, 0, 1023);
@@ -2113,7 +2111,13 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType, const byte 
                 default: setStr("ERR"); break;
             }
             break;
-        case outputCcEvaluated: setStr(toStr(getLiveCcEvaluated(channel))); break;
+        case outputCcEvaluated:
+            if (config.routing[channel].cc == 2) {
+                setStr(toStr(getLiveCcEvaluated(channel) / 64));
+            } else {
+                setStr(toStr(getLiveCcEvaluated(channel)));
+            }
+            break;
 
         case outputLiveMode:
             switch (config.routing[channel].liveMidiMode) {

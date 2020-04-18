@@ -113,6 +113,9 @@ void setup() {
     // Start Connection to the uC
     Serial3.begin(115200);
 
+    // MIDI Baud Rate for DIN input
+    Serial4.begin(31250);
+
     // SayHello to the uC
     byte send = B01010101;
     elapsedMillis timer;
