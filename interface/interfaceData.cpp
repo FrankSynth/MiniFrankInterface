@@ -492,8 +492,9 @@ void FrankData::init() {
         loadMenuSettings();
     }
     else {
-        memset(cal, 0, sizeof(cal));
-        saveNoteCalibration();
+        // memset(cal, 0, sizeof(cal));
+        // saveNoteCalibration();
+        loadNoteCalibration();
         saveMenuSettings();
         EEPROM.update(0, checkByte);
     }
