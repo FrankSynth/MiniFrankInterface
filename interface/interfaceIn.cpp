@@ -39,165 +39,185 @@ void inputControls::rotate(byte id, byte dir) {
 
     FrankData::frankData mappedID = mapping(id);
 
-    id = id + DATAOBJ.get(FrankData::activePage ,DATAOBJ.get(FrankData::screenOutputChannel)) *
-                  8;
+    id = id + DATAOBJ.get(FrankData::activePage, CHANNEL) * 8;
 
     switch (mappedID) {
 
-case STEP:
-
-    if (dir) {
-        DATAOBJ.increaseStepCounters(DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1);
-    }
-    else {
-        DATAOBJ.decreaseStepCounters(DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1);
-    }
-    break;
-
-    // TYPE,Channel,Index;
-    case NOTE:
-    case CV:
-
-        if (dir) {
-            DATAOBJ.increase(mappedID, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1, id);
-        }
-        else {
-            DATAOBJ.decrease(mappedID, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1, id);
-        }
-        break;
-
-        // TYPE,Channel,Index;  DoubleStep
-
-    case GATELENGTH:
-
-        if (dir) {
-            DATAOBJ.change(mappedID, 2, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1, id);
-        }
-        else {
-            DATAOBJ.change(mappedID, -2, DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1, id);
-        }
-        break;
-
-    // Type, Channel;
-    case FrankData::outputArpOctave:
-    case FrankData::outputClock:
-    case FrankData::outputRatchet:
-    case FrankData::outputArpMode:
-    case FrankData::outputArp:
-
-    // case FrankData::midiSource :
-    case FrankData::outputLiveMode:
-    
-    case FrankData::stepSpeed:
-    case FrankData::outputCc:
-    case FrankData::outputChannel:
-    case FrankData::outputSource:
-
-    case FrankData::nbPages:
-    
-    case FrankData::cvCalOffset:
-    case FrankData::liveCalNote:
-     case   FrankData::noteScaleOffset:
+        case STEP:
 
             if (dir) {
-            DATAOBJ.increase(mappedID, DATAOBJ.get(FrankData::screenOutputChannel));
-        }
-        else {
-            DATAOBJ.decrease(mappedID, DATAOBJ.get(FrankData::screenOutputChannel));
-        }
+                DATAOBJ.increaseStepCounters(CHANNEL);
+            }
+            else {
+                DATAOBJ.decreaseStepCounters(CHANNEL);
+            }
+            break;
 
-        break;
-
-    // Calibration:
-    case FrankData::noteCalOffset :
-        if (dir) {
-            DATAOBJ.increase(mappedID, DATAOBJ.get(FrankData::screenOutputChannel), DATAOBJ.get(FrankData::liveCalNote));
-        }
-        else {
-            DATAOBJ.decrease(mappedID, DATAOBJ.get(FrankData::screenOutputChannel), DATAOBJ.get(FrankData::liveCalNote));
-        }
-
-        break;
-
-    case FrankData::seqTuning :
+        // TYPE,Channel,Index;
+        case NOTE:
+        case CV:
 
             if (dir) {
-            DATAOBJ.increase(mappedID, (byte)(DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1));
-        }
-        else {
-            DATAOBJ.decrease(mappedID, (byte)(DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1));
-        }
-
-        break;
-
-    // Type, Channel; DoubleStep
-    case FrankData::seqGateLengthOffset:
-
-        if (dir) {
-            DATAOBJ.change(mappedID, 2,
-                           (byte)(DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1));
-        }
-        else {
-            DATAOBJ.change(mappedID, -2, (byte)(DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1));
-        }
-        break;
-
-    case SUBSCREEN:
-        if (dir) {
-
-            if (DATAOBJ.get(SUBSCREEN) == 0 && DATAOBJ.get(FrankData::screenConfig) == 1) {
-                DATAOBJ.toggle(FrankData::screenConfig);
+                DATAOBJ.increase(mappedID, DATAOBJ.get(FrankData::outputSource, CHANNEL) - 1, id);
             }
             else {
-                DATAOBJ.increase(SUBSCREEN);
+                DATAOBJ.decrease(mappedID, DATAOBJ.get(FrankData::outputSource, CHANNEL) - 1, id);
             }
-        }
-        else {
+            break;
 
-            if (DATAOBJ.get(FrankData::screenSubScreen) == 0 && DATAOBJ.get(FrankData::screenConfig) == 0) {
-                DATAOBJ.toggle(FrankData::screenConfig);
+            // TYPE,Channel,Index;  DoubleStep
+
+        case GATELENGTH:
+
+            if (dir) {
+                DATAOBJ.change(mappedID, 2, DATAOBJ.get(FrankData::outputSource, CHANNEL) - 1, id);
             }
             else {
-                DATAOBJ.decrease(FrankData::screenSubScreen);
+                DATAOBJ.change(mappedID, -2, DATAOBJ.get(FrankData::outputSource, CHANNEL) - 1, id);
             }
-        }
-        break;
+            break;
 
-    case FrankData::displayBrightness:
-        if (dir) {
-            DATAOBJ.change(mappedID, 5);
-        }
-        else {
-            DATAOBJ.change(mappedID, -5);
-        }
-        break;
+        case FrankData::screenCalCv:
+        case FrankData::screenCalNote:
+        case FrankData::screenMainMenu:
+        case FrankData::screenOutputChannel:
+        case FrankData::screenConfig:
+        case FrankData::saveCal: break;
 
-    // Type;
-    default:
-        if (dir) {
-            DATAOBJ.increase(mappedID);
-        }
-        else {
-            DATAOBJ.decrease(mappedID);
-        }
+        // Type, Channel;
+        case FrankData::outputArpOctave:
+        case FrankData::outputClock:
+        case FrankData::outputRatchet:
+        case FrankData::outputArpMode:
+        case FrankData::outputArp:
+
+        // case FrankData::midiSource :
+        case FrankData::outputLiveMode:
+
+        case FrankData::stepSpeed:
+        case FrankData::outputCc:
+        case FrankData::outputChannel:
+        case FrankData::outputSource:
+
+        case FrankData::nbPages:
+
+        case FrankData::cvCalOffset:
+        case FrankData::cvCalLower:
+        case FrankData::cvCalUpper:
+        case FrankData::cvPitchbendCalLower:
+        case FrankData::cvPitchbendCalUpper:
+
+        case FrankData::liveCalNote:
+        case FrankData::noteScaleOffset:
+
+            if (dir) {
+                DATAOBJ.increase(mappedID, CHANNEL);
+            }
+            else {
+                DATAOBJ.decrease(mappedID, CHANNEL);
+            }
+
+            break;
+
+        // Calibration:
+        case FrankData::noteCalOffset:
+            if (dir) {
+                DATAOBJ.increase(mappedID, CHANNEL, DATAOBJ.get(FrankData::liveCalNote));
+            }
+            else {
+                DATAOBJ.decrease(mappedID, CHANNEL, DATAOBJ.get(FrankData::liveCalNote));
+            }
+
+            break;
+            // Calibration:
+        case FrankData::outputCcEvaluated:
+            if (dir) {
+                DATAOBJ.increase(FrankData::outputCc, CHANNEL);
+            }
+            else {
+                DATAOBJ.decrease(FrankData::outputCc, CHANNEL);
+            }
+
+            break;
+        case FrankData::seqTuning:
+
+            if (dir) {
+                DATAOBJ.increase(mappedID, SEQCHANNEL);
+            }
+            else {
+                DATAOBJ.decrease(mappedID, SEQCHANNEL);
+            }
+
+            break;
+
+        // Type, Channel; DoubleStep
+        case FrankData::seqGateLengthOffset:
+
+            if (dir) {
+                DATAOBJ.change(mappedID, 2, SEQCHANNEL);
+            }
+            else {
+                DATAOBJ.change(mappedID, -2, SEQCHANNEL);
+            }
+            break;
+
+        case SUBSCREEN:
+            if (dir) {
+
+                if (DATAOBJ.get(SUBSCREEN) == 1 && DATAOBJ.get(FrankData::screenConfig) == 1) {
+                    DATAOBJ.toggle(FrankData::screenConfig);
+                    DATAOBJ.set(FrankData::screenSubScreen, 0);
+                }
+                else {
+                    DATAOBJ.increase(SUBSCREEN);
+                }
+            }
+            else {
+
+                if (DATAOBJ.get(FrankData::screenSubScreen) == 0 && DATAOBJ.get(FrankData::screenConfig) == 0) {
+                    DATAOBJ.toggle(FrankData::screenConfig);
+                    DATAOBJ.set(FrankData::screenSubScreen, 1);
+                }
+                else {
+                    DATAOBJ.decrease(FrankData::screenSubScreen);
+                }
+            }
+            break;
+
+        case FrankData::displayBrightness:
+            if (dir) {
+                DATAOBJ.change(mappedID, 5);
+            }
+            else {
+                DATAOBJ.change(mappedID, -5);
+            }
+            break;
+
+        // Type;
+        default:
+            if (dir) {
+                DATAOBJ.increase(mappedID);
+            }
+            else {
+                DATAOBJ.decrease(mappedID);
+            }
     }
 }
 void inputControls::push(byte id, byte push) { // switch message
 
     FrankData::frankData mappedID = mappingPush(id);
-    id = id + DATAOBJ.get(FrankData::activePage, DATAOBJ.get(FrankData::screenOutputChannel)) * 8;
+    id = id + DATAOBJ.get(FrankData::activePage, CHANNEL) * 8;
 
     PRINTLN(id);
     PRINT("Mapping:");
     PRINTLN(mappedID);
 
     switch (mappedID) {
-    case FrankData::noteCalOffset: 
-    DATAOBJ.toggle(mappedID, DATAOBJ.get(FrankData::screenOutputChannel), DATAOBJ.get(FrankData::liveCalNote)); break;
+        case FrankData::noteCalOffset: DATAOBJ.toggle(mappedID, CHANNEL, DATAOBJ.get(FrankData::liveCalNote)); break;
 
-    case GATE: DATAOBJ.toggle(mappedID, (byte)(DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1), id); break;
+        case GATE: DATAOBJ.toggle(mappedID, (byte)SEQCHANNEL, id); break;
 
-    default: DATAOBJ.toggle(mappedID);
+        default: DATAOBJ.toggle(mappedID);
     }
 }
 
@@ -227,15 +247,30 @@ void inputControls::readSeq() {
 }
 
 void inputControls::readBPMSpeed() {
-    DATAOBJ.setBPMPoti(1024-analogRead(BPMPOT));
+    static elapsedMillis timer;
+    static elapsedMillis timerFast;
+    static uint16_t tempRead;
+
+    if (DATAOBJ.get(FrankData::bpmSync))
+        return;
+
+    if (timerFast > 9) {
+        tempRead = analogRead(BPMPOT);
+        timerFast = 0;
+    }
+    if (timer > 15) {
+        DATAOBJ.set(FrankData::bpmPoti, 1023 - (analogRead(BPMPOT) + tempRead) / 2);
+        timer = 0;
+        timerFast = 0;
+    }
 }
 
-void inputControls::init(){
-        pinMode(SWSYNC, INPUT_PULLUP);
-        pinMode(SWSEQ, INPUT_PULLUP);
-        pinMode(SWREC, INPUT_PULLUP);
-        pinMode(BPMPOT, INPUT);
-        readBPMSpeed();
-        delay(10);
-        readSwitches();
+void inputControls::init() {
+    pinMode(SWSYNC, INPUT_PULLUP);
+    pinMode(SWSEQ, INPUT_PULLUP);
+    pinMode(SWREC, INPUT_PULLUP);
+    pinMode(BPMPOT, INPUT);
+    readBPMSpeed();
+    delay(10);
+    readSwitches();
 }

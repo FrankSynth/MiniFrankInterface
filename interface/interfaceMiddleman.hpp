@@ -10,19 +10,20 @@
 class PreviousOutputs {
   public:
     byte note = 0;
-    byte cv = 0;
+    int cv = 0;
     byte ratchet = 0;
     byte gateActivated = 0;
-    unsigned long gateCloseTime = 0;
-    unsigned long reactivateTime = 0;
-    unsigned long ratchetOffsetTime = 0;
+    uint32_t gateCloseTime = 0;
+    uint32_t reactivateTime = 0;
+    uint32_t ratchetOffsetTime = 0;
 
     byte stepSeq = 0;
 
     byte clockPulseActivated = 0;
+    byte clockPulseStep = 100;
 
     byte triggerActivated = 0;
-    unsigned long triggerTimer = 0;
+    elapsedMillis triggerTimer = 0;
 
   public:
     PreviousOutputs() {}
@@ -34,7 +35,7 @@ class PreviousState {
     byte clockLED = 0;
     byte old16thClockCount = 0;
 
-    PreviousState() { this->old16thClockCount = 0; }
+    PreviousState() {}
 };
 
 // init Middleman

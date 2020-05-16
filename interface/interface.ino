@@ -26,19 +26,10 @@
 #define PRINT2(x, y)
 #endif
 
-// status settings;   //init status object;
-// mfMidi midi0; //create midi object
-
 inputControls cntrl;
 
 Display lcd = Display(160, 128, 3); // create display object, (width, heigh, rotation)
 TLC5916 tlc;
-
-// IntervalTimer myTimerLCD;
-// IntervalTimer myTimerLED;
-
-// PressedNotesList noteList0;
-// PressedNotesList noteList1;
 
 void ISRSwitch(); // Switch Interrupt
 
@@ -59,7 +50,7 @@ void updateDisplay() { // update interrupt
 
 void updateTLC() { // update interrupt
     static byte sendOld = 0;
-    byte source = DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel));
+    byte source = DATAOBJ.get(FrankData::outputSource, CHANNEL);
     if (source) { // seq modus an?
         byte send = 0;
         for (int x = 0; x < 2; x++) {
@@ -91,7 +82,10 @@ void updateTLC() { // update interrupt
 void setup() {
 
     Serial.begin(115200);
-    
+
+    analogReadAveraging(32);
+    analogReadResolution(10);
+
     DATAOBJ.init();
 
     PRINTLN("Debug Mode");
@@ -106,7 +100,6 @@ void setup() {
     digitalWrite(5, LOW);
 
     lcd.displayBrightness(200);
-
     initMidi();
     initMiddleman();
     tlc.init(7);
@@ -120,14 +113,17 @@ void setup() {
     // Start Connection to the uC
     Serial3.begin(115200);
 
+    // MIDI Baud Rate for DIN input
+    Serial4.begin(31250);
+
     // SayHello to the uC
     byte send = B01010101;
-    long timer = millis();
+    elapsedMillis timer;
     byte timeout = 0;
     while (!Serial3.available() && !timeout) { // send hello until uC response (max 2seconds)
         Serial3.write(send);
 
-        if (millis() - timer > 2000) {
+        if (timer > 2000) {
             timeout = 1;                      // we timed out
             DATAOBJ.set(FrankData::error, 1); // set error status
             PRINTLN("uC : connection failed (timeout)");
@@ -149,37 +145,58 @@ void setup() {
     // Set timer interrupt (display refresh)
     // myTimerLCD.begin(updateDisplay, 17000); // display refresh
     // myTimerLED.begin(updateTLC, 20000);     // display refresh
-
 }
 
 void loop() {
 
-    static unsigned int screenTimer = millis();
+    // static elapsedMillis performanceTimer;
+    // static elapsedMillis loopTimer;
+    // static uint32_t counter = 0;
+    // static uint32_t loopTime = 0;
+    // counter++;
 
-    if (millis() > screenTimer + 16) {
-        
-        cli();
+    // if (loopTimer > loopTime) {
+    //     loopTime = loopTimer;
+    // }
+    // loopTimer = 0;
+
+    // if (performanceTimer > 1000) {
+    //     PRINT("repeats: ");
+    //     PRINT(counter);
+    //     PRINT(", longest loop: ");
+    //     PRINTLN(loopTime);
+    //     loopTime = 0;
+    //     counter = 0;
+    //     performanceTimer = 0;
+    // }
+
+    static elapsedMillis screenTimer;
+
+    if (screenTimer > 16) {
+
         updateDisplay();
         updateTLC();
-        sei();
 
-        screenTimer = millis();
+        screenTimer = 0;
     }
 
     // NEW Midi Signal
-    updateMidi();
 
     //   Read uC UART Data
     while (Serial3.available()) {
+
         readSerial3();
     }
 
+    updateMidi();
     // count all clocks forward if not synced
+
     DATAOBJ.updateClockCounter();
 
     // activate middleman
     updateAllOutputs();
 
+    // read BPM knob
     cntrl.readBPMSpeed();
 }
 

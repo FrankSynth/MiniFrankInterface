@@ -19,10 +19,12 @@
 void PressedNotesList::appendKey(const byte &note, const byte &velocity) {
     PressedNotesElement *listElement = pressedNoteElement;
     if (listElement) {
-        if (listElement->note == note) return;
+        if (listElement->note == note)
+            return;
         while (listElement->next != NULL) {
             listElement = listElement->next;
-            if (listElement->note == note) return;
+            if (listElement->note == note)
+                return;
         }
 
         listElement->next = new PressedNotesElement(note, velocity);
@@ -164,11 +166,12 @@ PressedNotesElement *PressedNotesList::getElement(const byte &element) {
 void LiveMidi::keyPressed(const byte &note, const byte &velocity) {
     noteList.appendKey(note, velocity);
     if (arpRetrigger && sustain < 64) {
+        // PRINTLN("retrigger");
         arpList.deleteAllKeys();
         arpRetrigger = 0;
-        stepArp = 0;
-        arpOctave = 0;
-        arpOctaveDirection = 0;
+        arpStepRepeat = 1;
+        arpRestarted = 1;
+        arp16thCount = 0;
     }
     else {
         arpRetrigger = 0;
@@ -183,12 +186,10 @@ void LiveMidi::keyReleased(const byte &note) {
     if (noteList.size == 1) {
         lastKey.note = noteList.getElement(0)->note;
         lastKey.velocity = noteList.getElement(0)->velocity;
+        arpRetrigger = 1;
     }
 
     noteList.deleteKey(note);
-    if (noteList.size == 0) {
-        arpRetrigger = 1;
-    }
 }
 
 // bool, are any keys pressed
@@ -253,20 +254,18 @@ void LiveMidi::reset() {
     triggered = 1;    // update outputs
     arpOctave = 0;
     arpDirection = 0;
-}
-
-void LiveMidi::printArray() {
-    for (int x = 0; x < arpList.size; x++) {
-    }
+    arpStepRepeat = 1;
 }
 
 void LiveMidi::updateArpArray(const byte &arpSettings) {
+
     copyArpListToArray();
 
-    if (arpSettings < 4) qsort(arpArray, arpList.size, sizeof(structKey), sort_asc);
+    if (arpSettings < 6)
+        qsort(arpArray, arpList.size, sizeof(structKey), sort_asc);
 }
 
-inline void LiveMidi::copyArpListToArray() {
+void LiveMidi::copyArpListToArray() {
     for (int x = 0; x < arpList.size; x++) {
         PressedNotesElement *element = arpList.getElement(x);
         structKey key;
@@ -277,14 +276,15 @@ inline void LiveMidi::copyArpListToArray() {
 }
 
 structKey LiveMidi::getArpKey(const byte &step) {
-    if (arpList.containsElements()) return arpArray[step];
+    if (arpList.containsElements())
+        return arpArray[step];
     else
         return lastKey;
 }
 
 // Sequence data for each sequence
 // init sequence to default values
-void Seq::init(const byte &note, const byte &gate, const byte &gateLength, const byte &cc, const byte &tuning, const byte &gateLengthOffset) {
+void Seq::init(const byte &note, const byte &gate, const byte &gateLength, const byte &cc, const byte &tuning, const int16_t &gateLengthOffset) {
     for (int i = 0; i < LENGTH; i++) {
         sequence.note[i] = note; // test
         setGate(i, 1);           // test
@@ -296,7 +296,7 @@ void Seq::init(const byte &note, const byte &gate, const byte &gateLength, const
 }
 
 void Seq::setNote(const byte &index, const byte &note) { // set note value
-    sequence.note[testByte(index, 0, LENGTH)] = testByte(note, 0, NOTERANGE-1);
+    sequence.note[testByte(index, 0, LENGTH)] = testByte(note, 0, NOTERANGE - 1);
 }
 
 void Seq::setNotes(const byte &note) { // set note value
@@ -312,6 +312,7 @@ void Seq::setCCs(const byte &cc) { // set note value
         sequence.cc[i] = testByte(cc, 0, 127); // set notes
     }
 }
+
 void Seq::setGates(const byte &gate) { // set note value
     for (int i = 0; i < LENGTH; i++) {
         setGate(i, gate); // set gates
@@ -333,22 +334,22 @@ void Seq::increaseNote(const byte &index) { // increase note value and return ne
     // no tuning
     if (sequence.tuning == 0) {
         // note up
-        sequence.note[index] = increaseByte(note, NOTERANGE-1);
+        sequence.note[index] = increaseByte(note, NOTERANGE - 1);
     }
     else { // tuning active
         if (note < 88) {
             switch (((note + 1) + (12 - (sequence.tuning - 1))) % 12) {
-            case 1:
-            case 4:
-            case 6:
-            case 9:
-            case 11:
-                if (note < 87) {
-                    note = note + 2;
-                }
-                break;
+                case 1:
+                case 4:
+                case 6:
+                case 9:
+                case 11:
+                    if (note < 87) {
+                        note = note + 2;
+                    }
+                    break;
 
-            default: note++; break;
+                default: note++; break;
             }
         }
         sequence.note[index] = note;
@@ -367,26 +368,26 @@ void Seq::decreaseNote(const byte &index) { // decrease  note value and return n
     else { // tuning active
         if (note > 0) {
             switch (((note - 1) + (12 - (sequence.tuning - 1))) % 12) {
-            case 1:
-            case 4:
-            case 6:
-            case 9:
-            case 11:
-                if (note > 1) {
-                    note = note - 2;
-                }
-                break;
+                case 1:
+                case 4:
+                case 6:
+                case 9:
+                case 11:
+                    if (note > 1) {
+                        note = note - 2;
+                    }
+                    break;
 
-            default: note--; break;
+                default: note--; break;
             }
         }
         sequence.note[index] = note;
     }
 }
 
-void Seq::changeNotes(const int &change) { // change note
+void Seq::changeNotes(const int16_t &change) { // change note
     for (int i = 0; i < LENGTH; i++) {
-        sequence.note[i] = changeByte(sequence.note[i], change, 0, NOTERANGE-1, 1);
+        sequence.note[i] = changeByte(sequence.note[i], change, 0, NOTERANGE - 1, 1);
     }
 }
 
@@ -410,7 +411,7 @@ void Seq::setGateLengths(const byte &gateLength) { // set all gates at once
     }
 }
 
-void Seq::changeGateLengths(const int &change) { // change gate length
+void Seq::changeGateLengths(const int16_t &change) { // change gate length
     for (int i = 0; i < LENGTH; i++) {
         sequence.gateLength[i] = changeByte(sequence.gateLength[i], change, 0, 100, 1);
     }
@@ -421,14 +422,6 @@ void Seq::setSequence(structSequence *copySeq) { // set complete suquence struct
     sequence = *copySeq;                         // copy struct
 }
 
-structSequence *Seq::getSequence() { // return sequence struct pointer
-    return &sequence;
-}
-
-int Seq::getSequenceSize() { // return the struct size
-    return (int)sizeof(structSequence);
-}
-
 // Data Singleton that handles all data, including all sequences, live midi and settings
 void FrankData::receivedKeyPressed(const byte &channel, const byte &note, const byte &velocity) {
     for (byte x = 0; x < OUTPUTS; x++) {
@@ -436,15 +429,20 @@ void FrankData::receivedKeyPressed(const byte &channel, const byte &note, const 
             liveMidi[x].keyPressed(note, velocity);
             updateArp(x);
 
+            // seq rec
             if (stat.rec && x == stat.screen.channel && config.routing[x].outSource > 0) {
-                set(FrankData::seqNote, note, config.routing[x].outSource - 1, liveMidi[x].stepSeq);
+                seq[config.routing[x].outSource - 1].sequence.note[liveMidi[x].stepSeq] = note;
 
-                // if output cc is velocity, take newest velocity
+                // if output cc is velocity, take new velocity
                 if (config.routing[x].cc == 0) {
-                    set(frankData::seqCc, velocity, config.routing[x].outSource - 1, liveMidi[x].stepSeq);
+                    seq[config.routing[x].outSource - 1].sequence.cc[liveMidi[x].stepSeq] = velocity;
+                }
+                // else take the momentary cc values depending on outputCC
+                else if (config.routing[x].cc == 2) {
+                    seq[config.routing[x].outSource - 1].sequence.cc[liveMidi[x].stepSeq] = getPitchbendAsByte(x);
                 }
                 else {
-                    set(frankData::seqCc, getLiveCcEvaluated(x), config.routing[x].outSource - 1, liveMidi[x].stepSeq);
+                    seq[config.routing[x].outSource - 1].sequence.cc[liveMidi[x].stepSeq] = getLiveCcEvaluated(x);
                 }
 
                 if (!stat.play) {
@@ -453,8 +451,15 @@ void FrankData::receivedKeyPressed(const byte &channel, const byte &note, const 
                 }
             }
 
+            // live midi
             if (config.routing[x].outSource == 0) {
                 liveMidi[x].triggered = 1;
+                if (liveMidi[x].arpRestarted) {
+                    // liveMidi[x].arpOffsetTime = millis() - stat.last16thTime + 1; // at least 1 ms time
+                    // if (bpmSync)
+                    // nextArpStep(x);
+                }
+                liveMidi[x].midiUpdateWaitTimer = 0;
             }
         }
     }
@@ -466,23 +471,30 @@ void FrankData::receivedKeyReleased(const byte &channel, const byte &note) {
             liveMidi[x].keyReleased(note);
         }
 
-        if (config.routing[x].outSource == 0) {
-            liveMidi[x].released = 1;
+        if (config.routing[x].outSource == 0 && config.routing[x].arp == 0) {
             liveMidi[x].triggered = 1;
+            liveMidi[x].released = 1;
+        }
+        if (config.routing[x].arp == 1 && liveMidi[x].sustain < 64) {
+
+            liveMidi[x].arpList.deleteKey(note);
+            liveMidi[x].updateArpArray(config.routing[x].arpMode);
+            liveMidi[x].midiUpdateWaitTimer = 0;
         }
     }
 }
 
 void FrankData::init() {
     byte testByte = 0;
-    byte checkByte = 2;
+    byte checkByte = 2; // change this to cause a memory reset
     if (EEPROM.get(0, testByte) == checkByte) {
         loadNoteCalibration();
-        loadAllMenuSettings();
+        loadMenuSettings();
     }
     else {
-        memset(cal, 127, sizeof(cal));
-        saveNoteCalibration();
+        // memset(cal, 0, sizeof(cal));
+        // saveNoteCalibration();
+        loadNoteCalibration();
         saveMenuSettings();
         EEPROM.update(0, checkByte);
     }
@@ -492,39 +504,56 @@ void FrankData::receivedMidiClock() {
     increaseMidiClock();
 }
 void FrankData::receivedMidiSongPosition(unsigned int spp) {
-    setBpm16thCount(spp);
+    // PRINTLN("#################");
+
+    stat.midiClockCount = 0;
+    stat.bpm16thCount = spp % 32;
+    stat.receivedNewSPP = 1;
+
+    for (byte out = 0; out < OUTPUTS; out++) {
+        liveMidi[out].stepSeq = (spp / (int)pow(2, (int)(config.routing[out].stepSpeed))) % (config.routing[out].nbPages * STEPSPERPAGE);
+        liveMidi[out].channel16thCount = spp % 128;
+    }
 }
 void FrankData::receivedStart() {
     if (stat.bpmSync) {
 
-        stat.midiClockCount = 5;
-        stat.bpm16thCount = 31;
+        // PRINTLN("start");
+        stat.receivedNewSPP = 1;
+        stat.midiClockCount = 0;
+        stat.bpm16thCount = 0;
         for (byte out = 0; out < OUTPUTS; out++) {
-            liveMidi[out].stepSeq = config.routing[out].nbPages * STEPSPERPAGE - 1;
-            liveMidi[out].channel16thCount = liveMidi[out].stepSeq * 16 - 1;
-            liveMidi[out].stepArp = liveMidi[out].arpList.size - 1;
-            liveMidi[out].arpOctave = 0;
-            liveMidi[out].arpDirection = 0;
+            liveMidi[out].stepSeq = config.routing[out].nbPages * STEPSPERPAGE;
+            liveMidi[out].channel16thCount = config.routing[out].nbPages * STEPSPERPAGE * 16;
+            liveMidi[out].arpRetrigger = 1;
+
+            // liveMidi[out].arpOctave = 0;
+            // liveMidi[out].arpDirection = 0;
         }
-        set(play, 1);
+        stat.play = 1;
     }
 }
 void FrankData::receivedContinue() {
     if (stat.bpmSync) {
 
+        // PRINTLN("continue");
         for (byte out = 0; out < OUTPUTS; out++) {
-            liveMidi[out].stepArp = liveMidi[out].arpList.size - 1;
-            liveMidi[out].channel16thCount = 0;
-            liveMidi[out].arpOctave = 0;
-            liveMidi[out].arpDirection = 0;
+            liveMidi[out].stepArp = 0;
+            liveMidi[out].arpRetrigger = 1;
+            liveMidi[out].arpRestarted = 1;
+
+            // liveMidi[out].arpOctave = 0;
+            // liveMidi[out].arpDirection = 0;
         }
-        set(play, 1);
+        stat.play = 1;
     }
 }
 void FrankData::receivedStop() {
     if (stat.bpmSync) {
-
-        set(play, 0);
+        stat.play = 0;
+        for (byte out = 0; out < OUTPUTS; out++) {
+            liveMidi[out].arpRetrigger = 1;
+        }
     }
 }
 
@@ -533,22 +562,37 @@ void FrankData::receivedReset() {
 }
 
 void FrankData::reset() {
-    stat.midiClockCount = 5;
-    stat.bpm16thCount = 31;
+    stat.midiClockCount = 0;
+    stat.bpm16thCount = 0;
+    stat.receivedNewSPP = 1;
 
     for (byte out = 0; out < OUTPUTS; out++) {
-        liveMidi[out].channel16thCount = liveMidi[out].stepSeq * 16 - 1;
+        liveMidi[out].channel16thCount = config.routing[out].nbPages * STEPSPERPAGE * 16;
         liveMidi[out].reset();
         liveMidi[out].updateArpArray(config.routing[out].arpMode);
     }
-    // set(play, 0);
 }
 
 void FrankData::increaseMidiClock() {
+
     if (stat.bpmSync) {
+        if (stat.receivedNewSPP) {
+            stat.receivedNewSPP = 0;
+            for (byte out = 0; out < OUTPUTS; out++) {
+                if ((int)stat.bpm16thCount % (int)pow(2, (int)(config.routing[out].stepSpeed)) == 0) {
+                    liveMidi[out].triggered = 1;
+                    liveMidi[out].arpTriggeredNewNote = 1;
+                }
+            }
+            return;
+        }
 
         stat.midiClockCount++;
         if (stat.midiClockCount == 6) {
+
+            for (byte out = 0; out < OUTPUTS; out++) {
+                liveMidi[out].midiUpdateWaitTimer = 0;
+            }
             stat.midiClockCount = 0;
             increaseBpm16thCount();
         }
@@ -560,19 +604,21 @@ void FrankData::increaseBpm16thCount() {
     if (stat.bpm16thCount == 32) {
         stat.bpm16thCount = 0;
     }
+    // stat.last16thTime = millis();
+
     calcBPM();
+
     for (byte out = 0; out < OUTPUTS; out++) {
+
         if ((int)liveMidi[out].channel16thCount == ((int)config.routing[out].nbPages * STEPSPERPAGE * 16) - 1) {
             liveMidi[out].channel16thCount = 0;
         }
         else {
             liveMidi[out].channel16thCount++;
         }
-    }
 
-    for (byte out = 0; out < OUTPUTS; out++) {
         if ((int)stat.bpm16thCount % (int)pow(2, (int)(config.routing[out].stepSpeed)) == 0) {
-            nextArpStep(out);
+            // nextArpStep(out);
 
             if (stat.play) {
                 if (config.direction) {
@@ -596,34 +642,6 @@ void FrankData::increaseStepCounters(const byte &channel) {
         if (stat.bpm16thCount == 32) {
             stat.bpm16thCount = 0;
         }
-        for (byte out = 0; out < OUTPUTS; out++) {
-            if ((int)liveMidi[out].channel16thCount == 0) {
-                liveMidi[out].channel16thCount = 0;
-                liveMidi[out].channel16thCount = ((int)config.routing[out].nbPages * STEPSPERPAGE * 16) - 1;
-            }
-            else {
-                liveMidi[out].channel16thCount--;
-            }
-        }
-        for (byte out = 0; out < OUTPUTS; out++) {
-            if ((int)stat.bpm16thCount % (int)pow(2, (int)(config.routing[out].stepSpeed)) == 0) {
-
-                increaseSeqStep(out);
-            }
-        }
-    }
-}
-
-void FrankData::decreaseStepCounters(const byte &channel) {
-
-    byte amount = config.routing[channel].stepSpeed;
-
-    for (byte count = 0; count < amount; count++) {
-
-        if (stat.bpm16thCount == 0) {
-            stat.bpm16thCount = 32;
-        }
-        stat.bpm16thCount--;
 
         for (byte out = 0; out < OUTPUTS; out++) {
             if ((int)liveMidi[out].channel16thCount == ((int)config.routing[out].nbPages * STEPSPERPAGE * 16) - 1) {
@@ -633,6 +651,50 @@ void FrankData::decreaseStepCounters(const byte &channel) {
                 liveMidi[out].channel16thCount++;
             }
         }
+
+        for (byte out = 0; out < OUTPUTS; out++) {
+            if ((int)stat.bpm16thCount % (int)pow(2, (int)(config.routing[out].stepSpeed)) == 0) {
+
+                increaseSeqStep(out);
+            }
+        }
+    }
+    // PRINTLN("---------------increaseStepCounters----------------");
+    // PRINT("current channel ");
+    // PRINTLN(channel);
+    // PRINT("config.routing[0].stepSpeed ");
+    // PRINTLN(config.routing[0].stepSpeed);
+    // PRINT("config.routing[1].stepSpeed ");
+    // PRINTLN(config.routing[1].stepSpeed);
+    // PRINT("amount ");
+    // PRINTLN(amount);
+    // PRINT("stat.bpm16thCount ");
+    // PRINTLN(stat.bpm16thCount);
+    // PRINT("stat.liveMidi[0].channel16thCount  ");
+    // PRINTLN(liveMidi[0].channel16thCount);
+    // PRINT("stat.liveMidi[1].channel16thCount  ");
+    // PRINTLN(liveMidi[1].channel16thCount);
+}
+
+void FrankData::decreaseStepCounters(const byte &channel) {
+
+    byte amount = (byte)pow(2, (int)(config.routing[channel].stepSpeed));
+
+    for (byte count = 0; count < amount; count++) {
+
+        if (stat.bpm16thCount == 0) {
+            stat.bpm16thCount = 32;
+        }
+        stat.bpm16thCount--;
+
+        for (byte out = 0; out < OUTPUTS; out++) {
+            if ((int)liveMidi[out].channel16thCount == 0) {
+                liveMidi[out].channel16thCount = ((int)config.routing[out].nbPages * STEPSPERPAGE * 16) - 1;
+            }
+            else {
+                liveMidi[out].channel16thCount--;
+            }
+        }
         for (byte out = 0; out < OUTPUTS; out++) {
             if ((int)stat.bpm16thCount % (int)pow(2, (int)(config.routing[out].stepSpeed)) == 0) {
 
@@ -640,59 +702,105 @@ void FrankData::decreaseStepCounters(const byte &channel) {
             }
         }
     }
+    // PRINTLN("---------------decreaseStepCounters----------------");
+    // PRINT("current channel ");
+    // PRINTLN(channel);
+    // PRINT("config.routing[0].stepSpeed ");
+    // PRINTLN(config.routing[0].stepSpeed);
+    // PRINT("config.routing[1].stepSpeed ");
+    // PRINTLN(config.routing[1].stepSpeed);
+    // PRINT("amount ");
+    // PRINTLN(amount);
+    // PRINT("stat.bpm16thCount ");
+    // PRINTLN(stat.bpm16thCount);
+    // PRINT("stat.liveMidi[0].channel16thCount  ");
+    // PRINTLN(liveMidi[0].channel16thCount);
+    // PRINT("stat.liveMidi[1].channel16thCount  ");
+    // PRINTLN(liveMidi[1].channel16thCount);
 }
 
-void FrankData::setBpm16thCount(unsigned int spp) {
-    stat.midiClockCount = 5;
-    stat.bpm16thCount = (spp % 16) - 1;
-}
-
-void FrankData::setBPMPoti(const unsigned &bpmPot) {
-    stat.bpmPot = bpmPot;
-    if (!stat.bpmSync) stat.bpm = testByte(bpmPot / 4);
-}
-
-void FrankData::updateClockCounter(const bool newMillis) {
+// call with argument bool "true" to restart time counter
+void FrankData::updateClockCounter(const bool restartCounter) {
 
     if (!stat.bpmSync) {
-        static unsigned long timer = millis();
-        if (newMillis) {
-            timer = millis();
+        static elapsedMicros timer;
+        if (restartCounter) {
+            timer = 0;
         }
         else {
+            if (stat.bpm != 0) {
+                // count time for 16ths, 1 bpm would count every 15 seconds
+                uint32_t bpmTiming = 15000000 / (uint32_t)stat.bpm;
+                if (timer >= bpmTiming) {
+                    increaseBpm16thCount();
+                    timer -= bpmTiming;
+                }
+            }
+        }
+    }
 
-            if (stat.bpmPot == 0) stat.bpmPot = 1;
-            if (millis() >= timer + 15000.0 / stat.bpm) {
-                increaseBpm16thCount();
-                timer = millis();
+    for (byte out = 0; out < OUTPUTS; out++) {
+
+        if (config.routing[out].arp && config.routing[out].outSource == 0) {
+
+            static byte checkArpStep[OUTPUTS] = {0, 0};
+            static byte lastBpm16thCount[OUTPUTS] = {255, 255};
+            // static elapsedMillis arpTimer = 0;
+            // static byte restartedArp = 0;
+
+            if (lastBpm16thCount[out] != stat.bpm16thCount && !stat.receivedNewSPP) {
+
+                liveMidi[out].arp16thCount++;
+                lastBpm16thCount[out] = stat.bpm16thCount;
+
+                if (stat.bpm16thCount % (int)pow(2, (int)(config.routing[out].stepSpeed)) == 0) {
+                    liveMidi[out].arp16thCount = 0;
+                    // arpTimer = 0;
+                    // restartedArp = 0;
+                    checkArpStep[out] = 1;
+                }
+            }
+
+            if (liveMidi[out].midiUpdateWaitTimer > MIDIARPUPDATEDELAY && checkArpStep[out]) {
+
+                nextArpStep(out);
+
+                checkArpStep[out] = 0;
             }
         }
     }
 }
 
-inline void FrankData::calcBPM() {
+void FrankData::calcBPM() {
     if (stat.bpmSync) {
-        static unsigned long bpm16thTimer = 0;
-        static unsigned long averagingStartTime = millis();
-        static float averageTimer = 0;
+        static elapsedMicros bpm16thTimer;
+        static elapsedMillis averagingStartTime;
+        static double averageTimer = 0;
         static byte counter = 0;
 
-        averageTimer += (((60000 / (millis() - bpm16thTimer))));
-
-        bpm16thTimer = millis();
+        averageTimer += 60000000.0 / (double)bpm16thTimer;
+        bpm16thTimer = 0;
         counter++;
 
-        if (millis() > averagingStartTime + 1000 && counter > 3) {
-            averageTimer = averageTimer / 4 + 0.5;
-            set(bpm, (int)((averageTimer / (float)counter) + 0.5));
+        if (averagingStartTime > 1000) {
+
+            // avoid updating bpm when last update is too long ago
+            if (averagingStartTime > 2000) {
+                averagingStartTime = 0;
+                averageTimer = 0;
+                counter = 0;
+                return;
+            }
+            averageTimer = averageTimer / 4.0;
+            stat.bpm = testInt((int)(averageTimer / (int)counter + 0.5), 1, 1000);
             averageTimer = 0;
             counter = 0;
-            averagingStartTime = millis();
+            averagingStartTime = 0;
         }
     }
 }
 
-inline void FrankData::increaseSeqStep(const byte &array) {
+void FrankData::increaseSeqStep(const byte &array) {
     if (!((liveMidi[array].stepSeq + 1) % STEPSPERPAGE)) {                                     // if we make a pageJump
         if (config.routing[array].nbPages <= ((liveMidi[array].stepSeq + 1) / STEPSPERPAGE)) { // newPage above number of pages
             liveMidi[array].stepSeq = 0;                                                       // set stepSeq[array] 0
@@ -705,11 +813,12 @@ inline void FrankData::increaseSeqStep(const byte &array) {
         liveMidi[array].stepSeq++; // increase Step
     }
 
-    if (config.routing[array].outSource) liveMidi[array].triggered = 1;
+    if (config.routing[array].outSource)
+        liveMidi[array].triggered = 1;
     liveMidi[array].recModePlayback = 0;
 }
 
-inline void FrankData::decreaseSeqStep(const byte &array) {
+void FrankData::decreaseSeqStep(const byte &array) {
     if (liveMidi[array].stepSeq == 0) {                                             // we jump to the last page?
         liveMidi[array].stepSeq = config.routing[array].nbPages * STEPSPERPAGE - 1; // set to max stepSeq[array]
     }
@@ -724,37 +833,36 @@ inline void FrankData::decreaseSeqStep(const byte &array) {
     else {
         liveMidi[array].stepSeq--; // decrease Step
     }
-    if (config.routing[array].outSource) liveMidi[array].triggered = 1;
+    if (config.routing[array].outSource)
+        liveMidi[array].triggered = 1;
     liveMidi[array].recModePlayback = 0;
 }
 
-inline byte FrankData::getCurrentPageNumber(const byte &array) { // number of pages, takes care if page number has changed
+byte FrankData::getCurrentPageNumber(const byte &array) { // number of pages, takes care if page number has changed
     if (config.routing[array].nbPages > (liveMidi[array].stepSeq / 8))
         return config.routing[array].nbPages; // is our stepSeq above the current number of pages?
     return (liveMidi[array].stepSeq / 8 + 1); // return current stepSeq page until the next page jump
 }
 
 // Singleton
-// FrankData *FrankData::mainData = nullptr;
 FrankData &FrankData::getDataObj() {
-    // if (mainData == nullptr) mainData = new FrankData();
     static FrankData mainData;
     return mainData;
 }
 
-inline structKey FrankData::getLiveKeyEvaluated(const byte &array) {
+structKey FrankData::getLiveKeyEvaluated(const byte &array) {
     switch (config.routing[array].liveMidiMode) {
-    case 0: return liveMidi[array].getKeyLatest();
-    case 1: return liveMidi[array].getKeyLowest();
-    case 2: return liveMidi[array].getKeyHighest();
-    default: PRINTLN("FrankData getLiveKeyEvaluated, no case found"); return liveMidi[array].lastKey;
+        case 0: return liveMidi[array].getKeyLatest();
+        case 1: return liveMidi[array].getKeyLowest();
+        case 2: return liveMidi[array].getKeyHighest();
+        default: PRINTLN("FrankData getLiveKeyEvaluated, no case found"); return liveMidi[array].lastKey;
     }
 }
 
-inline void FrankData::increaseArpOct(const byte &array) {
+void FrankData::increaseArpOct(const byte &array) {
     // change octave for next round
     // no octaving
-    if (config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET == 0) {
+    if (config.routing[array].arpOctaves == 0) {
         liveMidi[array].arpOctave = 0;
     }
     else {
@@ -763,132 +871,313 @@ inline void FrankData::increaseArpOct(const byte &array) {
         int newOctMin;
         int newOctMax;
 
-        if (config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET < 0) {
-            newOctMin = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET;
+        if (config.routing[array].arpOctaves < 0) {
+            newOctMin = config.routing[array].arpOctaves;
             newOctMax = 0;
         }
         else {
             newOctMin = 0;
-            newOctMax = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET;
+            newOctMax = config.routing[array].arpOctaves;
         }
-
-        if (config.routing[array].arpMode == 2 || config.routing[array].arpMode == 3) {
-            liveMidi[array].arpOctave = changeInt(liveMidi[array].arpOctave, 1, newOctMin, newOctMax, true);
-            if (liveMidi[array].arpOctave == newOctMax) liveMidi[array].arpOctaveDirection = 0;
+        if (liveMidi[array].arpRestarted) {
+            liveMidi[array].arpOctave = newOctMin;
         }
         else {
-            liveMidi[array].arpOctave = changeIntReverse(liveMidi[array].arpOctave, 1, newOctMin, newOctMax);
-        }
-    }
-}
 
-inline void FrankData::decreaseArpOct(const byte &array) {
-    // no octaving
-    if (config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET == 0) {
-        liveMidi[array].arpOctave = 0;
-    }
-    else {
-        // eval new min and max
-        int newOctMin;
-        int newOctMax;
-
-        if (config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET < 0) {
-            newOctMin = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET;
-            newOctMax = 0;
-        }
-        else {
-            newOctMin = 0;
-            newOctMax = config.routing[array].arpOctaves - ARPOCTAVECENTEROFFSET;
-        }
-        if (config.routing[array].arpMode == 2 || config.routing[array].arpMode == 3) {
-            liveMidi[array].arpOctave = changeInt(liveMidi[array].arpOctave, -1, newOctMin, newOctMax, true);
-            if (liveMidi[array].arpOctave == newOctMin) {
-                liveMidi[array].arpOctaveDirection = 1;
+            if (config.routing[array].arpMode == 2 || config.routing[array].arpMode == 3 || config.routing[array].arpMode == 4 ||
+                config.routing[array].arpMode == 5) {
+                liveMidi[array].arpOctave = changeInt(liveMidi[array].arpOctave, 1, newOctMin, newOctMax, true);
+                if (liveMidi[array].arpOctave == newOctMax)
+                    liveMidi[array].arpOctaveDirection = 0;
+            }
+            else {
+                liveMidi[array].arpOctave = changeIntReverse(liveMidi[array].arpOctave, 1, newOctMin, newOctMax);
             }
         }
+    }
+}
+
+void FrankData::decreaseArpOct(const byte &array) {
+    // no octaving
+    if (config.routing[array].arpOctaves == 0) {
+        liveMidi[array].arpOctave = 0;
+    }
+    else {
+        // eval new min and max
+        int newOctMin;
+        int newOctMax;
+
+        if (config.routing[array].arpOctaves < 0) {
+            newOctMin = config.routing[array].arpOctaves;
+            newOctMax = 0;
+        }
         else {
-            liveMidi[array].arpOctave = changeIntReverse(liveMidi[array].arpOctave, -1, newOctMin, newOctMax);
+            newOctMin = 0;
+            newOctMax = config.routing[array].arpOctaves;
+        }
+
+        if (liveMidi[array].arpRestarted) {
+            liveMidi[array].arpOctave = newOctMax;
+        }
+        else {
+            if (config.routing[array].arpMode == 2 || config.routing[array].arpMode == 3 || config.routing[array].arpMode == 4 ||
+                config.routing[array].arpMode == 5) {
+                liveMidi[array].arpOctave = changeInt(liveMidi[array].arpOctave, -1, newOctMin, newOctMax, true);
+                if (liveMidi[array].arpOctave == newOctMin) {
+                    liveMidi[array].arpOctaveDirection = 1;
+                }
+            }
+            else {
+                liveMidi[array].arpOctave = changeIntReverse(liveMidi[array].arpOctave, -1, newOctMin, newOctMax);
+            }
         }
     }
 }
 
-inline void FrankData::nextArpStep(const byte &array) {
+void FrankData::nextArpStep(const byte &array) {
 
     if (config.routing[array].outSource == 0 && config.routing[array].arp) {
+        if (config.routing[array].arp == 1 && !liveMidi[array].keysPressed() && liveMidi[array].sustain < 64) {
+            return;
+        }
+        if (liveMidi[array].arpRestarted) {
+            // PRINT("restarted arp ");
+            // PRINTLN(array);
+        }
 
         switch (config.routing[array].arpMode) {
-        case 1:
-            if (liveMidi[array].stepArp == 0) {
-                decreaseArpOct(array);
-            }
-            liveMidi[array].stepArp = changeByteReverse(liveMidi[array].stepArp, -1, 0, liveMidi[array].arpList.size - 1);
-            break;
-        case 0:
-        case 4:
-        case 5:
-            if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
-                increaseArpOct(array);
-            }
-            liveMidi[array].stepArp = changeByteReverse(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1);
-            break;
-        case 2:
-            // going up
-            if (liveMidi[array].arpDirection) {
-                liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1);
-                if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
+            case 1: // down
 
-                    liveMidi[array].arpDirection = 0;
-                }
-            }
-            // going down
-            else {
-                liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, -1, 0, liveMidi[array].arpList.size - 1);
                 if (liveMidi[array].stepArp == 0) {
-                    liveMidi[array].arpDirection = 1;
-                    if (liveMidi[array].arpOctaveDirection == 1) {
-                        increaseArpOct(array);
-                    }
-                    else {
-                        decreaseArpOct(array);
-                    }
+                    decreaseArpOct(array);
                 }
-            }
-            break;
-        case 3:
-            // going up
-            if (liveMidi[array].arpDirection) {
-                liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1);
+                if (liveMidi[array].arpRestarted) {
+                    decreaseArpOct(array);
+                    liveMidi[array].stepArp = liveMidi[array].arpList.size - 1;
+                    liveMidi[array].arpRestarted = 0;
+                }
+                else {
+                    // if arp size increased by one, a note would be repeated, so instead, we increase further
+                    do {
+                        liveMidi[array].stepArp = changeByteReverse(liveMidi[array].stepArp, -1, 0, liveMidi[array].arpList.size - 1);
+                    } while (liveMidi[array].getArpKey(liveMidi[array].stepArp).note == liveMidi[array].arpKey.note &&
+                             liveMidi[array].arpList.size > 1);
+                }
+                break;
+            case 0: // up
+            case 6: // order
                 if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
-
-                    liveMidi[array].arpDirection = 0;
-                    if (liveMidi[array].arpOctaveDirection == 1) {
-                        increaseArpOct(array);
-                    }
-                    else {
-                        decreaseArpOct(array);
-                    }
+                    increaseArpOct(array);
                 }
-            }
-            // going down
-            else {
-                liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, -1, 0, liveMidi[array].arpList.size - 1);
-                if (liveMidi[array].stepArp == 0) {
+                if (liveMidi[array].arpRestarted) {
+                    increaseArpOct(array);
+                    liveMidi[array].stepArp = 0;
+                    liveMidi[array].arpRestarted = 0;
+                }
+                else {
+                    // if arp size increased by one, a note would be repeated, so instead, we increase further
+                    do {
+                        liveMidi[array].stepArp = changeByteReverse(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1);
+                    } while (liveMidi[array].getArpKey(liveMidi[array].stepArp).note == liveMidi[array].arpKey.note &&
+                             liveMidi[array].arpList.size > 1);
+                }
+                break;
+            case 7: // random
+                if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
+                    increaseArpOct(array);
+                }
+                if (liveMidi[array].arpRestarted) {
+                    increaseArpOct(array);
+                    liveMidi[array].stepArp = 0;
+                    liveMidi[array].arpRestarted = 0;
+                }
+                else {
+                    liveMidi[array].stepArp = changeByteReverse(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1);
+                }
+                break;
+            case 2: // updown
+                if (liveMidi[array].arpRestarted) {
+                    increaseArpOct(array);
                     liveMidi[array].arpDirection = 1;
+                    liveMidi[array].arpOctaveDirection = 1;
+                    liveMidi[array].stepArp = 0;
+                    liveMidi[array].arpRestarted = 0;
                 }
-            }
-            break;
-        default:;
+                else {
+                    // if arp size increased by one, a note would be repeated, so instead, we increase further
+
+                    do {
+
+                        // going up
+                        if (liveMidi[array].arpDirection) {
+                            liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1);
+                            if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
+                                liveMidi[array].arpDirection = 0;
+                            }
+                        }
+                        // going down
+                        else {
+                            liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, -1, 0, liveMidi[array].arpList.size - 1);
+                            if (liveMidi[array].stepArp == 0) {
+                                liveMidi[array].arpDirection = 1;
+                                if (liveMidi[array].arpOctaveDirection == 1) {
+                                    increaseArpOct(array);
+                                }
+                                else {
+                                    decreaseArpOct(array);
+                                }
+                            }
+                        }
+                    } while (liveMidi[array].getArpKey(liveMidi[array].stepArp).note == liveMidi[array].arpKey.note &&
+                             liveMidi[array].arpList.size > 1);
+                }
+                break;
+            case 4: // upRdownR
+                if (liveMidi[array].arpRestarted) {
+                    increaseArpOct(array);
+                    liveMidi[array].arpDirection = 1;
+                    liveMidi[array].arpOctaveDirection = 1;
+                    liveMidi[array].stepArp = 0;
+                    liveMidi[array].arpRestarted = 0;
+                }
+                else {
+
+                    do {
+
+                        // going up
+                        if (liveMidi[array].arpDirection) {
+                            liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1);
+                            if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
+                                if (!liveMidi[array].arpStepRepeat) {
+                                    liveMidi[array].arpStepRepeat = 1;
+                                    liveMidi[array].arpDirection = 0;
+                                }
+                                else {
+                                    liveMidi[array].arpStepRepeat = 0;
+                                }
+                            }
+                        }
+                        // going down
+                        else {
+                            liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, -1, 0, liveMidi[array].arpList.size - 1);
+                            if (liveMidi[array].stepArp == 0) {
+                                if (!liveMidi[array].arpStepRepeat) {
+                                    liveMidi[array].arpStepRepeat = 1;
+                                    liveMidi[array].arpDirection = 1;
+                                    if (liveMidi[array].arpOctaveDirection == 1) {
+                                        increaseArpOct(array);
+                                    }
+                                    else {
+                                        decreaseArpOct(array);
+                                    }
+                                }
+                                else {
+                                    liveMidi[array].arpStepRepeat = 0;
+                                }
+                            }
+                        }
+                    } while (liveMidi[array].getArpKey(liveMidi[array].stepArp).note == liveMidi[array].arpKey.note &&
+                             liveMidi[array].arpList.size > 1 && !liveMidi[array].arpStepRepeat);
+                }
+                break;
+            case 3: // downup
+                if (liveMidi[array].arpRestarted) {
+                    decreaseArpOct(array);
+                    liveMidi[array].arpDirection = 0;
+                    liveMidi[array].arpOctaveDirection = 0;
+                    liveMidi[array].stepArp = liveMidi[array].arpList.size - 1;
+                    liveMidi[array].arpRestarted = 0;
+                }
+                else {
+
+                    do {
+
+                        // going up
+                        if (liveMidi[array].arpDirection) {
+                            liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1);
+                            if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
+
+                                liveMidi[array].arpDirection = 0;
+                                if (liveMidi[array].arpOctaveDirection == 1) {
+                                    increaseArpOct(array);
+                                }
+                                else {
+                                    decreaseArpOct(array);
+                                }
+                            }
+                        }
+                        // going down
+                        else {
+                            liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, -1, 0, liveMidi[array].arpList.size - 1);
+                            if (liveMidi[array].stepArp == 0) {
+                                liveMidi[array].arpDirection = 1;
+                            }
+                        }
+                    } while (liveMidi[array].getArpKey(liveMidi[array].stepArp).note == liveMidi[array].arpKey.note &&
+                             liveMidi[array].arpList.size > 1);
+                }
+                break;
+            case 5: // downRupR
+                if (liveMidi[array].arpRestarted) {
+                    decreaseArpOct(array);
+                    liveMidi[array].arpDirection = 0;
+                    liveMidi[array].arpOctaveDirection = 0;
+                    liveMidi[array].stepArp = liveMidi[array].arpList.size - 1;
+                    liveMidi[array].arpRestarted = 0;
+                }
+                else {
+
+                    do {
+
+                        // going up
+                        if (liveMidi[array].arpDirection) {
+                            liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1);
+                            if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
+                                if (!liveMidi[array].arpStepRepeat) {
+                                    liveMidi[array].arpStepRepeat = 1;
+
+                                    liveMidi[array].arpDirection = 0;
+                                    if (liveMidi[array].arpOctaveDirection == 1) {
+                                        increaseArpOct(array);
+                                    }
+                                    else {
+                                        decreaseArpOct(array);
+                                    }
+                                }
+                                else {
+                                    liveMidi[array].arpStepRepeat = 0;
+                                }
+                            }
+                        }
+                        // going down
+                        else {
+                            liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, -1, 0, liveMidi[array].arpList.size - 1);
+                            if (liveMidi[array].stepArp == 0) {
+                                if (!liveMidi[array].arpStepRepeat) {
+                                    liveMidi[array].arpStepRepeat = 1;
+                                    liveMidi[array].arpDirection = 1;
+                                }
+                                else {
+                                    liveMidi[array].arpStepRepeat = 0;
+                                }
+                            }
+                        }
+                    } while (liveMidi[array].getArpKey(liveMidi[array].stepArp).note == liveMidi[array].arpKey.note &&
+                             liveMidi[array].arpList.size > 1 && !liveMidi[array].arpStepRepeat);
+                }
+                break;
+            default:;
         }
 
-        byte step = liveMidi[array].stepArp;
+        // PRINT("Arp Step ");
+        // PRINTLN(liveMidi[array].stepArp);
         structKey key;
 
-        if (config.routing[array].arpMode == 5) {
-            step = random(0, liveMidi[array].arpList.size);
-            key = liveMidi[array].getArpKey(step);
+        if (config.routing[array].arpMode == 7) {
+            key = liveMidi[array].getArpKey(random(0, liveMidi[array].arpList.size));
         }
         else {
-            key = liveMidi[array].getArpKey(step);
+            key = liveMidi[array].getArpKey(liveMidi[array].stepArp);
         }
 
         // lower octaves
@@ -906,28 +1195,33 @@ inline void FrankData::nextArpStep(const byte &array) {
 
         liveMidi[array].arpKey = key;
         liveMidi[array].triggered = 1;
+        liveMidi[array].arpTriggeredNewNote = 1;
     }
 }
 
-inline structKey FrankData::getKeyHighest(const byte &array) {
+structKey FrankData::getKeyHighest(const byte &array) {
     return liveMidi[array].getKeyHighest();
 }
-inline structKey FrankData::getKeyLowest(const byte &array) {
+structKey FrankData::getKeyLowest(const byte &array) {
     return liveMidi[array].getKeyLowest();
 }
-inline structKey FrankData::getKeyLatest(const byte &array) {
+structKey FrankData::getKeyLatest(const byte &array) {
     return liveMidi[array].getKeyLatest();
 }
 
-inline byte FrankData::getLiveCcEvaluated(const byte &array) {
+int16_t FrankData::getLiveCcEvaluated(const byte &array) {
     switch (config.routing[array].cc) {
-    case 0: return config.routing[array].arp ? liveMidi[array].arpKey.velocity : getLiveKeyEvaluated(array).velocity;
-    case 1: return liveMidi[array].mod;
-    case 2: return liveMidi[array].pitchbend;
-    case 3: return liveMidi[array].aftertouch;
-    case 4: return liveMidi[array].sustain;
-    default: PRINTLN("FrankData getLiveCcEvaluated, no case found"); return 0;
+        case 0: return config.routing[array].arp ? liveMidi[array].arpKey.velocity : getLiveKeyEvaluated(array).velocity;
+        case 1: return liveMidi[array].mod;
+        case 2: return liveMidi[array].pitchbend;
+        case 3: return liveMidi[array].aftertouch;
+        case 4: return liveMidi[array].sustain;
+        default: PRINTLN("FrankData getLiveCcEvaluated, no case found"); return 0;
     }
+}
+
+byte FrankData::getPitchbendAsByte(const byte &channel) {
+    return (byte)(liveMidi[channel].pitchbend / 128 + 64);
 }
 
 void FrankData::seqSetAllNotes(const byte &array, const byte &data) {
@@ -953,7 +1247,7 @@ void FrankData::seqAllOctaveDown(const byte &array) {
 }
 
 void FrankData::seqResetAllNotes(const byte &array) {
-    seq[array].setNotes(0);
+    seq[array].setNotes(24);
 }
 void FrankData::seqResetAllGates(const byte &array) {
     seq[array].setGateLengths(50);
@@ -969,732 +1263,904 @@ void FrankData::seqCopy(const byte &source, const byte &destination) {
 
 void FrankData::resetAllStepCounter() {
     for (byte out = 0; out < OUTPUTS; out++) {
-        liveMidi[out].stepSeq = config.routing[out].nbPages * STEPSPERPAGE - 1;
-        liveMidi[out].channel16thCount = liveMidi[out].stepSeq * 16 - 1;
+        liveMidi[out].stepSeq = 0;
+        liveMidi[out].channel16thCount = 0;
     }
 }
 
 void FrankData::updateArp(const byte &array) {
     if (config.routing[array].outSource == 0 && config.routing[array].arp) {
         liveMidi[array].updateArpArray(config.routing[array].arpMode);
-        liveMidi[array].stepArp = testByte(liveMidi[array].stepArp, 0, liveMidi[array].arpList.size, true);
+        liveMidi[array].stepArp = testByte(liveMidi[array].stepArp, 0, liveMidi[array].arpList.size);
     }
 }
 
 // Screen config
-void FrankData::resetSubScreen() {
-    stat.screen.subscreen = FrankData::screenNote;
-}
-
-inline const byte FrankData::getSubscreenMax() {
+const byte FrankData::getSubscreenMax() {
     return config.routing[stat.screen.channel].outSource ? stat.screen.subScreenMaxSeq : stat.screen.subScreenMaxLive;
 }
 
 // new set and get functions
-byte FrankData::get(const frankData &frankDataType) {
+int16_t FrankData::get(const frankData &frankDataType) {
     switch (frankDataType) {
-    case midiSource: return config.midiSource;
+        case midiSource: return config.midiSource;
 
-    case direction: return config.direction;
-    case displayBrightness: return config.displayBrightness;
+        case direction: return config.direction;
+        case displayBrightness: return config.displayBrightness;
 
-    case screenOutputChannel: return stat.screen.channel;
-    case screenConfig: return stat.screen.config;
-    case screenMainMenu: return stat.screen.mainMenu;
-    case screenSubScreen: return stat.screen.subscreen;
-    case screenRouting: return stat.screen.routing;
-    case screenCal: return stat.screen.calibration;
+        case screenOutputChannel: return stat.screen.channel;
+        case screenConfig: return stat.screen.config;
+        case screenMainMenu: return stat.screen.mainMenu;
+        case screenSubScreen: return stat.screen.subscreen;
+        case screenRouting: return stat.screen.routing;
+        case screenCalNote: return stat.screen.calibration;
+        case screenCalCv: return stat.screen.calibrationCv;
 
-    case liveCalNote: return stat.noteToCalibrate;
-    case bpm: return stat.bpm;
-    case play: return stat.play;
-    case rec: return stat.rec;
-    case error: return stat.error;
-    case bpmSync: return stat.bpmSync;
-    case bpmPoti: return stat.bpmPot;
-    case bpm16thCount: return stat.bpm16thCount;
-    case save:
-    case load: return stat.loadSaveSlot;
-    case pulseLength: return stat.pulseLength;
+        case liveCalNote: return stat.noteToCalibrate;
+        case liveCalCv: return stat.cvToCalibrate;
+        case bpm: return stat.bpm;
+        case play: return stat.play;
+        case rec: return stat.rec;
+        case error: return stat.error;
+        case bpmSync: return stat.bpmSync;
+        case bpmPoti: return stat.bpmPot;
+        case bpm16thCount: return stat.bpm16thCount;
+        case save:
+        case load: return stat.loadSaveSlot;
+        case pulseLength:
+            return config.pulseLength;
+            // case liveNewMidiDataArp: return stat.receivedNewMidiDataArp;
 
-    case none: return (byte)0;
-    default: PRINTLN("FrankData get(frankData frankDataType), no case found"); return 0;
+        case none: return (int16_t)0;
+        default: PRINTLN("FrankData get(frankData frankDataType), no case found"); return 0;
     }
 }
 
-byte FrankData::get(const frankData &frankDataType, const byte &array) {
+int16_t FrankData::get(const frankData &frankDataType, const byte &array) {
     switch (frankDataType) {
-    case outputSource: return config.routing[array].outSource;
-    case outputChannel: return config.routing[array].channel;
-    case outputArp: return config.routing[array].arp;
-    case outputCc: return config.routing[array].cc;
-    case outputCcEvaluated: return getLiveCcEvaluated(array);
-    case outputLiveMode: return config.routing[array].liveMidiMode;
-    case outputClock: return config.routing[array].clockSpeed;
-    case outputRatchet: return config.routing[array].arpRatchet;
-    case outputArpOctave: return config.routing[array].arpOctaves;
-    case outputArpMode: return config.routing[array].arpMode;
+        case outputSource: return config.routing[array].outSource;
+        case outputChannel: return config.routing[array].channel;
+        case outputArp: return config.routing[array].arp;
+        case outputCc: return config.routing[array].cc;
+        case outputCcEvaluated: return getLiveCcEvaluated(array);
+        case outputLiveMode: return config.routing[array].liveMidiMode;
+        case outputClock: return config.routing[array].clockSpeed;
+        case outputRatchet: return config.routing[array].arpRatchet;
+        case outputArpOctave: return config.routing[array].arpOctaves;
+        case outputArpMode: return config.routing[array].arpMode;
 
-    case liveKeysPressed: return liveMidi[array].keysPressed();
+        case liveKeysPressed: return liveMidi[array].keysPressed();
 
-    case cvCalOffset: return cal[array].cvOffset;
-    case noteScaleOffset: return cal[array].noteScaleOffset;
+        case cvCalOffset: return cal[array].cvOffset;
+        case cvCalLower: return cal[array].cvLowerLimit;
+        case cvCalUpper: return cal[array].cvUpperLimit;
+        case cvPitchbendCalLower: return cal[array].cvPitchbendLowerLimit;
+        case cvPitchbendCalUpper: return cal[array].cvPitchbendUpperLimit;
+        case noteScaleOffset: return cal[array].noteScaleOffset;
 
-    case liveMod: return liveMidi[array].mod;
-    case livePitchbend: return liveMidi[array].pitchbend;
-    case liveAftertouch: return liveMidi[array].aftertouch;
-    case liveSustain: return liveMidi[array].sustain;
-    case liveTriggered: return liveMidi[array].triggered;
-    case liveReleased: return liveMidi[array].released;
-    case liveRecModePlayback: return liveMidi[array].recModePlayback;
-    case liveKeyNoteEvaluated: return getLiveKeyEvaluated(array).note;
-    case liveKeyVelEvaluated: return getLiveKeyEvaluated(array).velocity;
-    case liveKeyArpNoteEvaluated: return liveMidi[array].arpKey.note;
-    case liveKeyArpVelEvaluated: return liveMidi[array].arpKey.velocity;
-    case liveLatestKey: return liveMidi[array].getKeyLatest().note;
-    case liveLowestKey: return liveMidi[array].getKeyLowest().note;
-    case liveHighestKey: return liveMidi[array].getKeyHighest().note;
+        case liveMod: return liveMidi[array].mod;
+        case livePitchbend: return liveMidi[array].pitchbend;
+        case liveAftertouch: return liveMidi[array].aftertouch;
+        case liveSustain: return liveMidi[array].sustain;
+        case liveTriggered: return liveMidi[array].triggered;
+        case liveArpTriggeredNewNote: return liveMidi[array].arpTriggeredNewNote;
+        case liveReleased: return liveMidi[array].released;
+        case liveRecModePlayback: return liveMidi[array].recModePlayback;
+        case liveKeyNoteEvaluated: return getLiveKeyEvaluated(array).note;
+        case liveKeyVelEvaluated: return getLiveKeyEvaluated(array).velocity;
+        case liveKeyArpNoteEvaluated: return liveMidi[array].arpKey.note;
+        case liveKeyArpVelEvaluated: return liveMidi[array].arpKey.velocity;
+        case liveLatestKey: return liveMidi[array].getKeyLatest().note;
+        case liveLowestKey: return liveMidi[array].getKeyLowest().note;
+        case liveHighestKey: return liveMidi[array].getKeyHighest().note;
+        case liveMidiUpdateWaitTimer: return liveMidi[array].midiUpdateWaitTimer;
 
-    case nbPages: return config.routing[array].nbPages;
-    case stepArp: return liveMidi[array].stepArp;
-    case stepSeq: return liveMidi[array].stepSeq;
-    case stepSpeed: return config.routing[array].stepSpeed;
-    case activePage: return (liveMidi[array].stepSeq / STEPSPERPAGE);
-    case stepOnPage: return (liveMidi[array].stepSeq - (get(activePage, array) * STEPSPERPAGE));
-    case currentPageNumber: return getCurrentPageNumber(array);
+        case nbPages: return config.routing[array].nbPages;
+        case stepArp: return liveMidi[array].stepArp;
+        case stepSeq: return liveMidi[array].stepSeq;
+        case stepSpeed: return config.routing[array].stepSpeed;
+        case activePage: return (liveMidi[array].stepSeq / STEPSPERPAGE);
+        case stepOnPage: return (liveMidi[array].stepSeq - (get(activePage, array) * STEPSPERPAGE));
+        case currentPageNumber: return getCurrentPageNumber(array);
 
-    case seqTuning: return seq[array].sequence.tuning;
-    case seqGateLengthOffset: return seq[array].sequence.gateLengthOffset;
+        case seqTuning: return seq[array].sequence.tuning;
+        case seqGateLengthOffset: return seq[array].sequence.gateLengthOffset;
 
-    case liveCalNote: return stat.noteToCalibrate;
+        case liveCalNote: return stat.noteToCalibrate;
+        case liveCalCv: return stat.cvToCalibrate;
 
-    case none: return (byte)0;
+        case none: return (int16_t)0;
 
-    default: PRINTLN("FrankData get(frankData frankDataType, byte array), no case found"); return 0;
+        default: PRINTLN("FrankData get(frankData frankDataType, byte array), no case found"); return 0;
     }
 }
 
-byte FrankData::get(const frankData &frankDataType, const byte &array, const byte &step) {
+int16_t FrankData::get(const frankData &frankDataType, const byte &array, const byte &step) {
     switch (frankDataType) {
-    case seqNote: return seq[array].sequence.note[step];
-    case seqGate: return seq[array].getGate(step);
-    case seqGateLength: return seq[array].sequence.gateLength[step];
-    case seqCc: return seq[array].sequence.cc[step];
-    case seqVelocity: return seq[array].sequence.velocity[step];
+        case seqNote: return seq[array].sequence.note[step];
+        case seqGate: return seq[array].getGate(step);
+        case seqGateLength: return seq[array].sequence.gateLength[step];
+        case seqCc:
+            return seq[array].sequence.cc[step];
 
-    case noteCalOffset: return cal[array].noteCalibration[step];
+            // case seqVelocity: return seq[array].sequence.velocity[step];
 
-    case none: return (byte)0;
+        case noteCalOffset: return cal[array].noteCalibration[step];
 
-    default: PRINTLN("FrankData get(frankData frankDataType, byte array, byte step), no case found"); return 0;
+        case none: return (int16_t)0;
+
+        default: PRINTLN("FrankData get(frankData frankDataType, byte array, byte step), no case found"); return 0;
     }
 }
 
 // set data
-void FrankData::set(const frankData &frankDataType, const int &data, const bool &clampChange) {
+void FrankData::set(const frankData &frankDataType, const int16_t &data) {
     switch (frankDataType) {
-    case midiSource: config.midiSource = testByte(data, 0, 1, clampChange); break;
+        case midiSource: config.midiSource = testByte(data, 0, 1); break;
 
-    case direction: config.direction = testByte(data, 0, 1, clampChange); break;
-    case displayBrightness: config.displayBrightness = testByte(data, 5, 255, clampChange); break; // how high?
+        case direction: config.direction = testByte(data, 0, 1); break;
+        case displayBrightness: config.displayBrightness = testByte(data, 0, 100); break; // how high?
 
-    case screenOutputChannel: stat.screen.channel = testByte(data, 0, OUTPUTS - 1, clampChange); break;
-    case screenConfig: stat.screen.config = testByte(data, 0, 1, clampChange); break;
-    case screenMainMenu: stat.screen.mainMenu = testByte(data, 0, 1, clampChange); break;
-    case screenSubScreen: stat.screen.subscreen = testByte(data, 0, getSubscreenMax(), clampChange); break;
-    case screenRouting: stat.screen.routing = testByte(data, 0, 1, clampChange); break;
-    case screenCal: stat.screen.calibration = testByte(data, 0, 1, clampChange); break;
+        case screenOutputChannel: stat.screen.channel = testByte(data, 0, OUTPUTS - 1); break;
+        case screenConfig: stat.screen.config = testByte(data, 0, 1); break;
+        case screenMainMenu: stat.screen.mainMenu = testByte(data, 0, 1); break;
+        case screenSubScreen: stat.screen.subscreen = testByte(data, 0, getSubscreenMax()); break;
+        case screenRouting: stat.screen.routing = testByte(data, 0, 1); break;
+        case screenCalNote: stat.screen.calibration = testByte(data, 0, 1); break;
+        case screenCalCv: stat.screen.calibrationCv = testByte(data, 0, 1); break;
 
-    case liveCalNote: stat.noteToCalibrate = testByte(data, 0, NOTERANGE - 1, clampChange); break;
-    case bpm: stat.bpm = testByte(data, 0, 255, clampChange); break;
-    case play: stat.play = testByte(data, 0, 1, clampChange); break;
-    case rec: stat.rec = testByte(data, 0, 1, clampChange); break;
-    case error: stat.error = testByte(data, 0, 1, clampChange); break;
-    case bpmSync:
-        stat.bpmSync = testByte(data, 0, 1, clampChange);
-        updateClockCounter(true);
-        break;
-    case bpmPoti: stat.bpmPot = testByte(data, 0, 255, clampChange); break;
-    case load:
-    case save: stat.loadSaveSlot = testByte(data, 0, SAVESLOTS - 1, clampChange); break;
-    case pulseLength: stat.pulseLength = testByte(data, 0, 255, clampChange); break;
-    case none: break;
-    default: PRINTLN("FrankData set(frankData frankDataType, byte data, bool clampChange = 0), no case found");
+        case liveCalNote: stat.noteToCalibrate = testByte(data, 0, NOTERANGE - 1); break;
+        case liveCalCv: stat.cvToCalibrate = testInt(data, -1, 2); break;
+        case bpm: stat.bpm = testByte(data, 0, 255); break;
+        case play: stat.play = testByte(data, 0, 1); break;
+        case rec: stat.rec = testByte(data, 0, 1); break;
+        case error: stat.error = testByte(data, 0, 1); break;
+        case bpmSync:
+            stat.bpmSync = testByte(data, 0, 1);
+            updateClockCounter(true);
+            break;
+        case bpmPoti:
+            stat.bpmPot = testInt(data, 0, 1023);
+            if (!stat.bpmSync) {
+
+                if (stat.bpmPot < 512)
+                    stat.bpm = map(stat.bpmPot, 0, 511, 0, 119);
+                else
+                    stat.bpm = map(stat.bpmPot, 512, 1023, 120, 280);
+            }
+            break;
+        case load:
+        case save: stat.loadSaveSlot = testByte(data, 0, SAVESLOTS - 1); break;
+        case pulseLength: config.pulseLength = testInt(data, 0, 1000); break;
+        case none: break;
+        default: PRINTLN("FrankData set(frankData frankDataType, byte data  ), no case found");
     }
 }
 
 // set data, array
-void FrankData::set(const frankData &frankDataType, const int &data, const byte &array, const bool &clampChange) {
+void FrankData::set(const frankData &frankDataType, const int16_t &data, const byte &array) {
     switch (frankDataType) {
-    case outputSource: config.routing[array].outSource = testByte(data, 0, OUTPUTS, clampChange); break;
-    case outputChannel: config.routing[array].channel = testByte(data, 0, 16, clampChange); break;
-    case outputArp:
-        config.routing[array].arp = testByte(data, 0, 1, clampChange);
-        updateArp(array);
-        break;
-    case outputCc: config.routing[array].cc = testByte(data, 0, 4, clampChange); break;
-    case outputLiveMode: config.routing[array].liveMidiMode = testByte(data, 0, 2, clampChange); break;
-    case outputClock: config.routing[array].clockSpeed = testByte(data, 0, 5, clampChange); break;
-    case outputRatchet: config.routing[array].arpRatchet = testByte(data, 0, 3, clampChange); break;
-    case outputArpOctave: config.routing[array].arpOctaves = testByte(data, 0, 6, clampChange); break;
-    case outputArpMode:
-        config.routing[array].arpMode = testByte(data, 0, 5, clampChange);
-        updateArp(array);
-        break;
+        case outputSource: config.routing[array].outSource = testByte(data, 0, OUTPUTS); break;
+        case outputChannel: config.routing[array].channel = testByte(data, 0, 16); break;
+        case outputArp:
+            config.routing[array].arp = testByte(data, 0, 2);
+            updateArp(array);
+            break;
+        case outputCc: config.routing[array].cc = testByte(data, 0, 4); break;
+        case outputLiveMode:
+            config.routing[array].liveMidiMode = testByte(data, 0, 2);
+            liveMidi[array].triggered = 1;
+            break;
+        case outputClock: config.routing[array].clockSpeed = testByte(data, 0, 5); break;
+        case outputRatchet: config.routing[array].arpRatchet = testByte(data, 0, 3); break;
+        case outputArpOctave: config.routing[array].arpOctaves = testInt(data, -3, 3); break;
+        case outputArpMode:
+            config.routing[array].arpMode = testByte(data, 0, 7);
+            updateArp(array);
+            break;
 
-    case cvCalOffset: cal[array].cvOffset = testByte(data, 0, 255, clampChange); break;
-    case noteScaleOffset: cal[array].noteScaleOffset = testByte(data, 0, 255, clampChange); break;
+        case cvCalOffset: cal[array].cvOffset = testInt(data, -500, 500); break;
+        case cvCalLower: cal[array].cvLowerLimit = testInt(data, 0, 1000); break;
+        case cvCalUpper: cal[array].cvUpperLimit = testInt(data, -1000, 0); break;
+        case cvPitchbendCalLower: cal[array].cvPitchbendLowerLimit = testInt(data, 0, 1000); break;
+        case cvPitchbendCalUpper: cal[array].cvPitchbendUpperLimit = testInt(data, -1000, 0); break;
+        case noteScaleOffset: cal[array].noteScaleOffset = testInt(data, -100, 100); break;
 
-    case liveMod: liveMidi[array].mod = testByte(data, 0, 127, clampChange); break;
-    case livePitchbend: liveMidi[array].pitchbend = testByte(data, 0, 255, clampChange); break;
-    case liveAftertouch: liveMidi[array].aftertouch = testByte(data, 0, 127, clampChange); break;
-    case liveSustain: liveMidi[array].sustain = testByte(data, 0, 127, clampChange); break;
-    case liveTriggered: liveMidi[array].triggered = testByte(data, 0, 1, clampChange); break;
-    case liveReleased: liveMidi[array].released = testByte(data, 0, 1, clampChange); break;
-    case liveRecModePlayback: liveMidi[array].recModePlayback = testByte(data, 0, 1, clampChange); break;
+        case liveMod: liveMidi[array].mod = testByte(data, 0, 127); break;
+        case livePitchbend: liveMidi[array].pitchbend = testInt(data, -8192, 8191); break;
+        case liveAftertouch: liveMidi[array].aftertouch = testByte(data, 0, 127); break;
+        case liveSustain: liveMidi[array].sustain = testByte(data, 0, 127); break;
+        case liveTriggered: liveMidi[array].triggered = testByte(data, 0, 1); break;
+        case liveArpTriggeredNewNote: liveMidi[array].arpTriggeredNewNote = testByte(data, 0, 1); break;
+        case liveReleased: liveMidi[array].released = testByte(data, 0, 1); break;
+        case liveRecModePlayback: liveMidi[array].recModePlayback = testByte(data, 0, 1); break;
 
-    case stepArp: liveMidi[array].stepArp = testByte(data, 0, NOTERANGE - 1, clampChange); break;
-    case stepSeq: liveMidi[array].stepSeq = testByte(data, 0, STEPSPERPAGE * config.routing[array].nbPages - 1, clampChange); break;
-    case stepSpeed: config.routing[array].stepSpeed = testByte(data, 0, 5, clampChange); break;
-    case nbPages: config.routing[array].nbPages = testByte(data, 1, PAGES, clampChange); break;
+        case stepArp: liveMidi[array].stepArp = testByte(data, 0, NOTERANGE - 1); break;
+        case stepSeq: liveMidi[array].stepSeq = testByte(data, 0, STEPSPERPAGE * config.routing[array].nbPages - 1); break;
+        case stepSpeed: config.routing[array].stepSpeed = testByte(data, 0, 5); break;
+        case nbPages: config.routing[array].nbPages = testByte(data, 1, PAGES); break;
 
-    case liveCalNote: stat.noteToCalibrate = testByte(data, 0, NOTERANGE - 1, clampChange); break;
+        case liveCalNote: stat.noteToCalibrate = testByte(data, 0, NOTERANGE - 1); break;
+        case liveCalCv: stat.cvToCalibrate = testInt(data, -1, 2); break;
+        case liveMidiUpdateWaitTimer: liveMidi[array].midiUpdateWaitTimer = data;
 
-    case seqTuning: seq[array].sequence.tuning = testByte(data, 0, 13, clampChange); break;
-    // case seqRatchet: seq[array].sequence.ratchet = testByte(data, 0, 3, clampChange); break;
-    case seqGateLengthOffset: seq[array].sequence.gateLengthOffset = testByte(data, 0, 200, clampChange); break;
-    case none: break;
-    default: PRINTLN("FrankData set(frankData frankDataType, byte data, byte array, bool clampChange), no case found");
+        case seqTuning: seq[array].sequence.tuning = testByte(data, 0, 13); break;
+        case seqGateLengthOffset: seq[array].sequence.gateLengthOffset = testInt(data, -100, 100); break;
+        case copySeq: break;
+        case none: break;
+        default: PRINTLN("FrankData set(frankData frankDataType, byte data, byte array), no case found");
     }
 }
 
 // set data, array, step
-void FrankData::set(const frankData &frankDataType, const int &data, const byte &array, const byte &step, const bool &clampChange) {
+void FrankData::set(const frankData &frankDataType, const int16_t &data, const byte &array, const byte &step) {
     switch (frankDataType) {
-    case seqNote: seq[array].setNote(step, data); break;
-    case seqGate: seq[array].setGate(step, data); break;
-    case seqGateLength: seq[array].sequence.gateLength[step] = testByte(data, 0, 100, clampChange); break;
-    case seqCc: seq[array].sequence.cc[step] = testByte(data, 0, 127, clampChange); break;
-    case seqVelocity: seq[array].sequence.velocity[step] = testByte(data, 0, 127, clampChange); break;
+        case seqNote: seq[array].setNote(step, data); break;
+        case seqGate: seq[array].setGate(step, data); break;
+        case seqGateLength: seq[array].sequence.gateLength[step] = testByte(data, 0, 100); break;
+        case seqCc:
+            seq[array].sequence.cc[step] = testByte(data, 0, 127);
+            break;
+            // case seqVelocity: seq[array].sequence.velocity[step] = testByte(data, 0, 127); break;
 
-    case noteCalOffset: cal[array].noteCalibration[step] = testByte(data, 0, 255, clampChange); break;
-    case none: break;
-    default:
-        PRINTLN("FrankData set(frankData frankDataType, byte data, byte array, byte step, bool clampChange), no case "
-                "found");
+        case noteCalOffset: cal[array].noteCalibration[step] = testInt(data, -100, 100); break;
+        case none: break;
+        default:
+            PRINTLN("FrankData set(frankData frankDataType, byte data, byte array, byte step), no case "
+                    "found");
     }
 }
 
-void FrankData::change(const frankData &frankDataType, const int &amount, const bool &clampChange) {
-    set(frankDataType, get(frankDataType) + amount, clampChange);
+void FrankData::change(const frankData &frankDataType, const int16_t &amount) {
+    set(frankDataType, get(frankDataType) + amount);
 }
-void FrankData::change(const frankData &frankDataType, const int &amount, const byte &array, const bool &clampChange) {
-    set(frankDataType, get(frankDataType, array) + amount, array, clampChange);
+void FrankData::change(const frankData &frankDataType, const int16_t &amount, const byte &array) {
+    set(frankDataType, get(frankDataType, array) + amount, array);
 }
-void FrankData::change(const frankData &frankDataType, const int &amount, const byte &array, const byte &step, const bool &clampChange) {
-    set(frankDataType, get(frankDataType, array, step) + amount, array, step, clampChange);
-}
-
-void FrankData::increase(const frankData &frankDataType, const bool &clampChange) {
-    change(frankDataType, 1, clampChange);
-}
-void FrankData::increase(const frankData &frankDataType, const byte &array, const bool &clampChange) {
-    switch (frankDataType) {
-    case stepArp: nextArpStep(array); break;
-    case stepSeq: increaseSeqStep(array); break;
-    default: change(frankDataType, 1, array, clampChange);
-    }
-}
-void FrankData::increase(const frankData &frankDataType, const byte &array, const byte &step, const bool &clampChange) {
-    switch (frankDataType) {
-    case seqNote:
-        seq[array].increaseNote(step);
-        if (!stat.play) {
-            liveMidi[stat.screen.channel].triggered = 1;
-            liveMidi[stat.screen.channel].recModePlayback = 0;
-        }
-        break;
-    default: change(frankDataType, 1, array, step, clampChange);
-    }
+void FrankData::change(const frankData &frankDataType, const int16_t &amount, const byte &array, const byte &step) {
+    set(frankDataType, get(frankDataType, array, step) + amount, array, step);
 }
 
-void FrankData::decrease(const frankData &frankDataType, const bool &clampChange) {
-    change(frankDataType, -1, clampChange);
+void FrankData::increase(const frankData &frankDataType) {
+    change(frankDataType, 1);
 }
-void FrankData::decrease(const frankData &frankDataType, const byte &array, const bool &clampChange) {
+void FrankData::increase(const frankData &frankDataType, const byte &array) {
     switch (frankDataType) {
-    case stepArp: nextArpStep(array); break;
-    case stepSeq: decreaseSeqStep(array); break;
-    default: change(frankDataType, -1, array, clampChange);
+        case stepArp: nextArpStep(array); break;
+        case stepSeq: increaseSeqStep(array); break;
+        default: change(frankDataType, 1, array);
     }
 }
-void FrankData::decrease(const frankData &frankDataType, const byte &array, const byte &step, const bool &clampChange) {
+void FrankData::increase(const frankData &frankDataType, const byte &array, const byte &step) {
     switch (frankDataType) {
-    case seqNote:
-        seq[array].decreaseNote(step);
-        if (!stat.play) {
-            liveMidi[stat.screen.channel].triggered = 1;
-            liveMidi[stat.screen.channel].recModePlayback = 0;
-        }
-        break;
-    default: change(frankDataType, -1, array, step, clampChange);
+        case seqNote:
+            seq[array].increaseNote(step);
+            if (!stat.play) {
+                for (byte x = 0; x < OUTPUTS; x++) {
+                    if (config.routing[x].outSource) {
+                        liveMidi[x].triggered = 1;
+                        liveMidi[x].recModePlayback = 0;
+                    }
+                }
+            }
+            break;
+        default: change(frankDataType, 1, array, step);
+    }
+}
+
+void FrankData::decrease(const frankData &frankDataType) {
+    change(frankDataType, -1);
+}
+void FrankData::decrease(const frankData &frankDataType, const byte &array) {
+    switch (frankDataType) {
+        case stepArp: nextArpStep(array); break;
+        case stepSeq: decreaseSeqStep(array); break;
+        default: change(frankDataType, -1, array);
+    }
+}
+void FrankData::decrease(const frankData &frankDataType, const byte &array, const byte &step) {
+    switch (frankDataType) {
+        case seqNote:
+            seq[array].decreaseNote(step);
+            if (!stat.play) {
+                for (byte x = 0; x < OUTPUTS; x++) {
+                    if (config.routing[x].outSource) {
+                        liveMidi[x].triggered = 1;
+                        liveMidi[x].recModePlayback = 0;
+                    }
+                }
+            }
+            break;
+        default: change(frankDataType, -1, array, step);
     }
 }
 
 void FrankData::toggle(const frankData &frankDataType) {
+    // save toggle values, instead of simply resetting to default
+    static int16_t bufferedRatchet[OUTPUTS] = {0, 0};
+    static int16_t bufferedStepSpeed[OUTPUTS] = {2, 2};
+    static int16_t bufferedClockSpeed[OUTPUTS] = {2, 2};
+    static int16_t bufferedArpOctaves[OUTPUTS] = {0, 0};
+    static int16_t bufferedArpMode[OUTPUTS] = {0, 0};
+    static int16_t bufferedGateLengthOffset[OUTPUTS] = {0, 0};
+    static int16_t bufferedLiveMode[OUTPUTS] = {0, 0};
+    static int16_t bufferedOutputSource[OUTPUTS] = {0, 0};
+    int16_t temp;
+
     switch (frankDataType) {
-    case direction: config.direction = toggleValue(config.direction); break;
-    case play: stat.play = toggleValue(stat.play); break;
-    case rec: stat.rec = toggleValue(stat.rec); break;
-    case bpmSync:
-        stat.bpmSync = toggleValue(stat.bpmSync);
-        updateClockCounter(true);
-        break;
-    case outputArp:
-        config.routing[stat.screen.channel].arp = toggleValue(config.routing[stat.screen.channel].arp);
-        updateArp(stat.screen.channel);
-        break;
-    case screenMainMenu:
-        if (stat.screen.mainMenu || stat.screen.config || stat.screen.routing || stat.screen.calibration) {
+        case direction: config.direction = toggleValue(config.direction); break;
+        case play: stat.play = toggleValue(stat.play); break;
+        case rec: stat.rec = toggleValue(stat.rec); break;
+        case bpmSync:
+            stat.bpmSync = toggleValue(stat.bpmSync);
+            updateClockCounter(true);
+            break;
+        case outputArp:
+            config.routing[stat.screen.channel].arp = toggleValue(config.routing[stat.screen.channel].arp);
+            updateArp(stat.screen.channel);
+            break;
+        case screenMainMenu: stat.screen.mainMenu = toggleValue(stat.screen.mainMenu); break;
+        case screenConfig:
+            stat.screen.config = toggleValue(stat.screen.config);
+            if (stat.screen.config == 0)
+                saveMenuSettings();
+            break;
+        case screenRouting:
+            if (stat.screen.mainMenu || stat.screen.routing || stat.screen.calibration || stat.screen.calibrationCv) {
+                stat.screen.mainMenu = 0;
+                stat.screen.routing = 0;
+                stat.screen.calibration = 0;
+                stat.screen.calibrationCv = 0;
+                saveMenuSettings();
+            }
+            else {
+                stat.screen.mainMenu = 0;
+                stat.screen.routing = 1;
+                stat.screen.calibration = 0;
+                stat.screen.calibrationCv = 0;
+            }
+            break;
+        case screenCalNote:
             stat.screen.mainMenu = 0;
-            stat.screen.config = 0;
+            stat.screen.routing = 0;
+            stat.screen.calibration = 1;
+            stat.screen.calibrationCv = 0;
+            break;
+        case screenCalCv:
+            stat.screen.mainMenu = 0;
             stat.screen.routing = 0;
             stat.screen.calibration = 0;
-            saveMenuSettings();
-        }
-        else {
-            stat.screen.mainMenu = 1;
-            stat.screen.config = 0;
-            stat.screen.routing = 0;
-            stat.screen.calibration = 0;
-        }
-        break;
-    case screenConfig:
-        stat.screen.config = toggleValue(stat.screen.config);
-        if (stat.screen.config == 0) saveMenuSettings();
+            stat.screen.calibrationCv = 1;
+            break;
 
-        break;
-    case screenRouting:
-        stat.screen.mainMenu = 0;
-        stat.screen.config = 0;
-        stat.screen.routing = !stat.screen.routing;
-        stat.screen.calibration = 0;
-        break;
-    case screenCal:
-        stat.screen.mainMenu = 0;
-        stat.screen.config = 0;
-        stat.screen.routing = 0;
-        stat.screen.calibration = 1;
-        break;
+        case outputRatchet:
+            temp = config.routing[stat.screen.channel].arpRatchet;
+            config.routing[stat.screen.channel].arpRatchet = bufferedRatchet[stat.screen.channel];
+            bufferedRatchet[stat.screen.channel] = temp;
+            break;
+        case outputArpMode:
+            temp = config.routing[stat.screen.channel].arpMode;
+            config.routing[stat.screen.channel].arpMode = bufferedArpMode[stat.screen.channel];
+            bufferedArpMode[stat.screen.channel] = temp;
+            break;
+        case outputArpOctave:
+            temp = config.routing[stat.screen.channel].arpOctaves;
+            config.routing[stat.screen.channel].arpOctaves = bufferedArpOctaves[stat.screen.channel];
+            bufferedArpOctaves[stat.screen.channel] = temp;
+            break;
+        case outputLiveMode:
+            temp = config.routing[stat.screen.channel].liveMidiMode;
+            config.routing[stat.screen.channel].liveMidiMode = bufferedLiveMode[stat.screen.channel];
+            bufferedLiveMode[stat.screen.channel] = temp;
+            break;
+        case stepSpeed:
+            temp = config.routing[stat.screen.channel].stepSpeed;
+            config.routing[stat.screen.channel].stepSpeed = bufferedStepSpeed[stat.screen.channel];
+            bufferedStepSpeed[stat.screen.channel] = temp;
+            break;
+        case outputClock:
+            temp = config.routing[stat.screen.channel].clockSpeed;
+            config.routing[stat.screen.channel].clockSpeed = bufferedClockSpeed[stat.screen.channel];
+            bufferedClockSpeed[stat.screen.channel] = temp;
+            break;
+        case outputSource:
+            temp = config.routing[stat.screen.channel].outSource;
+            config.routing[stat.screen.channel].outSource = bufferedOutputSource[stat.screen.channel];
+            bufferedOutputSource[stat.screen.channel] = temp;
+            break;
 
-    case seqResetGates: seqResetAllGates(config.routing[stat.screen.channel].outSource - 1); break;
-    case seqResetNotes: seqResetAllNotes(config.routing[stat.screen.channel].outSource - 1); break;
-    case seqResetGateLengths: seqResetAllGateLengths(config.routing[stat.screen.channel].outSource - 1); break;
-    case seqResetCC: seqResetAllCC(config.routing[stat.screen.channel].outSource - 1); break;
-    case seqOctaveUp: seqAllOctaveUp(config.routing[stat.screen.channel].outSource - 1); break;
-    case seqOctaveDown: seqAllOctaveDown(config.routing[stat.screen.channel].outSource - 1); break;
+        case seqGateLengthOffset:
+            temp = seq[config.routing[stat.screen.channel].outSource - 1].sequence.gateLengthOffset;
+            seq[config.routing[stat.screen.channel].outSource - 1].sequence.gateLengthOffset = bufferedGateLengthOffset[stat.screen.channel];
+            bufferedGateLengthOffset[stat.screen.channel] = temp;
+            break;
+        case seqTuning: seq[config.routing[stat.screen.channel].outSource - 1].sequence.tuning = 0; break;
 
-    case resetStepCounters: resetAllStepCounter(); break;
+        case nbPages: config.routing[stat.screen.channel].nbPages = 8; break;
+        case pulseLength: config.pulseLength = 20; break;
 
-    case saveCal: saveNoteCalibration(); break;
+        case seqResetGates: seqResetAllGates(config.routing[stat.screen.channel].outSource - 1); break;
+        case seqResetNotes: seqResetAllNotes(config.routing[stat.screen.channel].outSource - 1); break;
+        case seqResetGateLengths: seqResetAllGateLengths(config.routing[stat.screen.channel].outSource - 1); break;
+        case seqResetCC: seqResetAllCC(config.routing[stat.screen.channel].outSource - 1); break;
+        case seqOctaveUp: seqAllOctaveUp(config.routing[stat.screen.channel].outSource - 1); break;
+        case seqOctaveDown: seqAllOctaveDown(config.routing[stat.screen.channel].outSource - 1); break;
+        case copySeq:
+            seqCopy(config.routing[stat.screen.channel].outSource - 1, !(config.routing[stat.screen.channel].outSource - 1));
+            break; // works only for two seq objects
 
-    case load: loadSequence(stat.loadSaveSlot, config.routing[stat.screen.channel].outSource - 1); break;
-    case save: saveSequence(stat.loadSaveSlot, config.routing[stat.screen.channel].outSource - 1); break;
+        case resetStepCounters: resetAllStepCounter(); break;
 
-    case cvCalOffset: cal[stat.screen.channel].cvOffset = 127; break;
-    case noteScaleOffset: cal[stat.screen.channel].noteScaleOffset = 127; break;
+        case saveCal: saveNoteCalibration(); break;
 
-    case none: break;
-    default: PRINTLN("FrankData toggle(frankData frankDataType), no case found");
+        case load: loadSequence(stat.loadSaveSlot, config.routing[stat.screen.channel].outSource - 1); break;
+        case save: saveSequence(stat.loadSaveSlot, config.routing[stat.screen.channel].outSource - 1); break;
+
+        case cvCalOffset: cal[stat.screen.channel].cvOffset = 0; break;
+        case noteScaleOffset: cal[stat.screen.channel].noteScaleOffset = 0; break;
+        case cvCalLower: cal[stat.screen.channel].cvLowerLimit = 0; break;
+        case cvCalUpper: cal[stat.screen.channel].cvUpperLimit = 0; break;
+        case cvPitchbendCalLower: cal[stat.screen.channel].cvPitchbendLowerLimit = 0; break;
+        case cvPitchbendCalUpper: cal[stat.screen.channel].cvPitchbendUpperLimit = 0; break;
+
+        case none: break;
+        default: PRINTLN("FrankData toggle(frankData frankDataType), no case found");
+    }
+}
+
+void FrankData::toggle(const frankData &frankdataType, const byte &array) {
+    switch (frankdataType) {
+        case seqResetGates: seqResetAllGates(array); break;
+        case seqResetNotes: seqResetAllNotes(array); break;
+        case seqResetGateLengths: seqResetAllGateLengths(array); break;
+        case seqResetCC: seqResetAllCC(array); break;
+        case copySeq: seqCopy(array, !array); break; // works only for two seq objects
+        case resetStepCounters: resetAllStepCounter(); break;
+        default: PRINTLN("FrankData toggle(frankData frankDataType, const byte &array), no case found");
     }
 }
 
 void FrankData::toggle(const frankData &frankDataType, const byte &array, const byte &step) {
     switch (frankDataType) {
-    case seqGate: seq[array].setGate(step, toggleValue(seq[array].getGate(step))); break;
-    case noteCalOffset: cal[array].noteCalibration[step] = 127;
-    case none: break;
-    default: PRINTLN("FrankData toggle(frankData frankDataType, byte array, byte step), no case found");
+        case seqGate: seq[array].setGate(step, toggleValue(seq[array].getGate(step))); break;
+        case noteCalOffset: cal[array].noteCalibration[step] = 0;
+        case none: break;
+        default: PRINTLN("FrankData toggle(frankData frankDataType, byte array, byte step), no case found");
     }
 }
 
 const char *FrankData::getNameAsStr(const frankData &frankDataType) {
     switch (frankDataType) {
-    case seqNote: setStr("Note"); break;
-    case seqGate: setStr("Gate"); break;
-    case seqGateLength: setStr("GateLn"); break;
-    case seqCc: setStr("CC"); break;
-    case seqVelocity: setStr("Vel"); break;
-    case seqTuning: setStr("Tune"); break;
-    case seqSize: setStr("Seq"); break;
-    // case seqRatchet: setStr("Reps"); break;
-    case seqGateLengthOffset: setStr("GL-OF"); break;
-    case stepSpeed: setStr("Speed"); break;
-    case seqResetNotes: setStr("Rs Nt"); break;
-    case seqResetGates: setStr("Rs Gt"); break;
-    case seqResetGateLengths: setStr("Rs GL"); break;
-    case seqResetCC: setStr("Rs CC"); break;
-    case seqOctaveUp: setStr("OctUp"); break;
-    case seqOctaveDown: setStr("OctDn"); break;
+        case copySeq: setStr("CopSq"); break;
+        case seqNote: setStr("Note"); break;
+        case seqGate: setStr("Gate"); break;
+        case seqGateLength: setStr("GateLn"); break;
+        case seqCc: setStr("CC"); break;
+        case seqTuning: setStr("Tune"); break;
+        case seqGateLengthOffset: setStr("GL-OF"); break;
+        case stepSpeed: setStr("Speed"); break;
+        case seqResetNotes: setStr("Rs Nt"); break;
+        case seqResetGates: setStr("Rs Gt"); break;
+        case seqResetGateLengths: setStr("Rs GL"); break;
+        case seqResetCC: setStr("Rs CC"); break;
+        case seqOctaveUp: setStr("OctUp"); break;
+        case seqOctaveDown: setStr("OctDn"); break;
 
-    case midiSource: setStr("Src"); break;
-    case nbPages: setStr("Pages"); break;
-    case direction: setStr("Fw/Rv"); break;
-    case displayBrightness: setStr("ScBr"); break;
+        case midiSource: setStr("Midi"); break;
+        case nbPages: setStr("Pages"); break;
+        case direction: setStr("Fw/Rv"); break;
+        case displayBrightness: setStr("ScBr"); break;
 
-    case outputSource: setStr("Src"); break;
-    case outputChannel: setStr("Chan"); break;
-    case outputArp: setStr("Arp"); break;
-    case outputArpMode: setStr("Mode"); break;
-    case outputCc: setStr("CC"); break;
-    case outputCcEvaluated:
-        switch (config.routing[stat.screen.channel].cc) {
-        case 0: setStr("Vel"); break;
-        case 1: setStr("Mod"); break;
-        case 2: setStr("PB"); break;
-        case 3: setStr("AftT"); break;
-        case 4: setStr("Sus"); break;
-        default: setStr("ERR"); break;
-        }
-        break;
-    case outputRatchet: setStr("Reps"); break;
-    case outputArpOctave: setStr("Oct"); break;
+        case outputSource: setStr("Src"); break;
+        case outputChannel: setStr("Chan"); break;
+        case outputArp: setStr("Arp"); break;
+        case outputArpMode: setStr("Mode"); break;
+        case outputCc: setStr("CC"); break;
+        case outputCcEvaluated:
+            switch (config.routing[stat.screen.channel].cc) {
+                case 0: setStr("Vel"); break;
+                case 1: setStr("Mod"); break;
+                case 2: setStr("PB"); break;
+                case 3: setStr("AftT"); break;
+                case 4: setStr("Sus"); break;
+                default: setStr("ERR"); break;
+            }
+            break;
+        case outputRatchet: setStr("Reps"); break;
+        case outputArpOctave: setStr("Oct"); break;
 
-    case outputLiveMode: setStr("Key"); break;
+        case outputLiveMode: setStr("Key"); break;
 
-    case outputClock: setStr("Clock"); break;
+        case outputClock: setStr("Clock"); break;
 
-    case screenOutputChannel: setStr("Rout"); break;
-    case screenConfig: setStr("Conf"); break;
-    case screenMainMenu: setStr("Main"); break;
-    case screenSubScreen: setStr("Sub"); break;
-    case screenCal: setStr("Cal"); break;
-    case screenRouting: setStr("MIDI"); break;
+        case screenOutputChannel: setStr("Rout"); break;
+        case screenConfig: setStr("Conf"); break;
+        case screenMainMenu: setStr("Main"); break;
+        case screenSubScreen: setStr("Sub"); break;
+        case screenCalNote: setStr("calN"); break;
+        case screenCalCv: setStr("calCv"); break;
+        case screenRouting: setStr("MIDI"); break;
 
-    case stepSeq: setStr("Step"); break;
-    case stepArp: setStr("Arp Step"); break;
-    case bpm: setStr("BPM"); break;
-    case play: setStr("Pl/St"); break;
-    case rec: setStr("Rec"); break;
-    case error: setStr("Error"); break;
-    case bpmSync: setStr("Sync"); break;
-    case bpmPoti: setStr("BPM"); break;
-    case load: setStr("Load"); break;
-    case save: setStr("Save"); break;
-    case pulseLength: setStr("PulsL"); break;
+        case stepSeq: setStr("Step"); break;
+        case stepArp: setStr("Arp Step"); break;
+        case bpm: setStr("BPM"); break;
+        case play: setStr("Pl/St"); break;
+        case rec: setStr("Rec"); break;
+        case error: setStr("Error"); break;
+        case bpmSync: setStr("Sync"); break;
+        case bpmPoti: setStr("BPM"); break;
+        case load: setStr("Load"); break;
+        case save: setStr("Save"); break;
+        case pulseLength: setStr("PulsL"); break;
 
-    case liveMod: setStr("Mod"); break;
-    case livePitchbend: setStr("PB"); break;
-    case liveAftertouch: setStr("AftT"); break;
-    case liveSustain: setStr("Sus"); break;
-    case liveTriggered: setStr("TRIG"); break;
-    case liveLatestKey: setStr("Late"); break;
-    case liveLowestKey: setStr("Low"); break;
-    case liveHighestKey: setStr("High"); break;
-    case liveKeyArpNoteEvaluated:
-    case liveCalNote:
-    case liveKeyNoteEvaluated: setStr("Note"); break;
-    case liveKeyArpVelEvaluated:
-    case liveKeyVelEvaluated: setStr("Vel"); break;
-    case saveCal: setStr("Save"); break;
+        case liveMod: setStr("Mod"); break;
+        case livePitchbend: setStr("PB"); break;
+        case liveAftertouch: setStr("AftT"); break;
+        case liveSustain: setStr("Sus"); break;
+        case liveTriggered: setStr("TRIG"); break;
+        case liveLatestKey: setStr("Late"); break;
+        case liveLowestKey: setStr("Low"); break;
+        case liveHighestKey: setStr("High"); break;
+        case liveKeyArpNoteEvaluated:
+        case liveCalNote:
+        case liveKeyNoteEvaluated: setStr("Note"); break;
+        case liveCalCv: setStr("CV"); break;
+        case liveKeyArpVelEvaluated:
+        case liveKeyVelEvaluated: setStr("Vel"); break;
+        case saveCal: setStr("Save"); break;
 
-    case noteCalOffset: setStr("NCal"); break;
-    case cvCalOffset: setStr("CvCal"); break;
-    case noteScaleOffset: setStr("NSCal"); break;
+        case noteCalOffset: setStr("NCal"); break;
+        case cvCalOffset: setStr("CvCal"); break;
+        case noteScaleOffset: setStr("NSCal"); break;
+        case cvCalLower: setStr("CV Lo"); break;
+        case cvCalUpper: setStr("CV Hi"); break;
+        case cvPitchbendCalLower: setStr("PB Lo"); break;
+        case cvPitchbendCalUpper: setStr("PB Hi"); break;
 
-    case resetStepCounters: setStr("RsStep"); break;
+        case resetStepCounters: setStr("RsStep"); break;
 
-    case none: setStr(""); break;
+        case none: setStr(""); break;
 
-    default: PRINTLN("FrankData getNameAsStr(frankData frankDataType), no case found"); setStr("ERR");
+        default: PRINTLN("FrankData getNameAsStr(frankData frankDataType), no case found"); setStr("ERR");
     }
     return returnStr;
 }
 
 const char *FrankData::getValueAsStr(const frankData &frankDataType) {
-    byte channel;
     switch (frankDataType) {
-    case seqResetGates:
-    case seqResetGateLengths:
-    case seqResetCC:
-    case seqOctaveUp:
-    case seqOctaveDown:
-    case seqResetNotes:
-    case seqNote:
-    case seqGate:
-    case seqGateLength:
-    case seqCc:
-    case seqSize:
-    case seqGateLengthOffset:
-    case stepOnPage:
-    case currentPageNumber:
-    case nbPages: // potentionally wrong case?
-    case stepSeq:
-    case activePage:
-    case seqVelocity: channel = config.routing[stat.screen.channel].outSource - 1;
-    default: channel = stat.screen.channel;
+        case screenOutputChannel:
+        case screenConfig:
+        case screenSubScreen:
+
+        case displayBrightness:
+
+        case liveCalNote:
+
+        case bpm:
+        case bpmSync:
+        case pulseLength:
+        case bpmPoti: setStr(toStr(get(frankDataType))); break;
+        case midiSource:
+            switch (config.midiSource) {
+                case 0: setStr("DIN"); break;
+                case 1: setStr("USB"); break;
+                default:
+                    setStr("ERR");
+                    PRINT("midiSource, received ");
+                    PRINTLN(config.midiSource);
+            }
+            break;
+        case direction:
+            switch (config.direction) {
+
+                case 0: setStr("<-"); break;
+                case 1: setStr("->"); break;
+                default: setStr("ERR");
+            }
+            break;
+        case play:
+            switch (stat.play) {
+                case 0: setStr("STOP"); break;
+                case 1: setStr("PLAY"); break;
+                default: setStr("ERR");
+            }
+            break;
+
+        case rec:
+            switch (stat.rec) {
+                case 0: setStr("-"); break;
+                case 1: setStr("REC"); break;
+                default: setStr("ERR");
+            }
+            break;
+        case error:
+            switch (stat.error) {
+                case 0: setStr(" "); break;
+                case 1: setStr("ERR"); break;
+                default: setStr("ERR");
+            }
+            break;
+        case none: setStr(""); break;
+        default: setStr("ERR"); PRINTLN("FrankData getValueAsStr(const frankData &frankDataType), no case found");
     }
-    return valueToStr(frankDataType, channel);
+    return returnStr;
 }
 
-const char *FrankData::getValueAsStrChannel(const frankData &frankDataType, const byte &channel) {
-    return valueToStr(frankDataType, channel);
-}
-
-const char *FrankData::valueToStr(const frankData &frankDataType, const byte &channel) {
+const char *FrankData::getValueAsStr(const frankData &frankDataType, const byte &channel) {
     char tempStr[5];
 
     switch (frankDataType) {
-    case seqSize:
+        case stepSeq:
+        case stepArp:
+        case nbPages:
+        case seqGateLengthOffset:
 
-    case stepSeq:
-    case stepArp:
-    case nbPages:
+        case outputRatchet:
+        case outputArpOctave:
 
-    case outputRatchet:
-        // case seqRatchet:
+        case liveMod:
+        case livePitchbend:
+        case liveAftertouch:
+        case liveSustain:
+        case liveTriggered:
 
-    case liveMod:
-    case livePitchbend:
-    case liveAftertouch:
-    case liveSustain:
+        case cvCalLower:
+        case cvCalUpper:
+        case cvPitchbendCalLower:
+        case cvPitchbendCalUpper:
+        case noteScaleOffset:
+        case cvCalOffset: setStr(toStr(get(frankDataType, channel))); break;
 
-    case liveTriggered: setStr(toStr(get(frankDataType, channel))); break;
-    case outputChannel:
-        if (config.routing[channel].channel == 0) {
+        case outputChannel:
+            if (config.routing[channel].channel == 0) {
 
-            setStr("ALL");
-        }
-        else {
-            setStr(toStr(get(frankDataType, channel)));
-        }
-        break;
-    case outputArpOctave: setStr(toStr(((int)get(frankDataType, channel)) - ARPOCTAVECENTEROFFSET)); break;
-    case seqGateLengthOffset: setStr(toStr(((int)get(frankDataType, channel)) - GATELENGTHOFFSET)); break;
-    case seqTuning: setStr(tuningToChar(seq[channel].sequence.tuning)); break;
+                setStr("ALL");
+            }
+            else {
+                setStr(toStr(get(frankDataType, channel)));
+            }
+            break;
 
-    case resetStepCounters:
-    case screenRouting:
-    case screenCal:
-    case seqResetGates:
-    case seqResetGateLengths:
-    case seqResetCC:
-    case seqOctaveUp:
-    case seqOctaveDown:
-    case saveCal:
-    case seqResetNotes: setStr("@"); break;
-    case noteCalOffset: setStr(toStr(((int)get(frankDataType, channel, stat.noteToCalibrate)) - CALOFFSET)); break;
+        case seqTuning: setStr(tuningToChar(seq[channel].sequence.tuning)); break;
 
-    case screenOutputChannel:
-    case screenConfig:
-    case screenMainMenu:
-    case screenSubScreen:
+        case copySeq:
+        case resetStepCounters:
+        case screenRouting:
+        case screenCalNote:
+        case screenCalCv:
+        case screenMainMenu:
+        case seqResetGates:
+        case seqResetGateLengths:
+        case seqResetCC:
+        case seqOctaveUp:
+        case seqOctaveDown:
+        case saveCal:
+        case seqResetNotes: setStr("@"); break;
+        case noteCalOffset: setStr(toStr(get(frankDataType, channel, stat.noteToCalibrate))); break;
+        case liveCalCv:
+            switch (stat.cvToCalibrate) {
+                case -1: setStr("-5V"); break;
+                case 0: setStr("0V"); break;
+                case 1: setStr("5V"); break;
+                case 2: setStr("PB"); break;
+            }
+            break;
 
-    case displayBrightness:
+        case screenOutputChannel:
+        case screenConfig:
+        case screenSubScreen:
 
-    case liveCalNote:
+        case displayBrightness:
 
-    case bpm:
-    case bpmSync:
-    case pulseLength:
-    case bpmPoti: setStr(toStr(get(frankDataType))); break;
-    case load:
-    case save: setStr(toStr(get(frankDataType) + 1)); break;
+        case liveCalNote:
 
-    case noteScaleOffset:
-    case cvCalOffset: setStr(toStr(((int)get(frankDataType, channel)) - CALOFFSET)); break;
+        case bpm:
+        case bpmSync:
+        case pulseLength:
+        case bpmPoti: setStr(toStr(get(frankDataType))); break;
+        case load:
+        case save: setStr(toStr(get(frankDataType) + 1)); break;
 
-    case outputSource:
+        case outputSource:
 
-        if (config.routing[channel].outSource == 0) {
-            setStr("Midi");
-        }
-        else if (config.routing[channel].outSource <= OUTPUTS) {
+            if (config.routing[channel].outSource == 0) {
+                setStr("Midi");
+            }
+            else if (config.routing[channel].outSource <= OUTPUTS) {
 
-            itoa((int)config.routing[channel].outSource, tempStr, 10);
+                itoa((int)config.routing[channel].outSource, tempStr, 10);
 
-            tempStr[2] = tempStr[0];
-            tempStr[0] = 'S';
-            tempStr[1] = 'q';
-            tempStr[3] = '\0';
-            setStr(tempStr);
-        }
-        else {
-            setStr("ERR");
-            PRINT("outputSource, received ");
-            PRINTLN(config.routing[channel].outSource);
-        }
-        break;
+                tempStr[2] = tempStr[0];
+                tempStr[0] = 'S';
+                tempStr[1] = 'q';
+                tempStr[3] = '\0';
+                setStr(tempStr);
+            }
+            else {
+                setStr("ERR");
+                PRINT("outputSource, received ");
+                PRINTLN(config.routing[channel].outSource);
+            }
+            break;
 
-    case outputArpMode:
-        switch (config.routing[channel].arpMode) {
-        case 0: setStr("up"); break;
-        case 1: setStr("dn"); break;
-        case 2: setStr("UD"); break;
-        case 3: setStr("DU"); break;
-        case 4: setStr("ordr"); break;
-        case 5: setStr("rnd"); break;
-        default:
-            setStr("ERR");
-            PRINT("outputArpMode, received ");
-            PRINTLN(config.routing[channel].arpMode);
-        }
-        break;
+        case outputArpMode:
+            switch (config.routing[channel].arpMode) {
+                case 0: setStr("up"); break;
+                case 1: setStr("dn"); break;
+                case 2: setStr("ud"); break;
+                case 3: setStr("du"); break;
+                case 4: setStr("urdr"); break;
+                case 5: setStr("drur"); break;
+                case 6: setStr("ordr"); break;
+                case 7: setStr("rnd"); break;
+                default:
+                    setStr("ERR");
+                    PRINT("outputArpMode, received ");
+                    PRINTLN(config.routing[channel].arpMode);
+            }
+            break;
 
-    case midiSource:
-        switch (config.midiSource) {
-        case 0: setStr("DIN"); break;
-        case 1: setStr("USB"); break;
-        default:
-            setStr("ERR");
-            PRINT("midiSource, received ");
-            PRINTLN(config.midiSource);
-        }
-        break;
+        case midiSource:
+            switch (config.midiSource) {
+                case 0: setStr("DIN"); break;
+                case 1: setStr("USB"); break;
+                default:
+                    setStr("ERR");
+                    PRINT("midiSource, received ");
+                    PRINTLN(config.midiSource);
+            }
+            break;
 
-    case direction:
-        switch (config.direction) {
+        case direction:
+            switch (config.direction) {
 
-        case 0: setStr("<-"); break;
-        case 1: setStr("->"); break;
-        default: setStr("ERR");
-        }
-        break;
+                case 0: setStr("<-"); break;
+                case 1: setStr("->"); break;
+                default: setStr("ERR");
+            }
+            break;
 
-    case outputArp:
-        switch (config.routing[channel].arp) {
-        case 0: setStr("OFF"); break;
-        case 1: setStr("ON"); break;
-        default: setStr("ERR");
-        }
-        break;
+        case outputArp:
+            switch (config.routing[channel].arp) {
+                case 0: setStr("OFF"); break;
+                case 1: setStr("ON"); break;
+                case 2: setStr("Ltch"); break;
+                default: setStr("ERR");
+            }
+            break;
 
-    case play:
-        switch (stat.play) {
-        case 0: setStr("STOP"); break;
-        case 1: setStr("PLAY"); break;
-        default: setStr("ERR");
-        }
-        break;
+        case play:
+            switch (stat.play) {
+                case 0: setStr("STOP"); break;
+                case 1: setStr("PLAY"); break;
+                default: setStr("ERR");
+            }
+            break;
 
-    case rec:
-        switch (stat.rec) {
-        case 0: setStr("-"); break;
-        case 1: setStr("REC"); break;
-        default: setStr("ERR");
-        }
-        break;
+        case rec:
+            switch (stat.rec) {
+                case 0: setStr("-"); break;
+                case 1: setStr("REC"); break;
+                default: setStr("ERR");
+            }
+            break;
 
-    case error:
-        switch (stat.error) {
-        case 0: setStr(" "); break;
-        case 1: setStr("ERR"); break;
-        default: setStr("ERR");
-        }
-        break;
+        case error:
+            switch (stat.error) {
+                case 0: setStr(" "); break;
+                case 1: setStr("ERR"); break;
+                default: setStr("ERR");
+            }
+            break;
 
-    case liveLatestKey: setStr(toStr(getKeyLatest(channel).note)); break;
-    case liveLowestKey: setStr(toStr(getKeyLowest(channel).note)); break;
-    case liveHighestKey: setStr(toStr(getKeyHighest(channel).note)); break;
-    case liveKeyNoteEvaluated:
-        if (liveMidi[channel].keysPressed()) {
-            setStr(toStr(getLiveKeyEvaluated(channel).note));
-        }
-        else {
-            setStr("-");
-        }
-        break;
-    case liveKeyVelEvaluated:
-        if (liveMidi[channel].keysPressed()) {
-            setStr(toStr(getLiveKeyEvaluated(channel).velocity));
-        }
-        else {
-            setStr("-");
-        }
-        break;
-    case liveKeyArpNoteEvaluated:
-        if (liveMidi[channel].keysPressed()) {
-            setStr(toStr(liveMidi[channel].arpKey.note));
-        }
-        else {
-            setStr("-");
-        }
-        break;
-    case liveKeyArpVelEvaluated:
-        if (liveMidi[channel].keysPressed()) {
-            setStr(toStr(liveMidi[channel].arpKey.velocity));
-        }
-        else {
-            setStr("-");
-        }
-        break;
+        case liveLatestKey: setStr(toStr(getKeyLatest(channel).note)); break;
+        case liveLowestKey: setStr(toStr(getKeyLowest(channel).note)); break;
+        case liveHighestKey: setStr(toStr(getKeyHighest(channel).note)); break;
+        case liveKeyNoteEvaluated:
+            if (liveMidi[channel].keysPressed()) {
+                setStr(toStr(getLiveKeyEvaluated(channel).note));
+            }
+            else {
+                setStr("-");
+            }
+            break;
+        case liveKeyVelEvaluated:
+            if (liveMidi[channel].keysPressed()) {
+                setStr(toStr(getLiveKeyEvaluated(channel).velocity));
+            }
+            else {
+                setStr("-");
+            }
+            break;
+        case liveKeyArpNoteEvaluated:
+            if (liveMidi[channel].keysPressed()) {
+                setStr(toStr(liveMidi[channel].arpKey.note));
+            }
+            else {
+                setStr("-");
+            }
+            break;
+        case liveKeyArpVelEvaluated:
+            if (liveMidi[channel].keysPressed()) {
+                setStr(toStr(liveMidi[channel].arpKey.velocity));
+            }
+            else {
+                setStr("-");
+            }
+            break;
 
-    case outputCc:
-        switch (config.routing[channel].cc) {
-        case 0: setStr("Vel"); break;
-        case 1: setStr("Mod"); break;
-        case 2: setStr("PB"); break;
-        case 3: setStr("AftT"); break;
-        case 4: setStr("Sus"); break;
-        default: setStr("ERR"); break;
-        }
-        break;
-    case outputCcEvaluated: setStr(toStr(getLiveCcEvaluated(channel))); break;
+        case outputCc:
+            switch (config.routing[channel].cc) {
+                case 0: setStr("Vel"); break;
+                case 1: setStr("Mod"); break;
+                case 2: setStr("PB"); break;
+                case 3: setStr("AftT"); break;
+                case 4: setStr("Sus"); break;
+                default: setStr("ERR"); break;
+            }
+            break;
+        case outputCcEvaluated:
+            if (config.routing[channel].cc == 2) {
+                setStr(toStr(getLiveCcEvaluated(channel) / 64));
+            }
+            else {
+                setStr(toStr(getLiveCcEvaluated(channel)));
+            }
+            break;
 
-    case outputLiveMode:
-        switch (config.routing[channel].liveMidiMode) {
-        case 0: setStr("Late"); break;
-        case 1: setStr("Low"); break;
-        case 2: setStr("High"); break;
-        default: setStr("ERR");
-        }
-        break;
+        case outputLiveMode:
+            switch (config.routing[channel].liveMidiMode) {
+                case 0: setStr("Late"); break;
+                case 1: setStr("Low"); break;
+                case 2: setStr("High"); break;
+                default: setStr("ERR");
+            }
+            break;
 
-    case stepSpeed:
-        switch (config.routing[channel].stepSpeed) {
-        case 0: setStr("1/16"); break;
-        case 1: setStr("1/8"); break;
-        case 2: setStr("1/4"); break;
-        case 3: setStr("1/2"); break;
-        case 4: setStr("1/1"); break;
-        case 5: setStr("2/1"); break;
-        default: setStr("NONE");
-        }
-        break;
-    case outputClock:
-        switch (config.routing[channel].clockSpeed) {
-        case 0: setStr("1/16"); break;
-        case 1: setStr("1/8"); break;
-        case 2: setStr("1/4"); break;
-        case 3: setStr("1/2"); break;
-        case 4: setStr("1/1"); break;
-        case 5: setStr("2/1"); break;
-        default: setStr("ERR");
-        }
-        break;
-    case none: setStr(""); break;
+        case stepSpeed:
+            switch (config.routing[channel].stepSpeed) {
+                case 0: setStr("1/16"); break;
+                case 1: setStr("1/8"); break;
+                case 2: setStr("1/4"); break;
+                case 3: setStr("1/2"); break;
+                case 4: setStr("1/1"); break;
+                case 5: setStr("2/1"); break;
+                default: setStr("NONE");
+            }
+            break;
+        case outputClock:
+            switch (config.routing[channel].clockSpeed) {
+                case 0: setStr("1/16"); break;
+                case 1: setStr("1/8"); break;
+                case 2: setStr("1/4"); break;
+                case 3: setStr("1/2"); break;
+                case 4: setStr("1/1"); break;
+                case 5: setStr("2/1"); break;
+                default: setStr("ERR");
+            }
+            break;
+        case none: setStr(""); break;
 
-    default: setStr("ERR"); PRINTLN("FrankData getValueAsStr(const frankData &frankDataType), no case found");
+        default: setStr("ERR"); PRINTLN("FrankData getValueAsStr(const frankData &frankDataType, const byte &channel), no case found");
     }
     return returnStr;
 }
 
-const char *FrankData::getValueAsStr(const frankData &frankDataType, const byte &step) {
+const char *FrankData::getValueAsStr(const frankData &frankDataType, const byte &channel, const byte &step) {
     switch (frankDataType) {
-    case seqNote:
-    case seqGate:
-    case seqGateLength:
-    case seqCc:
-    case seqVelocity: setStr(toStr(get(frankDataType, config.routing[stat.screen.channel].outSource - 1, step))); break;
+        case seqNote:
+        case seqGate:
+        case seqGateLength:
+        case seqCc:
 
-    case none: setStr(""); break;
+        case none: setStr(""); break;
 
-    default: PRINTLN("FrankData getValueAsStr(const frankData &frankDataType, const byte &step), no case found"); setStr("NONE");
+        default: PRINTLN("FrankData getValueAsStr(const frankData &frankDataType, const byte &step), no case found"); setStr("NONE");
     }
     return returnStr;
 }
 
-inline void FrankData::setStr(const char *newStr) {
+void FrankData::setStr(const char *newStr) {
     strncpy(str, newStr, MAXSTRINGSIZE - 1);
     str[MAXSTRINGSIZE] = '\0';
 }
@@ -1710,8 +2176,7 @@ void FrankData::loadSequence(const byte &saveSlot, const byte &sequence) {
         return;
     }
 
-    int memory = 0;
-    memory = saveSlot * sizeof(structSequence) + 300; // leave space for menu and calibration
+    int memory = saveSlot * sizeof(structSequence) + 300; // leave space for menu and calibration
 
     EEPROM.get(memory, seq[sequence].sequence);
 }
@@ -1727,13 +2192,12 @@ void FrankData::saveSequence(const byte &saveSlot, const byte &sequence) {
         return;
     }
 
-    int memory = 0;
-    memory = saveSlot * sizeof(structSequence) + 300; // leave space for menu and calibration
+    int memory = saveSlot * sizeof(structSequence) + 300; // leave space for menu and calibration
 
     EEPROM.put(memory, seq[sequence].sequence);
 }
 
-void FrankData::loadAllMenuSettings() {
+void FrankData::loadMenuSettings() {
     Serial.println("Load Menu settings");
     int memory = 1;
 
@@ -1763,7 +2227,7 @@ void FrankData::loadNoteCalibration() {
 
 // utility
 // test byte range and return valid byte
-inline byte testByte(const int &value, const byte &minimum, const byte &maximum, const bool &clampChange) {
+byte testByte(const int16_t &value, const byte &minimum, const byte &maximum) {
     if (value > maximum) {
         return maximum;
     }
@@ -1775,7 +2239,7 @@ inline byte testByte(const int &value, const byte &minimum, const byte &maximum,
     }
 }
 
-int testInt(const int &value, const int &minimum, const int &maximum) {
+int16_t testInt(const int16_t &value, const int16_t &minimum, const int16_t &maximum) {
     if (value > maximum) {
         return maximum;
     }
@@ -1788,7 +2252,7 @@ int testInt(const int &value, const int &minimum, const int &maximum) {
 }
 
 // increase byte
-inline byte increaseByte(const byte &value, const byte &maximum) {
+byte increaseByte(const byte &value, const byte &maximum) {
     if (value == maximum) {
         return value;
     }
@@ -1798,7 +2262,7 @@ inline byte increaseByte(const byte &value, const byte &maximum) {
 }
 
 // decrease byte
-inline byte decreaseByte(const byte &value, const byte &minimum) {
+byte decreaseByte(const byte &value, const byte &minimum) {
     if (value == minimum) {
         return value;
     }
@@ -1808,22 +2272,22 @@ inline byte decreaseByte(const byte &value, const byte &minimum) {
 }
 
 // change byte value and check boundaries
-inline byte changeByte(const byte &value, const int &change, const byte &minimum, const byte &maximum, const bool &clampChange) {
+byte changeByte(const byte &value, const int16_t &change, const byte &minimum, const byte &maximum, const bool &clampChange) {
 
-    if ((int)value + change > maximum) { // test max
+    if ((int16_t)value + change > maximum) { // test max
 
         return clampChange ? maximum : value;
     }
 
-    else if ((int)value + change < minimum) { // test min
+    else if ((int16_t)value + change < minimum) { // test min
         return clampChange ? minimum : value;
     }
     else {
-        return (byte)((int)value + change); // return new value
+        return (byte)((int16_t)value + change); // return new value
     }
 }
 
-inline int changeInt(const int &value, const int &change, const int &minimum, const int &maximum, const bool &clampChange) {
+int16_t changeInt(const int16_t &value, const int16_t &change, const int16_t &minimum, const int16_t &maximum, const bool &clampChange) {
 
     if (value + change > maximum) { // test max
 
@@ -1837,13 +2301,13 @@ inline int changeInt(const int &value, const int &change, const int &minimum, co
     }
 }
 
-byte changeByteReverse(const byte &value, const int &change, const byte &minimum, const byte &maximum) {
+byte changeByteReverse(const byte &value, const int16_t &change, const byte &minimum, const byte &maximum) {
 
-    if ((int)value + change > maximum) { // test max
+    if ((int16_t)value + change > maximum) { // test max
 
         return minimum;
     }
-    else if ((int)value + change < minimum) { // test min
+    else if ((int16_t)value + change < minimum) { // test min
         return maximum;
     }
     else {
@@ -1851,7 +2315,7 @@ byte changeByteReverse(const byte &value, const int &change, const byte &minimum
     }
 }
 
-inline int changeIntReverse(const int &value, const int &change, const int &minimum, const int &maximum) {
+int16_t changeIntReverse(const int16_t &value, const int16_t &change, const int16_t &minimum, const int16_t &maximum) {
 
     if (value + change > maximum) { // test max
 
@@ -1866,12 +2330,12 @@ inline int changeIntReverse(const int &value, const int &change, const int &mini
 }
 
 // toggle byte
-template <typename T> inline T toggleValue(const T &data) {
+template <typename T> T toggleValue(const T &data) {
     return !data;
 }
 
 // convert number to string
-template <typename T> inline char *toStr(const T &data) {
+template <typename T> char *toStr(const T &data) {
     static char str[4];
     itoa((int)data, str, 10);
     return str;
@@ -1882,18 +2346,18 @@ char valueToNote(const byte &noteIn) {
     byte note;
     note = (noteIn + 9) % 12;
     switch (note) {
-    case 0:
-    case 1: return 'C';
-    case 2:
-    case 3: return 'D';
-    case 4: return 'E';
-    case 5:
-    case 6: return 'F';
-    case 7:
-    case 8: return 'G';
-    case 9:
-    case 10: return 'A';
-    case 11: return 'B';
+        case 0:
+        case 1: return 'C';
+        case 2:
+        case 3: return 'D';
+        case 4: return 'E';
+        case 5:
+        case 6: return 'F';
+        case 7:
+        case 8: return 'G';
+        case 9:
+        case 10: return 'A';
+        case 11: return 'B';
     }
     return '\0';
 }
@@ -1904,16 +2368,16 @@ const char *valueToOctave(const byte &noteIn) {
     octave = (noteIn + 9) / 12;
 
     switch (octave) {
-    case 0: return "-1";
-    case 1: return "0";
-    case 2: return "1";
-    case 3: return "2";
-    case 4: return "3";
-    case 5: return "4";
-    case 6: return "5";
-    case 7: return "6";
-    case 8: return "7";
-    case 9: return "8";
+        case 0: return "-1";
+        case 1: return "0";
+        case 2: return "1";
+        case 3: return "2";
+        case 4: return "3";
+        case 5: return "4";
+        case 6: return "5";
+        case 7: return "6";
+        case 8: return "7";
+        case 9: return "8";
     }
     return '\0';
 }
@@ -1932,31 +2396,31 @@ char valueToSharp(const byte &noteIn) {
 const char *tuningToChar(const byte &tuning) {
 
     switch (tuning) {
-    case 1: return "C";
-    case 2: return "C#";
-    case 3: return "D";
-    case 4: return "D#";
-    case 5: return "E";
-    case 6: return "F";
-    case 7: return "F#";
-    case 8: return "G";
-    case 9: return "G#";
-    case 10: return "A";
-    case 11: return "A#";
-    case 12: return "B";
-    case 13: return "F";
-    default: return "-";
+        case 1: return "C";
+        case 2: return "C#";
+        case 3: return "D";
+        case 4: return "D#";
+        case 5: return "E";
+        case 6: return "F";
+        case 7: return "F#";
+        case 8: return "G";
+        case 9: return "G#";
+        case 10: return "A";
+        case 11: return "A#";
+        case 12: return "B";
+        case 13: return "F";
+        default: return "-";
     }
 }
 
-inline int sort_desc(const void *cmp1, const void *cmp2) {
+int sort_desc(const void *cmp1, const void *cmp2) {
     // Need to cast the void * to int *
     byte a = ((structKey *)cmp1)->note;
     byte b = ((structKey *)cmp2)->note;
     // The comparison
     return a > b ? -1 : (a < b ? 1 : 0);
 }
-inline int sort_asc(const void *cmp1, const void *cmp2) {
+int sort_asc(const void *cmp1, const void *cmp2) {
     // Need to cast the void * to int *
     byte a = ((structKey *)cmp1)->note;
     byte b = ((structKey *)cmp2)->note;

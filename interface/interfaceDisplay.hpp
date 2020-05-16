@@ -1,10 +1,10 @@
 #pragma once
 
 // #include "Adafruit_ST7735_and_ST7789_Library/Adafruit_ST7735.h" // Hardware-specific library for ST7735 - CHANGE SPI SPEED
-#include "src/Adafruit_ST7735_and_ST7789_Library/Adafruit_ST7735.h" // Hardware-specific library for ST7735 - CHANGE SPI SPEED
 #include "interfaceData.hpp"
 #include "interfaceMapping.hpp"
-#include <Adafruit_GFX.h> // Core graphics library
+#include "src/Adafruit_ST7735_and_ST7789_Library/Adafruit_ST7735.h" // Hardware-specific library for ST7735 - CHANGE SPI SPEED
+#include <Adafruit_GFX.h>                                           // Core graphics library
 #include <SPI.h>
 
 // Include extra Fonts
@@ -48,8 +48,8 @@ class DispBuffer16 : public Adafruit_GFX {
     uint16_t *getBuffer(void) const { return buffer; }   // return buffer 1 pointer
     uint16_t *getBuffer2(void) const { return buffer2; } // return buffer 2 pointer
 
-    void copyBuffer(uint16_t index);   // copy value from buffer 1 to 2
-    int compareBuffer(uint16_t index); // compare value from both buffers
+    inline void copyBuffer(uint16_t index);    // copy value from buffer 1 to 2
+    inline bool compareBuffer(uint16_t index); // compare value from both buffers
 
     uint16_t *buffer2;
     uint16_t *buffer;

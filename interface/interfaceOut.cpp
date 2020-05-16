@@ -15,24 +15,50 @@
 #define PRINT2(x, y)
 #endif
 
-void Channel::setGate(byte state) { digitalWrite(gatePin, state); }
+void Channel::setGate(byte state) {
+    digitalWrite(gatePin, state);
+}
 
-void Channel::setTrigger(byte state) { digitalWrite(triggerPin, state); }
+void Channel::setTrigger(byte state) {
+    digitalWrite(triggerPin, state);
+}
 
 void Channel::setNote(byte note) {
-    unsigned int mV =
-        (unsigned int)testInt(((float)note * (NOTESCALING + ((float)DATAOBJ.get(FrankData::noteScaleOffset, outputChannel) - CALOFFSET) / 500.0f) +
-                               DATAOBJ.get(FrankData::noteCalOffset, outputChannel, note) - CALOFFSET),
-                              0, 4095);
+    unsigned int mV = (unsigned int)testInt(((float)note * (NOTESCALING + ((float)DATAOBJ.get(FrankData::noteScaleOffset, outputChannel)) / 500.0f) +
+                                             DATAOBJ.get(FrankData::noteCalOffset, outputChannel, note)),
+                                            0, 4095);
     // PRINT("Output Note mv ");
     // PRINTLN(mV);
     setVoltage(noteDac, noteDacChannel, 2, mV);
 }
 
-void Channel::setCV(int value) { // 0 - 1024 -> -5V -> 5V
-    unsigned int mV = (unsigned int)(testInt((1023-value) * 4 + (DATAOBJ.get(FrankData::cvCalOffset, outputChannel) - CALOFFSET) * 4, 0, 4095));
-    // PRINT("Output CV mv ");
-    // PRINTLN(mV);
+void Channel::setCV(int value) { // 0 - 2048 -> -5V -> 5V
+
+    int16_t calOffset = DATAOBJ.get(FrankData::cvCalOffset, outputChannel);
+
+    if (DATAOBJ.get(FrankData::outputCc, outputChannel) == 2) {
+        if (value < 0) {
+            value =
+                map(value, -2048, 0, DATAOBJ.get(FrankData::cvPitchbendCalLower, outputChannel) + DATAOBJ.get(FrankData::cvCalLower, outputChannel),
+                    2048 + calOffset);
+        }
+        else {
+            value = map(value, 0, 2047, 2048 + calOffset,
+                        4095 + DATAOBJ.get(FrankData::cvPitchbendCalUpper, outputChannel) + DATAOBJ.get(FrankData::cvCalUpper, outputChannel));
+        }
+    }
+    else {
+        if (value < 0) {
+            value = map(value, -2048, 0, DATAOBJ.get(FrankData::cvCalLower, outputChannel), 2048 + calOffset);
+        }
+        else {
+            value = map(value, 0, 2047, 2048 + calOffset, 4095 + DATAOBJ.get(FrankData::cvCalUpper, outputChannel));
+        }
+    }
+
+    unsigned int mV = (unsigned int)testInt((4095 - value), 0, 4095);
+    PRINT("Output CV mv ");
+    PRINTLN(value);
     setVoltage(cvDac, cvDacChannel, 2, mV);
 }
 
@@ -77,16 +103,15 @@ void setVoltage(int dacpin, bool channel, bool gain, unsigned int mV) // channel
     SPI.endTransaction();
 }
 
+void clock::setClock(byte state) {
+    digitalWrite(pin, state);
+}
 
-    void clock::setClock(byte state){
-        digitalWrite(pin, state);
-    }
+void ClkLed::init(byte pin) {
+    clkLed = pin;
+    pinMode(pin, OUTPUT);
+}
 
-    void ClkLed::init(byte pin) {
-        clkLed = pin;
-        pinMode(pin, OUTPUT);
-    }
-
-    void ClkLed::setClkLed(byte state) {
-        digitalWrite(clkLed, state);
-    }
+void ClkLed::setClkLed(byte state) {
+    digitalWrite(clkLed, state);
+}
