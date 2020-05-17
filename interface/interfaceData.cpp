@@ -1366,6 +1366,9 @@ int16_t FrankData::get(const frankData &frankDataType, const byte &array) {
         case seqTuning: return seq[array].sequence.tuning;
         case seqGateLengthOffset: return seq[array].sequence.gateLengthOffset;
 
+        case seqOctaveOffset: return config.routing[array].seqOctaves;
+        case seqNoteOffset: return config.routing[array].seqNotes;
+
         case liveCalNote: return stat.noteToCalibrate;
         case liveCalCv: return stat.cvToCalibrate;
 
@@ -1482,7 +1485,10 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data, const b
 
         case liveCalNote: stat.noteToCalibrate = testByte(data, 0, NOTERANGE - 1); break;
         case liveCalCv: stat.cvToCalibrate = testInt(data, -1, 2); break;
-        case liveMidiUpdateWaitTimer: liveMidi[array].midiUpdateWaitTimer = data;
+        case liveMidiUpdateWaitTimer: liveMidi[array].midiUpdateWaitTimer = data; break;
+
+        case seqOctaveOffset: config.routing[array].seqOctaves = testInt(data, -5, 5); break;
+        case seqNoteOffset: config.routing[array].seqNotes = testInt(data, -12, 12); break;
 
         case seqTuning: seq[array].sequence.tuning = testByte(data, 0, 13); break;
         case seqGateLengthOffset: seq[array].sequence.gateLengthOffset = testInt(data, -100, 100); break;
@@ -1585,6 +1591,8 @@ void FrankData::toggle(const frankData &frankDataType) {
     static int16_t bufferedGateLengthOffset[OUTPUTS] = {0, 0};
     static int16_t bufferedLiveMode[OUTPUTS] = {0, 0};
     static int16_t bufferedOutputSource[OUTPUTS] = {0, 0};
+    static int16_t bufferedSeqNotes[OUTPUTS] = {0, 0};
+    static int16_t bufferedSeqOctaves[OUTPUTS] = {0, 0};
     int16_t temp;
 
     switch (frankDataType) {
@@ -1668,12 +1676,21 @@ void FrankData::toggle(const frankData &frankDataType) {
             config.routing[stat.screen.channel].outSource = bufferedOutputSource[stat.screen.channel];
             bufferedOutputSource[stat.screen.channel] = temp;
             break;
-
+        case seqOctaveOffset:
+            temp = config.routing[stat.screen.channel].seqOctaves;
+            config.routing[stat.screen.channel].seqOctaves = bufferedSeqOctaves[stat.screen.channel];
+            bufferedSeqOctaves[stat.screen.channel] = temp;
+            break;
+        case seqNoteOffset:
+            temp = config.routing[stat.screen.channel].seqNotes;
+            config.routing[stat.screen.channel].seqNotes = bufferedSeqNotes[stat.screen.channel];
+            bufferedSeqNotes[stat.screen.channel] = temp;
         case seqGateLengthOffset:
             temp = seq[config.routing[stat.screen.channel].outSource - 1].sequence.gateLengthOffset;
             seq[config.routing[stat.screen.channel].outSource - 1].sequence.gateLengthOffset = bufferedGateLengthOffset[stat.screen.channel];
             bufferedGateLengthOffset[stat.screen.channel] = temp;
             break;
+
         case seqTuning: seq[config.routing[stat.screen.channel].outSource - 1].sequence.tuning = 0; break;
 
         case nbPages: config.routing[stat.screen.channel].nbPages = 8; break;
@@ -1716,6 +1733,8 @@ void FrankData::toggle(const frankData &frankdataType, const byte &array) {
         case seqResetCC: seqResetAllCC(array); break;
         case copySeq: seqCopy(array, !array); break; // works only for two seq objects
         case resetStepCounters: resetAllStepCounter(); break;
+        case seqOctaveOffset: setStr("Oct+-"); break;
+        case seqNoteOffset: setStr("Not+-"); break;
         default: PRINTLN("FrankData toggle(frankData frankDataType, const byte &array), no case found");
     }
 }
@@ -1745,6 +1764,8 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
         case seqResetCC: setStr("Rs CC"); break;
         case seqOctaveUp: setStr("OctUp"); break;
         case seqOctaveDown: setStr("OctDn"); break;
+        case seqOctaveOffset: setStr("Oct+-"); break;
+        case seqNoteOffset: setStr("Not+-"); break;
 
         case midiSource: setStr("Midi"); break;
         case nbPages: setStr("Pages"); break;
@@ -1894,6 +1915,9 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType, const byte 
         case stepArp:
         case nbPages:
         case seqGateLengthOffset:
+
+        case seqOctaveOffset:
+        case seqNoteOffset:
 
         case outputRatchet:
         case outputArpOctave:

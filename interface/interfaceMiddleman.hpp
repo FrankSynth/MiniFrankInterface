@@ -51,3 +51,5 @@ void closeGates();
 void updateClockOut();
 void closeTriggers();
 void reactivateRatchet();
+
+int16_t changeNote(const int16_t &value, const int16_t &change, const int16_t &minimum, const int16_t &maximum);

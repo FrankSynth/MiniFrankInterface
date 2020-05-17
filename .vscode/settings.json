@@ -48,7 +48,8 @@
         "avr_emulation.h": "c",
         "inttypes.h": "c",
         "avr_functions.h": "c",
-        "scoped_allocator": "cpp"
+        "scoped_allocator": "cpp",
+        "usb_names.h": "c"
     },
     "C_Cpp.intelliSenseEngineFallback": "Disabled",
     "C_Cpp.errorSquiggles": "Enabled",

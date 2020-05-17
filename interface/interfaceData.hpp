@@ -29,6 +29,8 @@ typedef struct {
     int8_t arpOctaves = 0; // Octaves -3 ... 0 ... 3
     byte stepSpeed = 2;    // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = 1 bar, 5 = 2 bars
     byte nbPages = 8;      // nb Pages  1-16
+    int8_t seqOctaves = 0; // Seq Octave Offset
+    int8_t seqNotes = 0;   // Seq single Note Offset
 } structOutputRouting;
 
 typedef struct {
@@ -95,9 +97,6 @@ typedef struct {
 
     byte receivedNewSPP = 1;
 
-    // byte receivedNewMidiDataArp = 0;
-
-    // uint32_t last16thTime = 0;
     uint16_t bpmPot = 120; // sync= 0 ? 0-1023 bpm log : divider /4, /2, 1, *2, *4 ; Range is 0-1023 (not yet implemented)
 } structStatus;
 
@@ -137,7 +136,7 @@ class PressedNotesList {
     PressedNotesElement *getElement(const byte &element);
 };
 
-// save live midi data
+// live midi data, won't be saved between sessions
 class LiveMidi {
   public:
     PressedNotesList noteList; // Key List for Live Midi
@@ -276,6 +275,8 @@ class FrankData {
         seqResetCC,
         seqOctaveUp,
         seqOctaveDown,
+        seqOctaveOffset,
+        seqNoteOffset,
         copySeq,
         stepOnPage,
         currentPageNumber,
@@ -338,7 +339,6 @@ class FrankData {
         liveLatestKey,
         liveHighestKey,
         liveLowestKey,
-        // liveNewMidiDataArp,
         liveMidiUpdateWaitTimer,
 
     };

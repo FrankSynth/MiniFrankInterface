@@ -1,7 +1,7 @@
 #include "interfaceMiddleman.hpp"
 
 // Debug logging
-#define DEBUG 0
+#define DEBUG 1
 
 #if DEBUG == 1
 #define PRINTLN(x) Serial.println(x)
@@ -56,7 +56,7 @@ void updateNoteOut() {
 
                 outputChannel[output].setNote(newNote);
                 previousOutputs[output].note = newNote;
-                PRINT("set new Calib Note ");
+                // PRINT("set new Calib Note ");
                 PRINTLN(newNote);
                 outputChannel[output].setGate(1);
                 previousOutputs[output].gateActivated = 1;
@@ -70,7 +70,7 @@ void updateNoteOut() {
     for (byte output = 0; output < OUTPUTS; output++) {
 
         if (DATAOBJ.get(FrankData::liveTriggered, output)) {
-            PRINTLN("new note triggered");
+            // PRINTLN("new note triggered");
             byte newNote;
             byte seqStep = DATAOBJ.get(FrankData::stepSeq, output);
             float gateDuration = 0.5f;
@@ -107,6 +107,12 @@ void updateNoteOut() {
                 }
 
                 newNote = DATAOBJ.get(FrankData::seqNote, DATAOBJ.get(FrankData::outputSource, output) - 1, seqStep);
+
+                newNote = changeNote(newNote, DATAOBJ.get(FrankData::seqNoteOffset, output), 0, NOTERANGE);
+
+                for (int8_t octaves = abs(DATAOBJ.get(FrankData::seqOctaveOffset, output)); octaves > 0; octaves--) {
+                    newNote = changeInt(newNote, DATAOBJ.get(FrankData::seqOctaveOffset, output) > 0 ? 12 : -12, 0, NOTERANGE, 0);
+                }
 
                 gateDuration =
                     (float)testInt((int16_t)DATAOBJ.get(FrankData::seqGateLength, DATAOBJ.get(FrankData::outputSource, output) - 1, seqStep) +
@@ -181,8 +187,8 @@ void updateNoteOut() {
             if (newNote != previousOutputs[output].note) {
                 previousOutputs[output].note = newNote;
                 outputChannel[output].setNote(newNote);
-                // PRINT("set new Note ");
-                // PRINTLN(newNote);
+                PRINT("set new Note ");
+                PRINTLN(newNote);
             }
 
             DATAOBJ.set(FrankData::liveTriggered, 0, output);
@@ -194,7 +200,7 @@ void updateNoteOut() {
 void reactivateRatchet() {
     for (byte output = 0; output < OUTPUTS; output++) {
         if (previousOutputs[output].ratchet && (DATAOBJ.get(FrankData::outputArp, output) || DATAOBJ.get(FrankData::outputSource, output))) {
-            PRINTLN("reactivate ratchet");
+            // PRINTLN("reactivate ratchet");
 
             if (millis() >= previousOutputs[output].reactivateTime) {
 
@@ -434,5 +440,19 @@ void closeTriggers() {
                 // PRINTLN("Trigger closed");
             }
         }
+    }
+}
+
+int16_t changeNote(const int16_t &value, const int16_t &change, const int16_t &minimum, const int16_t &maximum) {
+
+    if (value + change > maximum) { // test max
+
+        return value + change - 12;
+    }
+    else if (value + change < minimum) { // test min
+        return value + change + 12;
+    }
+    else {
+        return (value + change); // return new value
     }
 }

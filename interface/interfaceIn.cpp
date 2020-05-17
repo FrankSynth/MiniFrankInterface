@@ -107,6 +107,9 @@ void inputControls::rotate(byte id, byte dir) {
         case FrankData::cvPitchbendCalLower:
         case FrankData::cvPitchbendCalUpper:
 
+        case FrankData::seqOctaveOffset:
+        case FrankData::seqNoteOffset:
+
         case FrankData::liveCalNote:
         case FrankData::noteScaleOffset:
 
