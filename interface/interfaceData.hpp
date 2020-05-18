@@ -100,6 +100,9 @@ typedef struct {
 
     byte receivedNewSPP = 1;
 
+    byte editMode = 0;
+    byte editStep = 0;
+
     uint16_t bpmPot = 120; // sync= 0 ? 0-1023 bpm log : divider /4, /2, 1, *2, *4 ; Range is 0-1023 (not yet implemented)
 } structStatus;
 
@@ -269,6 +272,7 @@ class FrankData {
         nbPages,
         stepSeq,
         activePage,
+        activeEditPage,
         seqResetNotes,
         seqResetGates,
         seqResetGateLengths,
@@ -279,6 +283,7 @@ class FrankData {
         seqNoteOffset,
         copySeq,
         stepOnPage,
+        stepOnEditPage,
         currentPageNumber,
         seqPageEndOffset,
 
@@ -324,6 +329,8 @@ class FrankData {
         load,
         save,
         pulseLength,
+        editMode,
+        editStep,
 
         // liveMidi, needs value, array
         liveMod,

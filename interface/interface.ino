@@ -198,6 +198,8 @@ void loop() {
 
     // read BPM knob
     cntrl.readBPMSpeed();
+
+    cntrl.checkPushedButtons();
 }
 
 void ISRSync() {

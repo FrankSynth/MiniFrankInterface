@@ -608,21 +608,32 @@ void FrankData::increaseBpmCount() {
 
 void FrankData::increaseStepCounters(const byte &channel) {
 
-    bool steppingDone = false;
-
-    while (!steppingDone) {
-
-        stat.bpmClockCounter++;
-        if (stat.bpmClockCounter > 2303) {
-            stat.bpmClockCounter = 0;
+    if (stat.editMode) {
+        if (config.routing[channel].nbPages <= ((stat.editStep + STEPSPERPAGE) / STEPSPERPAGE)) { // newPage above number of pages
+            stat.editStep = 0;                                                                    // set stepSeq[array] 0
         }
+        else {                             // new page is valid.
+            stat.editStep += STEPSPERPAGE; // increase Step
+        }
+    }
+    else {
 
-        for (byte out = 0; out < OUTPUTS; out++) {
-            if (checkClockStepping(out, stepSpeed)) {
+        bool steppingDone = false;
 
-                increaseSeqStep(out);
-                if (channel == out) {
-                    steppingDone = true;
+        while (!steppingDone) {
+
+            stat.bpmClockCounter++;
+            if (stat.bpmClockCounter > 2303) {
+                stat.bpmClockCounter = 0;
+            }
+
+            for (byte out = 0; out < OUTPUTS; out++) {
+                if (checkClockStepping(out, stepSpeed)) {
+
+                    increaseSeqStep(out);
+                    if (channel == out) {
+                        steppingDone = true;
+                    }
                 }
             }
         }
@@ -631,21 +642,37 @@ void FrankData::increaseStepCounters(const byte &channel) {
 
 void FrankData::decreaseStepCounters(const byte &channel) {
 
-    bool steppingDone = false;
-
-    while (!steppingDone) {
-
-        stat.bpmClockCounter--;
-        if (stat.bpmClockCounter < 0) {
-            stat.bpmClockCounter = 2303;
+    if (stat.editMode) {
+        if (stat.editStep == 0) {                                                 // we jump to the last page?
+            stat.editStep = (config.routing[channel].nbPages - 1) * STEPSPERPAGE; // set to max stepSeq[array]
         }
+        else {                                                                                       // we make a pageJump?
+            if (config.routing[channel].nbPages < ((stat.editStep - STEPSPERPAGE) / STEPSPERPAGE)) { // newPage above number of pages
+                stat.editStep = (config.routing[channel].nbPages - 1) * STEPSPERPAGE;                // set jump to last stepSeq[array]
+            }
+            else {                             // new page is valid.
+                stat.editStep -= STEPSPERPAGE; // decrease Step
+            }
+        }
+    }
+    else {
 
-        for (byte out = 0; out < OUTPUTS; out++) {
-            if (checkClockStepping(out, stepSpeed)) {
+        bool steppingDone = false;
 
-                decreaseSeqStep(out);
-                if (channel == out) {
-                    steppingDone = true;
+        while (!steppingDone) {
+
+            stat.bpmClockCounter--;
+            if (stat.bpmClockCounter < 0) {
+                stat.bpmClockCounter = 2303;
+            }
+
+            for (byte out = 0; out < OUTPUTS; out++) {
+                if (checkClockStepping(out, stepSpeed)) {
+
+                    decreaseSeqStep(out);
+                    if (channel == out) {
+                        steppingDone = true;
+                    }
                 }
             }
         }
@@ -792,9 +819,9 @@ void FrankData::decreaseSeqStep(const byte &array) {
         if (liveMidi[array].stepSeq == 0) {                                             // we jump to the last page?
             liveMidi[array].stepSeq = config.routing[array].nbPages * STEPSPERPAGE - 1; // set to max stepSeq[array]
         }
-        else if (!liveMidi[array].stepSeq % STEPSPERPAGE) {                                 // we make a pageJump?
-            if (config.routing[array].nbPages > (liveMidi[array].stepSeq / STEPSPERPAGE)) { // newPage above number of pages
-                liveMidi[array].stepSeq = config.routing[array].nbPages * STEPSPERPAGE - 1; // set jump to last stepSeq[array]
+        else if (!(liveMidi[array].stepSeq % STEPSPERPAGE)) {                                     // we make a pageJump?
+            if (config.routing[array].nbPages < ((liveMidi[array].stepSeq - 1) / STEPSPERPAGE)) { // newPage above number of pages
+                liveMidi[array].stepSeq = config.routing[array].nbPages * STEPSPERPAGE - 1;       // set jump to last stepSeq[array]
             }
             else {                         // new page is valid.
                 liveMidi[array].stepSeq--; // decrease Step
@@ -803,6 +830,7 @@ void FrankData::decreaseSeqStep(const byte &array) {
         else {
             liveMidi[array].stepSeq--; // decrease Step
         }
+
     } while (STEPSPERPAGE - 1 + seq[SEQCHANNEL].sequence.pageEndOffset < liveMidi[array].stepSeq % STEPSPERPAGE);
 
     if (config.routing[array].outSource)
@@ -1279,6 +1307,11 @@ int16_t FrankData::get(const frankData &frankDataType) {
         case bpmClockCount: return stat.bpmClockCounter;
         case save:
         case load: return stat.loadSaveSlot;
+        case editMode: return stat.editMode;
+        case editStep: return stat.editStep;
+        case activeEditPage: return (stat.editStep / STEPSPERPAGE);
+        case stepOnEditPage: return (stat.editStep - (get(activeEditPage) * STEPSPERPAGE));
+
         case pulseLength:
             return config.pulseLength;
             // case liveNewMidiDataArp: return stat.receivedNewMidiDataArp;
@@ -1333,7 +1366,9 @@ int16_t FrankData::get(const frankData &frankDataType, const byte &array) {
         case stepSeq: return liveMidi[array].stepSeq;
         case stepSpeed: return config.routing[array].stepSpeed;
         case activePage: return (liveMidi[array].stepSeq / STEPSPERPAGE);
+
         case stepOnPage: return (liveMidi[array].stepSeq - (get(activePage, array) * STEPSPERPAGE));
+
         case currentPageNumber: return getCurrentPageNumber(array);
 
         case seqTuning: return seq[array].sequence.tuning;
@@ -1408,6 +1443,13 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data) {
             break;
         case load:
         case save: stat.loadSaveSlot = testByte(data, 0, SAVESLOTS - 1); break;
+        case editMode:
+            stat.editMode = testByte(data, 0, 1);
+            stat.editStep = get(activePage, stat.screen.channel) * 8;
+            break;
+
+        case editStep: stat.editStep = testByte(data, 0, STEPSPERPAGE * config.routing[stat.screen.channel].nbPages - 1); break;
+
         case pulseLength: config.pulseLength = testInt(data, 0, 1000); break;
         case none: break;
         default: PRINTLN("FrankData set(frankData frankDataType, byte data  ), no case found");
@@ -1576,6 +1618,11 @@ void FrankData::toggle(const frankData &frankDataType) {
         case direction: config.direction = toggleValue(config.direction); break;
         case play: stat.play = toggleValue(stat.play); break;
         case rec: stat.rec = toggleValue(stat.rec); break;
+        case editMode:
+            stat.editMode = toggleValue(stat.editMode);
+            stat.editStep = get(activePage, stat.screen.channel) * 8;
+
+            break;
         case bpmSync:
             stat.bpmSync = toggleValue(stat.bpmSync);
             updateClockCounter(true);
@@ -1800,6 +1847,8 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
         case load: setStr("Load"); break;
         case save: setStr("Save"); break;
         case pulseLength: setStr("PulsL"); break;
+        case editMode: setStr("EditM"); break;
+        case editStep: setStr("EditS"); break;
 
         case liveMod: setStr("Mod"); break;
         case livePitchbend: setStr("PB"); break;
@@ -2055,6 +2104,14 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType, const byte 
             switch (stat.play) {
                 case 0: setStr("STOP"); break;
                 case 1: setStr("PLAY"); break;
+                default: setStr("ERR");
+            }
+            break;
+
+        case editMode:
+            switch (stat.editMode) {
+                case 0: setStr("OFF"); break;
+                case 1: setStr("ON"); break;
                 default: setStr("ERR");
             }
             break;

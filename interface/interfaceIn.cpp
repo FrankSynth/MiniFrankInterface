@@ -24,6 +24,10 @@ void inputControls::encode(byte message) {
             push(id, message & B00010000);
             PRINT("Push : ");
         }
+        else {
+            PRINT("Release : ");
+            release(id, message & B00010000);
+        }
     }
     else { // seems to be an encoder
         PRINT("Encoder : ");
@@ -35,11 +39,19 @@ void inputControls::encode(byte message) {
 void inputControls::rotate(byte id, byte dir) {
     PRINTLN(id);
     PRINT("Direction: ");
-    PRINTLN(dir);
+    PRINT(dir);
 
     FrankData::frankData mappedID = mapping(id);
 
-    id = id + DATAOBJ.get(FrankData::activePage, CHANNEL) * 8;
+    if (DATAOBJ.get(FrankData::editMode)) {
+        id = id + DATAOBJ.get(FrankData::activeEditPage) * 8;
+    }
+    else {
+        id = id + DATAOBJ.get(FrankData::activePage, CHANNEL) * 8;
+    }
+
+    PRINT(" ,step: ");
+    PRINTLN(id);
 
     switch (mappedID) {
 
@@ -208,10 +220,17 @@ void inputControls::rotate(byte id, byte dir) {
             }
     }
 }
+
 void inputControls::push(byte id, byte push) { // switch message
 
     FrankData::frankData mappedID = mappingPush(id);
-    id = id + DATAOBJ.get(FrankData::activePage, CHANNEL) * 8;
+
+    if (DATAOBJ.get(FrankData::editMode)) {
+        id = id + DATAOBJ.get(FrankData::activeEditPage) * 8;
+    }
+    else {
+        id = id + DATAOBJ.get(FrankData::activePage, CHANNEL) * 8;
+    }
 
     PRINTLN(id);
     PRINT("Mapping:");
@@ -219,10 +238,49 @@ void inputControls::push(byte id, byte push) { // switch message
 
     switch (mappedID) {
         case FrankData::noteCalOffset: DATAOBJ.toggle(mappedID, CHANNEL, DATAOBJ.get(FrankData::liveCalNote)); break;
+        case FrankData::screenRouting:
+            screenRoutingPressedTimer = 0;
+            screenRoutingPressed = 1;
+            break;
 
         case GATE: DATAOBJ.toggle(mappedID, (byte)SEQCHANNEL, id); break;
 
         default: DATAOBJ.toggle(mappedID);
+    }
+}
+
+void inputControls::release(byte id, byte push) { // switch message
+
+    FrankData::frankData mappedID = mappingPush(id);
+
+    if (DATAOBJ.get(FrankData::editMode)) {
+        id = id + DATAOBJ.get(FrankData::activeEditPage) * 8;
+    }
+    else {
+        id = id + DATAOBJ.get(FrankData::activePage, CHANNEL) * 8;
+    }
+
+    PRINTLN(id);
+    PRINT("Mapping:");
+    PRINTLN(mappedID);
+
+    switch (mappedID) {
+        case FrankData::screenRouting:
+            if (screenRoutingPressed) {
+                DATAOBJ.toggle(mappedID);
+                screenRoutingPressed = 0;
+            }
+            break;
+        default: break;
+    }
+}
+
+void inputControls::checkPushedButtons() {
+    if (screenRoutingPressed) {
+        if (screenRoutingPressedTimer > BUTTONPRESSTIME) {
+            screenRoutingPressed = 0;
+            DATAOBJ.toggle(FrankData::editMode);
+        }
     }
 }
 

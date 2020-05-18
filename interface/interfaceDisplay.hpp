@@ -32,7 +32,9 @@
 
 #define GREYWHITE 0xC638 // Hell Blau
 #define GREY 0x39E7
-#define GREEN 0x4208    // Grün
+#define GREEN 0x04E0 // Grün
+#define MEDIUMGREY 0x4208
+#define LIGHTGREY 0x7BEF
 #define DARKGREY 0x2945 // linien
 #define BACKGROUND 0x3186
 
