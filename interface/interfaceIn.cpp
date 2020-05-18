@@ -94,6 +94,12 @@ void inputControls::rotate(byte id, byte dir) {
         case FrankData::screenMainMenu:
         case FrankData::screenOutputChannel:
         case FrankData::screenConfig:
+        case FrankData::resetStepCounters:
+        case FrankData::seqResetCC:
+        case FrankData::seqResetGateLengths:
+        case FrankData::seqResetGates:
+        case FrankData::seqResetNotes:
+        case FrankData::copySeq:
         case FrankData::saveCal: break;
 
         // Type, Channel;

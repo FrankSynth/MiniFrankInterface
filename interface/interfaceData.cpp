@@ -1716,6 +1716,7 @@ void FrankData::toggle(const frankData &frankDataType) {
             temp = config.routing[stat.screen.channel].seqNotes;
             config.routing[stat.screen.channel].seqNotes = bufferedSeqNotes[stat.screen.channel];
             bufferedSeqNotes[stat.screen.channel] = temp;
+            break;
         case seqGateLengthOffset:
             temp = seq[config.routing[stat.screen.channel].outSource - 1].sequence.gateLengthOffset;
             seq[config.routing[stat.screen.channel].outSource - 1].sequence.gateLengthOffset = bufferedGateLengthOffset[stat.screen.channel];
