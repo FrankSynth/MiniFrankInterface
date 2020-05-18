@@ -263,7 +263,7 @@ void Display::BodyTemplateSeq() { // has 2x4 dataField
         for (int y = 0; y < 2; y++) {
             byte dataField = x + y * 4; // current DataField
 
-            byte dataFieldIndex = x + y * 4 + DATAOBJ.get(FrankData::activePage, CHANNEL) * 8; // current index
+            byte dataFieldIndex = dataField + DATAOBJ.get(FrankData::activePage, CHANNEL) * 8; // current index
 
             /////Draw the squares/////
             bufferBody->drawRect(x * 40, y * 36 - 1 + y, 40, 38, DARKGREY); //
@@ -275,10 +275,17 @@ void Display::BodyTemplateSeq() { // has 2x4 dataField
 
             // Font Color depends on Gate status
 
-            bufferBody->setTextColor(WHITE, BACKGROUND); // Note  Color GateOn
+            if (dataField < STEPSPERPAGE + DATAOBJ.get(FrankData::seqPageEndOffset, SEQCHANNEL)) {
+                bufferBody->setTextColor(WHITE, BACKGROUND); // Note  Color GateOn
+            }
+            else {
+                bufferBody->setTextColor(GREY, BACKGROUND); // Note  Color GateOn
+            }
 
             // PRINT("DataFieldType:");
             // PRINTLN(mapping(dataField));
+
+            // check if page end has offset
 
             // Data is NOTE type
             if (mapping(dataField) == NOTE) {

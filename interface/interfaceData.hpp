@@ -52,6 +52,7 @@ typedef struct {
     byte gateLength[LENGTH]; //
     byte tuning;             // tuning offset
     int8_t gateLengthOffset; // 100 = no offset
+    int8_t pageEndOffset;    // shorten pages
 } structSequence;
 
 // Settings struct for all settings that need to be saved permanently
@@ -94,8 +95,8 @@ typedef struct {
 
     byte bpmSync = 0; // Sync Active
     // byte midiClockCount = 5;      // counts incoming midiclock signals (6 ticks per 16th)
-    byte bpm16thCount = 0;        // general 16th counter for clock outputs
-    uint16_t bpmClockCounter = 0; // Midiclock Counter counting up to up to 2304 (common multiplier of all possible timings)
+    byte bpm16thCount = 0;       // general 16th counter for clock outputs
+    int16_t bpmClockCounter = 0; // Midiclock Counter counting up to up to 2304 (common multiplier of all possible timings)
 
     byte receivedNewSPP = 1;
 
@@ -279,6 +280,7 @@ class FrankData {
         copySeq,
         stepOnPage,
         currentPageNumber,
+        seqPageEndOffset,
 
         // general Settings, needs value
         midiSource,

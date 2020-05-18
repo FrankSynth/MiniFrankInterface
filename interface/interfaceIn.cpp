@@ -143,6 +143,7 @@ void inputControls::rotate(byte id, byte dir) {
             }
 
             break;
+        case FrankData::seqPageEndOffset:
         case FrankData::seqTuning:
 
             if (dir) {
@@ -227,12 +228,14 @@ void inputControls::push(byte id, byte push) { // switch message
 
 void inputControls::readSwitches() {
 
-    PRINT("INPUT: SYNC set: ");
-    PRINTLN(!digitalRead(SWSYNC));
-    PRINT("INPUT: SEQ set: ");
-    PRINTLN(digitalRead(SWSEQ));
-    PRINT("INPUT: REC set: ");
-    PRINTLN(!digitalRead(SWREC));
+    // PRINTLN("Interrupt");
+
+    // PRINT("INPUT: SYNC set: ");
+    // PRINTLN(!digitalRead(SWSYNC));
+    // PRINT("INPUT: SEQ set: ");
+    // PRINTLN(digitalRead(SWSEQ));
+    // PRINT("INPUT: REC set: ");
+    // PRINTLN(!digitalRead(SWREC));
 
     DATAOBJ.set(FrankData::bpmSync, !digitalRead(SWSYNC));
     DATAOBJ.set(FrankData::screenOutputChannel, digitalRead(SWSEQ));
@@ -240,10 +243,10 @@ void inputControls::readSwitches() {
 }
 
 void inputControls::readSync() {
-    DATAOBJ.set(FrankData::bpmSync, digitalRead(SWSYNC));
+    DATAOBJ.set(FrankData::bpmSync, !digitalRead(SWSYNC));
 }
 void inputControls::readRec() {
-    DATAOBJ.set(FrankData::rec, digitalRead(SWREC));
+    DATAOBJ.set(FrankData::rec, !digitalRead(SWREC));
 }
 
 void inputControls::readSeq() {

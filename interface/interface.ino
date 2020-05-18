@@ -138,9 +138,9 @@ void setup() {
         DATAOBJ.set(FrankData::error, 1); // set error status
     }
 
-    attachInterrupt(digitalPinToInterrupt(SWSYNC), ISRSwitch, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(SWSEQ), ISRSwitch, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(SWREC), ISRSwitch, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(SWSYNC), ISRSync, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(SWSEQ), ISRSeq, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(SWREC), ISRRec, CHANGE);
 
     // Set timer interrupt (display refresh)
     // myTimerLCD.begin(updateDisplay, 17000); // display refresh
@@ -200,7 +200,12 @@ void loop() {
     cntrl.readBPMSpeed();
 }
 
-void ISRSwitch() {
-    cntrl.readSwitches();
-    //   PRINTLN("INPUT: SWChange");
+void ISRSync() {
+    cntrl.readSync();
+}
+void ISRRec() {
+    cntrl.readRec();
+}
+void ISRSeq() {
+    cntrl.readSeq();
 }

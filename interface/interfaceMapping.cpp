@@ -39,12 +39,12 @@ FrankData::frankData mappingSeqConfig2[] = {FrankData::resetStepCounters,
                                             FrankData::copySeq,
                                             FrankData::nbPages,
                                             FrankData::seqTuning,
-                                            FrankData::seqResetGateLengths,
+                                            FrankData::seqPageEndOffset,
                                             SUBSCREEN,
                                             STEP}; // CV Config Mapping
 FrankData::frankData mappingSeqConfig2Push[] = {
-    FrankData::resetStepCounters, FrankData::seqResetCC, FrankData::seqResetNotes,       FrankData::seqResetGates, FrankData::copySeq,
-    FrankData::nbPages,           FrankData::seqTuning,  FrankData::seqResetGateLengths, FrankData::screenRouting, PLAY}; // GATE Mapping Push
+    FrankData::resetStepCounters, FrankData::seqResetCC, FrankData::seqResetNotes,    FrankData::seqResetGates, FrankData::copySeq,
+    FrankData::nbPages,           FrankData::seqTuning,  FrankData::seqPageEndOffset, FrankData::screenRouting, PLAY}; // GATE Mapping Push
 
 FrankData::frankData mappingSeqNote[] = {NOTE, NOTE, NOTE, NOTE, NOTE, NOTE, NOTE, NOTE, SUBSCREEN, STEP};                    // NOTE Mapping  Rotary
 FrankData::frankData mappingSeqNotePush[] = {GATE, GATE, GATE, GATE, GATE, GATE, GATE, GATE, FrankData::screenRouting, PLAY}; // NOTE Mapping Push

@@ -582,7 +582,7 @@ void FrankData::increaseBpmCount() {
 
     // LCM of all timings is 2304
     stat.bpmClockCounter++;
-    if (stat.bpmClockCounter == 2304) {
+    if (stat.bpmClockCounter > 2303) {
         stat.bpmClockCounter = 0;
     }
 
@@ -606,21 +606,14 @@ void FrankData::increaseBpmCount() {
     }
 }
 
-// void FrankData::increaseBpm16thCount() {
-//     stat.bpm16thCount++;
-//     if (stat.bpm16thCount == 32) {
-//         stat.bpm16thCount = 0;
-//     }
-// }
-
 void FrankData::increaseStepCounters(const byte &channel) {
 
-    uint16_t amount = clockSteppingCounts(config.routing[channel].stepSpeed);
+    bool steppingDone = false;
 
-    for (uint16_t count = 0; count < amount; count++) {
+    while (!steppingDone) {
 
         stat.bpmClockCounter++;
-        if (stat.bpmClockCounter == 2304) {
+        if (stat.bpmClockCounter > 2303) {
             stat.bpmClockCounter = 0;
         }
 
@@ -628,51 +621,35 @@ void FrankData::increaseStepCounters(const byte &channel) {
             if (checkClockStepping(out, stepSpeed)) {
 
                 increaseSeqStep(out);
+                if (channel == out) {
+                    steppingDone = true;
+                }
             }
         }
     }
-    // PRINTLN("---------------increaseStepCounters----------------");
-    // PRINT("current channel ");
-    // PRINTLN(channel);
-    // PRINT("config.routing[0].stepSpeed ");
-    // PRINTLN(config.routing[0].stepSpeed);
-    // PRINT("config.routing[1].stepSpeed ");
-    // PRINTLN(config.routing[1].stepSpeed);
-    // PRINT("amount ");
-    // PRINTLN(amount);
-    // PRINT("stat.bpm16thCount ");
-    // PRINTLN(stat.bpm16thCount);
 }
 
 void FrankData::decreaseStepCounters(const byte &channel) {
 
-    uint16_t amount = clockSteppingCounts(config.routing[channel].stepSpeed);
+    bool steppingDone = false;
 
-    for (byte count = 0; count < amount; count++) {
+    while (!steppingDone) {
 
-        if (stat.bpmClockCounter == 0) {
-            stat.bpmClockCounter = 2304;
-        }
         stat.bpmClockCounter--;
+        if (stat.bpmClockCounter < 0) {
+            stat.bpmClockCounter = 2303;
+        }
 
         for (byte out = 0; out < OUTPUTS; out++) {
             if (checkClockStepping(out, stepSpeed)) {
 
                 decreaseSeqStep(out);
+                if (channel == out) {
+                    steppingDone = true;
+                }
             }
         }
     }
-    // PRINTLN("---------------decreaseStepCounters----------------");
-    // PRINT("current channel ");
-    // PRINTLN(channel);
-    // PRINT("config.routing[0].stepSpeed ");
-    // PRINTLN(config.routing[0].stepSpeed);
-    // PRINT("config.routing[1].stepSpeed ");
-    // PRINTLN(config.routing[1].stepSpeed);
-    // PRINT("amount ");
-    // PRINTLN(amount);
-    // PRINT("stat.bpm16thCount ");
-    // PRINTLN(stat.bpm16thCount);
 }
 
 // call with argument bool "true" to restart time counter
@@ -700,27 +677,19 @@ void FrankData::updateClockCounter(const bool restartCounter) {
         if (config.routing[out].arp && config.routing[out].outSource == 0) {
 
             static byte checkArpStep[OUTPUTS] = {0, 0};
-            // static byte lastBpm16thCount[OUTPUTS] = {255, 255};
-            static uint32_t lastBpmClockCount[OUTPUTS] = {30000000, 30000000};
-            // static elapsedMillis arpTimer = 0;
-            // static byte restartedArp = 0;
+            static int16_t lastBpmClockCount[OUTPUTS] = {3000, 3000};
 
-            // if (lastBpm16thCount[out] != stat.bpm16thCount && !stat.receivedNewSPP) {
             if (lastBpmClockCount[out] != stat.bpmClockCounter && !stat.receivedNewSPP) {
 
                 lastBpmClockCount[out] = stat.bpmClockCounter;
 
                 if (checkClockStepping(out, stepSpeed)) {
-                    // arpTimer = 0;
-                    // restartedArp = 0;
                     checkArpStep[out] = 1;
                 }
             }
 
             if (liveMidi[out].midiUpdateWaitTimer > MIDIARPUPDATEDELAY && checkArpStep[out]) {
-
                 nextArpStep(out);
-
                 checkArpStep[out] = 0;
             }
         }
@@ -799,17 +768,19 @@ uint16_t FrankData::clockSteppingCounts(const uint16_t &clockSetting) {
 }
 
 void FrankData::increaseSeqStep(const byte &array) {
-    if (!((liveMidi[array].stepSeq + 1) % STEPSPERPAGE)) {                                     // if we make a pageJump
-        if (config.routing[array].nbPages <= ((liveMidi[array].stepSeq + 1) / STEPSPERPAGE)) { // newPage above number of pages
-            liveMidi[array].stepSeq = 0;                                                       // set stepSeq[array] 0
+    do {
+        if (!((liveMidi[array].stepSeq + 1) % STEPSPERPAGE)) {                                     // if we make a pageJump
+            if (config.routing[array].nbPages <= ((liveMidi[array].stepSeq + 1) / STEPSPERPAGE)) { // newPage above number of pages
+                liveMidi[array].stepSeq = 0;                                                       // set stepSeq[array] 0
+            }
+            else {                         // new page is valid.
+                liveMidi[array].stepSeq++; // increase Step
+            }
         }
-        else {                         // new page is valid.
+        else {
             liveMidi[array].stepSeq++; // increase Step
         }
-    }
-    else {
-        liveMidi[array].stepSeq++; // increase Step
-    }
+    } while (STEPSPERPAGE - 1 + seq[SEQCHANNEL].sequence.pageEndOffset < liveMidi[array].stepSeq % STEPSPERPAGE);
 
     if (config.routing[array].outSource)
         liveMidi[array].triggered = 1;
@@ -817,20 +788,23 @@ void FrankData::increaseSeqStep(const byte &array) {
 }
 
 void FrankData::decreaseSeqStep(const byte &array) {
-    if (liveMidi[array].stepSeq == 0) {                                             // we jump to the last page?
-        liveMidi[array].stepSeq = config.routing[array].nbPages * STEPSPERPAGE - 1; // set to max stepSeq[array]
-    }
-    else if (!liveMidi[array].stepSeq % STEPSPERPAGE) {                                 // we make a pageJump?
-        if (config.routing[array].nbPages > (liveMidi[array].stepSeq / STEPSPERPAGE)) { // newPage above number of pages
-            liveMidi[array].stepSeq = config.routing[array].nbPages * STEPSPERPAGE - 1; // set jump to last stepSeq[array]
+    do {
+        if (liveMidi[array].stepSeq == 0) {                                             // we jump to the last page?
+            liveMidi[array].stepSeq = config.routing[array].nbPages * STEPSPERPAGE - 1; // set to max stepSeq[array]
         }
-        else {                         // new page is valid.
+        else if (!liveMidi[array].stepSeq % STEPSPERPAGE) {                                 // we make a pageJump?
+            if (config.routing[array].nbPages > (liveMidi[array].stepSeq / STEPSPERPAGE)) { // newPage above number of pages
+                liveMidi[array].stepSeq = config.routing[array].nbPages * STEPSPERPAGE - 1; // set jump to last stepSeq[array]
+            }
+            else {                         // new page is valid.
+                liveMidi[array].stepSeq--; // decrease Step
+            }
+        }
+        else {
             liveMidi[array].stepSeq--; // decrease Step
         }
-    }
-    else {
-        liveMidi[array].stepSeq--; // decrease Step
-    }
+    } while (STEPSPERPAGE - 1 + seq[SEQCHANNEL].sequence.pageEndOffset < liveMidi[array].stepSeq % STEPSPERPAGE);
+
     if (config.routing[array].outSource)
         liveMidi[array].triggered = 1;
     liveMidi[array].recModePlayback = 0;
@@ -1363,6 +1337,7 @@ int16_t FrankData::get(const frankData &frankDataType, const byte &array) {
         case currentPageNumber: return getCurrentPageNumber(array);
 
         case seqTuning: return seq[array].sequence.tuning;
+        case seqPageEndOffset: return seq[array].sequence.pageEndOffset;
         case seqGateLengthOffset: return seq[array].sequence.gateLengthOffset;
 
         case seqOctaveOffset: return config.routing[array].seqOctaves;
@@ -1491,6 +1466,8 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data, const b
         case seqNoteOffset: config.routing[array].seqNotes = testInt(data, -12, 12); break;
 
         case seqTuning: seq[array].sequence.tuning = testByte(data, 0, 13); break;
+        case seqPageEndOffset: seq[array].sequence.pageEndOffset = testInt(data, -STEPSPERPAGE + 1, 0); break;
+
         case seqGateLengthOffset: seq[array].sequence.gateLengthOffset = testInt(data, -100, 100); break;
         case copySeq: break;
         case none: break;
@@ -1693,6 +1670,7 @@ void FrankData::toggle(const frankData &frankDataType) {
             break;
 
         case seqTuning: seq[config.routing[stat.screen.channel].outSource - 1].sequence.tuning = 0; break;
+        case seqPageEndOffset: seq[config.routing[stat.screen.channel].outSource - 1].sequence.pageEndOffset = 0; break;
 
         case nbPages: config.routing[stat.screen.channel].nbPages = 8; break;
         case pulseLength: config.pulseLength = 20; break;
@@ -1761,8 +1739,9 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
         case seqGateLength: setStr("GateLn"); break;
         case seqCc: setStr("CC"); break;
         case seqTuning: setStr("Tune"); break;
+        case seqPageEndOffset: setStr("PgEnd"); break;
         case seqGateLengthOffset: setStr("GL-OF"); break;
-        case stepSpeed: setStr("Speed"); break;
+        case stepSpeed: setStr("Step"); break;
         case seqResetNotes: setStr("Rs Nt"); break;
         case seqResetGates: setStr("Rs Gt"); break;
         case seqResetGateLengths: setStr("Rs GL"); break;
@@ -1923,6 +1902,7 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType, const byte 
         case stepArp:
         case nbPages:
         case seqGateLengthOffset:
+        case seqPageEndOffset:
 
         case seqOctaveOffset:
         case seqNoteOffset:
