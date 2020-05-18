@@ -600,9 +600,10 @@ void FrankData::increaseBpmCount() {
             }
         }
     }
-
-    if (!stat.bpmClockCounter % 6) {
-        calcBPM();
+    if (stat.bpmSync) {
+        if (!(stat.bpmClockCounter % 6)) {
+            calcBPM();
+        }
     }
 }
 
@@ -724,31 +725,29 @@ void FrankData::updateClockCounter(const bool restartCounter) {
 }
 
 void FrankData::calcBPM() {
-    if (stat.bpmSync) {
-        static elapsedMicros bpm16thTimer;
-        static elapsedMillis averagingStartTime;
-        static double averageTimer = 0;
-        static byte counter = 0;
+    static elapsedMicros bpm16thTimer;
+    static elapsedMillis averagingStartTime;
+    static double averageTimer = 0;
+    static byte counter = 0;
 
-        averageTimer += 60000000.0 / (double)bpm16thTimer;
-        bpm16thTimer = 0;
-        counter++;
+    averageTimer += 60000000.0 / (double)bpm16thTimer;
+    bpm16thTimer = 0;
+    counter++;
 
-        if (averagingStartTime > 1000) {
+    if (averagingStartTime > 1000) {
 
-            // avoid updating bpm when last update is too long ago
-            if (averagingStartTime > 2000) {
-                averagingStartTime = 0;
-                averageTimer = 0;
-                counter = 0;
-                return;
-            }
-            averageTimer = averageTimer / 4.0;
-            stat.bpm = testInt((int)(averageTimer / (int)counter + 0.5), 1, 1000);
+        // avoid updating bpm when last update is too long ago
+        if (averagingStartTime > 2000) {
+            averagingStartTime = 0;
             averageTimer = 0;
             counter = 0;
-            averagingStartTime = 0;
+            return;
         }
+        averageTimer = averageTimer / 4.0;
+        stat.bpm = testInt((int)(averageTimer / (int)counter + 0.5), 1, 1000);
+        averageTimer = 0;
+        counter = 0;
+        averagingStartTime = 0;
     }
 }
 
