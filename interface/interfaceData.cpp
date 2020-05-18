@@ -2142,38 +2142,10 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType, const byte 
         case liveLatestKey: setStr(toStr(getKeyLatest(channel).note)); break;
         case liveLowestKey: setStr(toStr(getKeyLowest(channel).note)); break;
         case liveHighestKey: setStr(toStr(getKeyHighest(channel).note)); break;
-        case liveKeyNoteEvaluated:
-            if (liveMidi[channel].keysPressed()) {
-                setStr(toStr(getLiveKeyEvaluated(channel).note));
-            }
-            else {
-                setStr("-");
-            }
-            break;
-        case liveKeyVelEvaluated:
-            if (liveMidi[channel].keysPressed()) {
-                setStr(toStr(getLiveKeyEvaluated(channel).velocity));
-            }
-            else {
-                setStr("-");
-            }
-            break;
-        case liveKeyArpNoteEvaluated:
-            if (liveMidi[channel].keysPressed()) {
-                setStr(toStr(liveMidi[channel].arpKey.note));
-            }
-            else {
-                setStr("-");
-            }
-            break;
-        case liveKeyArpVelEvaluated:
-            if (liveMidi[channel].keysPressed()) {
-                setStr(toStr(liveMidi[channel].arpKey.velocity));
-            }
-            else {
-                setStr("-");
-            }
-            break;
+        case liveKeyNoteEvaluated: setStr(toStr(getLiveKeyEvaluated(channel).note)); break;
+        case liveKeyVelEvaluated: setStr(toStr(getLiveKeyEvaluated(channel).velocity)); break;
+        case liveKeyArpNoteEvaluated: setStr(toStr(liveMidi[channel].arpKey.note)); break;
+        case liveKeyArpVelEvaluated: setStr(toStr(liveMidi[channel].arpKey.velocity)); break;
 
         case outputCc:
             switch (config.routing[channel].cc) {
