@@ -201,6 +201,9 @@ void midiNoteOff(const byte &channel, const byte &note, const byte &velocity) {
 }
 
 void midiCC(const byte &channel, const byte &cc, const byte &midiData) {
+    PRINT("Midi CC ");
+    PRINTLN(cc);
+
     // CCs for Live performance
     if (cc == 1) {
         for (byte x = 0; x < OUTPUTS; x++) {
@@ -362,6 +365,8 @@ void midiCC(const byte &channel, const byte &cc, const byte &midiData) {
 }
 
 void midiAfterTouch(const byte &channel, const byte &midiData) {
+    PRINTLN("Midi AT");
+
     for (byte x = 0; x < OUTPUTS; x++) {
         if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
             DATAOBJ.set(FrankData::liveAftertouch, midiData, x);

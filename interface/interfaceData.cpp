@@ -1,7 +1,7 @@
 #include "interfaceData.hpp"
 
 // Debug logging
-#define DEBUG 1
+#define DEBUG 0
 
 #if DEBUG == 1
 #define PRINTLN(x) Serial.println(x)
@@ -600,6 +600,7 @@ void FrankData::increaseBpmCount() {
             }
         }
     }
+
     if (stat.bpmSync) {
         if (!(stat.bpmClockCounter % 6)) {
             calcBPM();
