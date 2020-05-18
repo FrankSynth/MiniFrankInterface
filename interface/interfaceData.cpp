@@ -1413,7 +1413,12 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data) {
         case direction: config.direction = testByte(data, 0, 1); break;
         case displayBrightness: config.displayBrightness = testByte(data, 0, 100); break; // how high?
 
-        case screenOutputChannel: stat.screen.channel = testByte(data, 0, OUTPUTS - 1); break;
+        case screenOutputChannel:
+            stat.screen.channel = testByte(data, 0, OUTPUTS - 1);
+            if (config.routing[stat.screen.channel].nbPages < stat.editStep / STEPSPERPAGE) {
+                stat.editStep = (config.routing[stat.screen.channel].nbPages - 1) * STEPSPERPAGE;
+            }
+            break;
         case screenConfig: stat.screen.config = testByte(data, 0, 1); break;
         case screenMainMenu: stat.screen.mainMenu = testByte(data, 0, 1); break;
         case screenSubScreen: stat.screen.subscreen = testByte(data, 0, getSubscreenMax()); break;
