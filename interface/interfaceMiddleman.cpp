@@ -91,7 +91,14 @@ void updateNoteOut() {
                     newNote = DATAOBJ.get(FrankData::liveKeyArpNoteEvaluated, output);
                 }
                 else {
-                    newNote = DATAOBJ.get(FrankData::liveKeyNoteEvaluated, output);
+                    // if after release the next note would be the same like the one already played by the other output, stay on the released note
+                    if (DATAOBJ.get(FrankData::liveReleased, output) &&
+                        DATAOBJ.get(FrankData::liveKeyNoteEvaluated, output) == previousOutputs[!output].note) {
+                        newNote = previousOutputs[output].note;
+                    }
+                    else {
+                        newNote = DATAOBJ.get(FrankData::liveKeyNoteEvaluated, output);
+                    }
                 }
             }
 
@@ -130,20 +137,10 @@ void updateNoteOut() {
                     // ratchet calc
                     previousOutputs[output].ratchet = DATAOBJ.get(FrankData::outputRatchet, output);
 
-                    int bpmMult; // achtung, doppelte value
-                    switch (DATAOBJ.get(FrankData::stepSpeed, output)) {
-                        case 0: bpmMult = 32; break; // 1/16
-                        case 1: bpmMult = 16; break;
-                        case 2: bpmMult = 8; break; // 1/4
-                        case 3: bpmMult = 4; break;
-                        case 4: bpmMult = 2; break;
-                        case 5: bpmMult = 1; break; // 2/1
-                        default: bpmMult = 1;
-                    }
-
-                    // /2 cause of double val, /4 cause of 4*16th per beat
-                    int divider = ((int)DATAOBJ.get(FrankData::bpm) * bpmMult * (int)(DATAOBJ.get(FrankData::outputRatchet, output) + 1) / 8);
-                    previousOutputs[output].ratchetOffsetTime = (60000 / divider);
+                    // 24 Ticks / BPM
+                    int divider = ((int)DATAOBJ.get(FrankData::bpm) * 24 * (int)(DATAOBJ.get(FrankData::outputRatchet, output) + 1));
+                    previousOutputs[output].ratchetOffsetTime =
+                        ((int)DATAOBJ.clockSteppingCounts(DATAOBJ.get(FrankData::stepSpeed, output)) * 60000) / divider;
                     previousOutputs[output].gateCloseTime = millis() + previousOutputs[output].ratchetOffsetTime * gateDuration;
                     previousOutputs[output].reactivateTime = millis() + previousOutputs[output].ratchetOffsetTime;
                     // PRINT("current Time is ");
@@ -151,9 +148,7 @@ void updateNoteOut() {
                     // PRINT(", New gate Close Time is ");
                     // PRINT(previousOutputs[output].gateCloseTime);
                     // PRINT(", next ratchet is ");
-                    // PRINT(previousOutputs[output].reactivateTime);
-                    // PRINT(", next step ist ");
-                    // PRINTLN(millis() + 60000 / (DATAOBJ.get(FrankData::bpm) * bpmMult / 8));
+                    // PRINTLN(previousOutputs[output].reactivateTime);
                 }
 
                 // output Trigger and Gate
@@ -187,8 +182,7 @@ void updateNoteOut() {
             if (newNote != previousOutputs[output].note) {
                 previousOutputs[output].note = newNote;
                 outputChannel[output].setNote(newNote);
-                PRINT("set new Note ");
-                PRINTLN(newNote);
+                // PRINTLN(newNote);
             }
 
             DATAOBJ.set(FrankData::liveTriggered, 0, output);
@@ -204,7 +198,7 @@ void reactivateRatchet() {
 
             if (millis() >= previousOutputs[output].reactivateTime) {
 
-                // PRINTLN("reactivate");
+                // PRINT("reactivate");
                 // PRINT(", current Time is ");
                 // PRINT(millis());
                 float gateDuration = 0.5f;
@@ -389,8 +383,9 @@ void updateClockOut() {
 
     static elapsedMillis timer[2];
 
-    if (!(DATAOBJ.get(FrankData::bpm16thCount) == previousState.old16thClockCount)) {
+    if (!(DATAOBJ.get(FrankData::bpmClockCount) == previousState.oldBpmClockCount)) {
         previousState.old16thClockCount = DATAOBJ.get(FrankData::bpm16thCount);
+        previousState.oldBpmClockCount = DATAOBJ.get(FrankData::bpmClockCount);
 
         if (DATAOBJ.get(FrankData::bpm16thCount) % 4 < 2) {
             if (!previousState.clockLED) {
@@ -407,12 +402,13 @@ void updateClockOut() {
 
         for (byte output = 0; output < OUTPUTS; output++) {
 
-            if (DATAOBJ.get(FrankData::bpm16thCount) != previousOutputs[output].clockPulseStep) {
+            if (DATAOBJ.get(FrankData::bpmClockCount) != previousOutputs[output].clockPulseStep) {
 
-                if ((int)(DATAOBJ.get(FrankData::bpm16thCount)) % (int)pow(2, (int)DATAOBJ.get(FrankData::outputClock, output)) == 0) {
+                // if ((int)(DATAOBJ.get(FrankData::bpm16thCount)) % (int)pow(2, (int)DATAOBJ.get(FrankData::outputClock, output)) == 0) {
+                if (DATAOBJ.checkClockStepping(output, FrankData::outputClock)) {
                     outputClock[output].setClock(1);
                     previousOutputs[output].clockPulseActivated = 1;
-                    previousOutputs[output].clockPulseStep = DATAOBJ.get(FrankData::bpm16thCount);
+                    previousOutputs[output].clockPulseStep = DATAOBJ.get(FrankData::bpmClockCount);
 
                     timer[output] = 0;
                 }

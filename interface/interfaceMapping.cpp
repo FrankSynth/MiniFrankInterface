@@ -106,13 +106,14 @@ FrankData::frankData mappingMenuRouting[] = {FrankData::outputSource,
                                              NONE,
                                              FrankData::outputClock,
                                              FrankData::stepSpeed,
-                                             NONE,
+                                             FrankData::outputPolyRhythm,
                                              MENU,
                                              NONE,
                                              NONE}; // Routing Menu
                                                     // Mapping
-FrankData::frankData mappingMenuRoutingPush[] = {FrankData::outputSource,  NONE, NONE, NONE, FrankData::outputClock, FrankData::stepSpeed, NONE, MENU,
-                                                 FrankData::screenRouting, PLAY}; // Routing Menu Mapping
+FrankData::frankData mappingMenuRoutingPush[] = {
+    FrankData::outputSource,  NONE, NONE, NONE, FrankData::outputClock, FrankData::stepSpeed, FrankData::outputPolyRhythm, MENU,
+    FrankData::screenRouting, PLAY}; // Routing Menu Mapping
 
 FrankData::frankData mappingMenuCalNote[] = {FrankData::liveCalNote, NONE, NONE, NONE, FrankData::noteCalOffset, FrankData::noteScaleOffset, NONE,
                                              FrankData::saveCal,     NONE, NONE}; // Routing Menu Mapping

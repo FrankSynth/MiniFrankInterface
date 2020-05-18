@@ -11,7 +11,7 @@
 #define OUTPUTS 2 // Number of output lanes
 #define MAXSTRINGSIZE 8
 
-#define MIDIARPUPDATEDELAY 3 // in millis
+#define MIDIARPUPDATEDELAY 2 // in millis
 
 #define DATAOBJ FrankData::getDataObj()
 #define CHANNEL DATAOBJ.get(FrankData::screenOutputChannel)
@@ -31,6 +31,7 @@ typedef struct {
     byte nbPages = 8;      // nb Pages  1-16
     int8_t seqOctaves = 0; // Seq Octave Offset
     int8_t seqNotes = 0;   // Seq single Note Offset
+    byte polyRhythm = 0;   // 0 = None, 1 = Clock, 2 = StepSpeed, 3 = Steps + Clock
 } structOutputRouting;
 
 typedef struct {
@@ -91,9 +92,10 @@ typedef struct {
     byte noteToCalibrate = 0; // note value that gets calibrated
     int8_t cvToCalibrate = 0; // cv value * 2048 that gets calibrated
 
-    byte bpmSync = 0;        // Sync Active
-    byte midiClockCount = 5; // counts incoming midiclock signals (6 ticks per 16th)
-    byte bpm16thCount = 0;   // general 16th counter for clock outputs
+    byte bpmSync = 0; // Sync Active
+    // byte midiClockCount = 5;      // counts incoming midiclock signals (6 ticks per 16th)
+    byte bpm16thCount = 0;        // general 16th counter for clock outputs
+    uint16_t bpmClockCounter = 0; // Midiclock Counter counting up to up to 2304 (common multiplier of all possible timings)
 
     byte receivedNewSPP = 1;
 
@@ -154,7 +156,6 @@ class LiveMidi {
     byte arpStepRepeat = 1;       // arp repeats step, for upRdownR, etc
     byte arpRestarted = 0;        // arp was reset
     uint32_t arpOffsetTime = 0;
-    byte arp16thCount = 0;
 
     byte recModePlayback = 0; // status for rec mode playback (last recorded note will be played instead of current step)
 
@@ -168,8 +169,6 @@ class LiveMidi {
 
     byte stepArp = 0; // current arp step
     byte stepSeq = 0; // current seq step
-
-    uint16_t channel16thCount = 0; // individual 16th counter for asynchronous playback
 
     LiveMidi() {
         // initialize with a default key
@@ -300,6 +299,7 @@ class FrankData {
         outputCcEvaluated,
         outputLiveMode,
         outputClock,
+        outputPolyRhythm,
 
         // Screen Settings, needs value
         screenOutputChannel,
@@ -317,6 +317,7 @@ class FrankData {
         error,
         bpmSync,
         bpm16thCount,
+        bpmClockCount,
         bpmPoti,
         load,
         save,
@@ -371,7 +372,7 @@ class FrankData {
 
     // internal helper functions
   private:
-    void increaseMidiClock();
+    void increaseBpmCount();
     void calcBPM();
     void increaseSeqStep(const byte &array);
     void decreaseSeqStep(const byte &array);
@@ -392,7 +393,7 @@ class FrankData {
 
     byte getPitchbendAsByte(const byte &channel);
 
-    void increaseBpm16thCount();
+    // void increaseBpm16thCount();
     structKey getLiveKeyEvaluated(const byte &array);
     structKey getKeyHighest(const byte &array);
     structKey getKeyLowest(const byte &array);
@@ -409,6 +410,9 @@ class FrankData {
     void seqAllOctaveUp(const byte &array);
     void seqAllOctaveDown(const byte &array);
     void seqCopy(const byte &source, const byte &destination);
+
+    bool checkClockStepping(const byte &array, const frankData &clockSource);
+    uint16_t clockSteppingCounts(const uint16_t &clockSetting);
 
     void updateArp(const byte &array);
 

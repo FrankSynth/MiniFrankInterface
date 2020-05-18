@@ -20,7 +20,7 @@ class PreviousOutputs {
     byte stepSeq = 0;
 
     byte clockPulseActivated = 0;
-    byte clockPulseStep = 100;
+    uint16_t clockPulseStep = 100;
 
     byte triggerActivated = 0;
     elapsedMillis triggerTimer = 0;
@@ -34,6 +34,7 @@ class PreviousState {
   public:
     byte clockLED = 0;
     byte old16thClockCount = 0;
+    uint16_t oldBpmClockCount = 0;
 
     PreviousState() {}
 };
