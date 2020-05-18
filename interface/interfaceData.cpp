@@ -1498,7 +1498,13 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data, const b
         case stepArp: liveMidi[array].stepArp = testByte(data, 0, NOTERANGE - 1); break;
         case stepSeq: liveMidi[array].stepSeq = testByte(data, 0, STEPSPERPAGE * config.routing[array].nbPages - 1); break;
         case stepSpeed: config.routing[array].stepSpeed = testByte(data, 0, 22); break;
-        case nbPages: config.routing[array].nbPages = testByte(data, 1, PAGES); break;
+        case nbPages:
+            config.routing[array].nbPages = testByte(data, 1, PAGES);
+            if (stat.editMode) {
+                if (stat.editStep / STEPSPERPAGE > config.routing[stat.screen.channel].nbPages - 1)
+                    stat.editStep = (config.routing[stat.screen.channel].nbPages - 1) * STEPSPERPAGE;
+            }
+            break;
 
         case liveCalNote: stat.noteToCalibrate = testByte(data, 0, NOTERANGE - 1); break;
         case liveCalCv: stat.cvToCalibrate = testInt(data, -1, 2); break;
