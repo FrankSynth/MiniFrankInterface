@@ -137,10 +137,26 @@ void updateNoteOut() {
                     // ratchet calc
                     previousOutputs[output].ratchet = DATAOBJ.get(FrankData::outputRatchet, output);
 
+                    DATAOBJ.clockSteppingCounts(DATAOBJ.get(FrankData::stepSpeed, output));
+
+                    int countsToNextClock = DATAOBJ.clockSteppingCounts(DATAOBJ.get(FrankData::stepSpeed, output));
+
+                    if (DATAOBJ.get(FrankData::outputPolyRhythm)) {
+                        int speedClockCounts =
+                            DATAOBJ.get(FrankData::bpmClockCount) % DATAOBJ.clockSteppingCounts(DATAOBJ.get(FrankData::outputClock, output));
+                        if (speedClockCounts < countsToNextClock && speedClockCounts) {
+                            countsToNextClock = speedClockCounts;
+                        }
+                        int outClockCounts =
+                            DATAOBJ.get(FrankData::bpmClockCount) % DATAOBJ.clockSteppingCounts(DATAOBJ.get(FrankData::outputClock, output));
+                        if (outClockCounts < countsToNextClock && outClockCounts) {
+                            countsToNextClock = outClockCounts;
+                        }
+                    }
+
                     // 24 Ticks / BPM
                     int divider = ((int)DATAOBJ.get(FrankData::bpm) * 24 * (int)(DATAOBJ.get(FrankData::outputRatchet, output) + 1));
-                    previousOutputs[output].ratchetOffsetTime =
-                        ((int)DATAOBJ.clockSteppingCounts(DATAOBJ.get(FrankData::stepSpeed, output)) * 60000) / divider;
+                    previousOutputs[output].ratchetOffsetTime = (countsToNextClock * 60000) / divider;
                     previousOutputs[output].gateCloseTime = millis() + previousOutputs[output].ratchetOffsetTime * gateDuration;
                     previousOutputs[output].reactivateTime = millis() + previousOutputs[output].ratchetOffsetTime;
                     // PRINT("current Time is ");
