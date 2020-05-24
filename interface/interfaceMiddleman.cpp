@@ -141,28 +141,33 @@ void updateNoteOut() {
 
                     int countsToNextClock = DATAOBJ.clockSteppingCounts(DATAOBJ.get(FrankData::stepSpeed, output));
 
-                    if (DATAOBJ.get(FrankData::outputPolyRhythm)) {
-                        int speedClockCounts =
-                            DATAOBJ.get(FrankData::bpmClockCount) % DATAOBJ.clockSteppingCounts(DATAOBJ.get(FrankData::outputClock, output));
-                        if (speedClockCounts < countsToNextClock && speedClockCounts) {
-                            countsToNextClock = speedClockCounts;
-                        }
+                    if (DATAOBJ.get(FrankData::outputPolyRhythm, output) > 1) {
+                        countsToNextClock -=
+                            DATAOBJ.get(FrankData::bpmClockCount) % DATAOBJ.clockSteppingCounts(DATAOBJ.get(FrankData::stepSpeed, output));
+
                         int outClockCounts =
+                            DATAOBJ.clockSteppingCounts(DATAOBJ.get(FrankData::outputClock, output)) -
                             DATAOBJ.get(FrankData::bpmClockCount) % DATAOBJ.clockSteppingCounts(DATAOBJ.get(FrankData::outputClock, output));
-                        if (outClockCounts < countsToNextClock && outClockCounts) {
+                        if (outClockCounts < countsToNextClock) {
                             countsToNextClock = outClockCounts;
                         }
                     }
+
+                    // PRINT(millis() - previousOutputs[output].gateCloseTime);
+                    // PRINTLN(" elapsed since gate closed ");
 
                     // 24 Ticks / BPM
                     int divider = ((int)DATAOBJ.get(FrankData::bpm) * 24 * (int)(DATAOBJ.get(FrankData::outputRatchet, output) + 1));
                     previousOutputs[output].ratchetOffsetTime = (countsToNextClock * 60000) / divider;
                     previousOutputs[output].gateCloseTime = millis() + previousOutputs[output].ratchetOffsetTime * gateDuration;
                     previousOutputs[output].reactivateTime = millis() + previousOutputs[output].ratchetOffsetTime;
+
                     // PRINT("current Time is ");
                     // PRINT(millis());
                     // PRINT(", New gate Close Time is ");
-                    // PRINT(previousOutputs[output].gateCloseTime);
+                    // PRINTLN(previousOutputs[output].gateCloseTime);
+                    // PRINT(previousOutputs[output].gateCloseTime - millis());
+                    // PRINTLN(" should elapse till gate close");
                     // PRINT(", next ratchet is ");
                     // PRINTLN(previousOutputs[output].reactivateTime);
                 }
@@ -214,9 +219,9 @@ void reactivateRatchet() {
 
             if (millis() >= previousOutputs[output].reactivateTime) {
 
-                // PRINT("reactivate");
-                // PRINT(", current Time is ");
-                // PRINT(millis());
+                PRINT("reactivate");
+                PRINT(", current Time is ");
+                PRINT(millis());
                 float gateDuration = 0.5f;
                 if (DATAOBJ.get(FrankData::outputSource, output)) {
 
@@ -229,8 +234,8 @@ void reactivateRatchet() {
 
                 previousOutputs[output].gateCloseTime = millis() + previousOutputs[output].ratchetOffsetTime * gateDuration;
                 previousOutputs[output].reactivateTime = millis() + previousOutputs[output].ratchetOffsetTime;
-                // PRINT(", New gate Close Time is ");
-                // PRINTLN(previousOutputs[output].gateCloseTime);
+                PRINT(", New gate Close Time is ");
+                PRINTLN(previousOutputs[output].gateCloseTime);
 
                 // output
                 outputChannel[output].setGate(1);
