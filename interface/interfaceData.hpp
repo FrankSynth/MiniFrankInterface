@@ -11,7 +11,7 @@
 #define OUTPUTS 2 // Number of output lanes
 #define MAXSTRINGSIZE 8
 
-#define MIDIARPUPDATEDELAY 2500 // in micros
+#define MIDIARPUPDATEDELAY 2000 // in micros
 
 #define DATAOBJ FrankData::getDataObj()
 #define CHANNEL DATAOBJ.get(FrankData::screenOutputChannel)
@@ -96,10 +96,11 @@ typedef struct {
 
     byte bpmSync = 0; // Sync Active
     // byte midiClockCount = 5;      // counts incoming midiclock signals (6 ticks per 16th)
-    byte bpm16thCount = 0;       // general 16th counter for clock outputs
+    // byte bpm16thCount = 0;       // general 16th counter for clock outputs
     int16_t bpmClockCounter = 0; // Midiclock Counter counting up to up to 2304 (common multiplier of all possible timings)
 
     byte receivedNewSPP = 1;
+    byte doNotCalcBpm = 0;
 
     int16_t receivedSPPclockCount = 0;
 
@@ -327,7 +328,7 @@ class FrankData {
         rec,
         error,
         bpmSync,
-        bpm16thCount,
+        // bpm16thCount,
         bpmClockCount,
         bpmPoti,
         load,

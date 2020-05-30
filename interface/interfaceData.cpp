@@ -503,11 +503,6 @@ void FrankData::init() {
 void FrankData::receivedMidiClock() {
     if (stat.bpmSync) {
         increaseBpmCount();
-        PRINT(millis());
-
-        PRINT(": midi clock: ");
-        PRINTLN(stat.bpmClockCounter);
-
         if (!(stat.bpmClockCounter % 6)) {
             calcBPM();
         }
@@ -517,18 +512,22 @@ void FrankData::receivedMidiClock() {
 void FrankData::receivedMidiSongPosition(unsigned int spp) {
     DebugTimer debug("spp");
     if (stat.bpmSync) {
-        stat.bpm16thCount = spp % 32;
+        // stat.bpm16thCount = spp % 32;
         stat.bpmClockCounter = 0;
         for (byte out = 0; out < OUTPUTS; out++) {
             // liveMidi[out].stepSeq = 0;
             // liveMidi[out].stepArp = 0;
-            // liveMidi[out].arpRestarted = 1;
+            liveMidi[out].arpRestarted = 1;
+            liveMidi[out].arpRetrigger = 1;
             // liveMidi[out].midiUpdateWaitTimer = 0;
         }
         PRINT(millis());
 
         PRINT(": ssp ");
         PRINTLN(spp);
+
+        // return;
+
         uint16_t stepcounter[OUTPUTS];
         uint16_t doNotCheckClocksCounter[OUTPUTS];
         uint16_t stepClockCount[OUTPUTS];
@@ -548,10 +547,10 @@ void FrankData::receivedMidiSongPosition(unsigned int spp) {
                     clockPoly = clockClockCount[out] - clockPoly;
                 doNotCheckClocksCounter[out] = min(doNotCheckClocksCounter[out], clockPoly);
             }
-            if (out == 1) {
-                PRINT("doNotCheckClocksCounter ");
-                PRINTLN(doNotCheckClocksCounter[out]);
-            }
+            // if (out == 1) {
+            //     PRINT("doNotCheckClocksCounter ");
+            //     PRINTLN(doNotCheckClocksCounter[out]);
+            // }
         }
 
         for (unsigned int i = 0; i < (spp * 6); i++) {
@@ -576,10 +575,10 @@ void FrankData::receivedMidiSongPosition(unsigned int spp) {
                                 clockPoly = clockClockCount[out] - clockPoly;
                             doNotCheckClocksCounter[out] = min(doNotCheckClocksCounter[out], clockPoly);
                         }
-                        if (out == 1) {
-                            PRINT("doNotCheckClocksCounter ");
-                            PRINTLN(doNotCheckClocksCounter[out]);
-                        }
+                        // if (out == 1) {
+                        //     PRINT("doNotCheckClocksCounter ");
+                        //     PRINTLN(doNotCheckClocksCounter[out]);
+                        // }
                     }
                     else {
                         doNotCheckClocksCounter[out]--;
@@ -591,11 +590,11 @@ void FrankData::receivedMidiSongPosition(unsigned int spp) {
         stat.receivedSPPclockCount = stat.bpmClockCounter;
 
         for (byte out = 0; out < OUTPUTS; out++) {
-            liveMidi[out].stepSeq = 0;
 
             // liveMidi[out].midiUpdateWaitTimer = 0;
 
             if (config.routing[out].outSource) {
+                liveMidi[out].stepSeq = 0;
 
                 stepcounter[out] = stepcounter[out] % (config.routing[out].nbPages * (STEPSPERPAGE - seq[out].sequence.pageEndOffset));
 
@@ -608,11 +607,8 @@ void FrankData::receivedMidiSongPosition(unsigned int spp) {
                         decreaseSeqStep(out);
                 }
             }
-        }
-        for (byte out = 0; out < OUTPUTS; out++) {
             liveMidi[out].midiUpdateWaitTimer = 0;
         }
-
         stat.receivedNewSPP = 1;
     }
 }
@@ -624,13 +620,15 @@ void FrankData::receivedStart() {
 
         stat.receivedNewSPP = 1;
         // stat.midiClockCount = 0;
-        stat.bpm16thCount = 0;
+        // stat.bpm16thCount = 0;
         stat.bpmClockCounter = 0;
         for (byte out = 0; out < OUTPUTS; out++) {
             // liveMidi[out].stepSeq = config.routing[out].nbPages * STEPSPERPAGE;
-            liveMidi[out].stepArp = 0;
+            // liveMidi[out].stepArp = 0;
             liveMidi[out].arpRetrigger = 1;
+            liveMidi[out].arpRestarted = 1;
             liveMidi[out].midiUpdateWaitTimer = 0;
+            // updateArp(out);
         }
         stat.play = 1;
     }
@@ -644,9 +642,10 @@ void FrankData::receivedContinue() {
         stat.receivedNewSPP = 1;
 
         for (byte out = 0; out < OUTPUTS; out++) {
-            liveMidi[out].stepArp = 0;
-            liveMidi[out].arpRetrigger = 1;
-            liveMidi[out].arpRestarted = 1;
+            // updateArp(out);
+            // liveMidi[out].stepArp = 0;
+            // liveMidi[out].arpRetrigger = 1;
+            // liveMidi[out].arpRestarted = 1;
             liveMidi[out].midiUpdateWaitTimer = 0;
         }
         stat.bpmClockCounter = stat.receivedSPPclockCount;
@@ -686,18 +685,25 @@ void FrankData::reset() {
 }
 
 void FrankData::increaseBpmCount() {
+    PRINT(millis());
 
     if (stat.receivedNewSPP) {
+
+        PRINTLN(": increaseBPM receivednewSPP");
+
         stat.receivedNewSPP = 0;
+        stat.doNotCalcBpm = 1;
         for (byte out = 0; out < OUTPUTS; out++) {
             if (checkClockStepping(out, stepSpeed)) {
                 liveMidi[out].triggered = 1;
                 liveMidi[out].arpTriggeredNewNote = 1;
-                liveMidi[out].arpRestarted = 1;
+                // liveMidi[out].arpRestarted = 1;
             }
         }
         return;
     }
+
+    PRINTLN(": increaseBPM");
 
     // LCM of all timings is 2304
     stat.bpmClockCounter++;
@@ -831,9 +837,17 @@ void FrankData::updateClockCounter(const bool restartCounter) {
             }
 
             if (liveMidi[out].midiUpdateWaitTimer > MIDIARPUPDATEDELAY && checkArpStep[out]) {
-                PRINTLN("new Arp step");
+                PRINT(millis());
+
+                PRINT(": midi clock: ");
+                PRINT(stat.bpmClockCounter);
+
+                PRINT(", new Arp step ");
 
                 nextArpStep(out);
+                PRINT(liveMidi[out].stepArp);
+                PRINT(", octave ");
+                PRINTLN(liveMidi[out].arpOctave);
                 checkArpStep[out] = 0;
             }
         }
@@ -853,10 +867,11 @@ void FrankData::calcBPM() {
     if (averagingStartTime > 1000) {
 
         // avoid updating bpm when last update is too long ago
-        if (averagingStartTime > 2000) {
+        if (averagingStartTime > 2000 || stat.doNotCalcBpm) {
             averagingStartTime = 0;
             averageTimer = 0;
             counter = 0;
+            stat.doNotCalcBpm = 0;
             return;
         }
         averageTimer = averageTimer / 4.0;
@@ -1056,8 +1071,8 @@ void FrankData::nextArpStep(const byte &array) {
             return;
         }
         if (liveMidi[array].arpRestarted) {
-            // PRINT("restarted arp ");
-            // PRINTLN(array);
+            PRINT("restarted arp ");
+            PRINTLN(array);
         }
 
         switch (config.routing[array].arpMode) {
@@ -1154,6 +1169,7 @@ void FrankData::nextArpStep(const byte &array) {
                     liveMidi[array].arpOctaveDirection = 1;
                     liveMidi[array].stepArp = 0;
                     liveMidi[array].arpRestarted = 0;
+                    liveMidi[array].arpStepRepeat = 1;
                 }
                 else {
 
@@ -1239,6 +1255,7 @@ void FrankData::nextArpStep(const byte &array) {
                     liveMidi[array].arpOctaveDirection = 0;
                     liveMidi[array].stepArp = liveMidi[array].arpList.size - 1;
                     liveMidi[array].arpRestarted = 0;
+                    liveMidi[array].arpStepRepeat = 1;
                 }
                 else {
 
@@ -1418,7 +1435,7 @@ int16_t FrankData::get(const frankData &frankDataType) {
         case error: return stat.error;
         case bpmSync: return stat.bpmSync;
         case bpmPoti: return stat.bpmPot;
-        case bpm16thCount: return stat.bpm16thCount;
+        // case bpm16thCount: return stat.bpm16thCount;
         case bpmClockCount: return stat.bpmClockCounter;
         case save:
         case load: return stat.loadSaveSlot;

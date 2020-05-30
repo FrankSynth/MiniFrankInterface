@@ -1,7 +1,7 @@
 #include "interfaceMidi.hpp"
 
 // Debug logging
-#define DEBUG 0
+#define DEBUG 1
 
 #if DEBUG == 1
 #define PRINTLN(x) Serial.println(x)
@@ -179,12 +179,12 @@ void initMidi() {
 // Midi Loop
 void updateMidi() {
 
-    usbMIDI.read();
-    MIDI.read();
-    // while (usbMIDI.read()) {
-    // }
-    // while (MIDI.read()) {
-    // }
+    // usbMIDI.read();
+    // MIDI.read();
+    while (usbMIDI.read()) {
+    }
+    while (MIDI.read()) {
+    }
 }
 
 // Midi actions

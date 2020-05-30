@@ -37,7 +37,7 @@ class PreviousOutputs {
 class PreviousState {
   public:
     byte clockLED = 0;
-    byte old16thClockCount = 0;
+    // byte old16thClockCount = 0;
     uint16_t oldBpmClockCount = 0;
 
     PreviousState() {}

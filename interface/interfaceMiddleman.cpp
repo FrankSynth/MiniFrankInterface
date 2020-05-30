@@ -436,10 +436,10 @@ void updateClockOut() {
     static elapsedMillis timer[2];
 
     if (!(DATAOBJ.get(FrankData::bpmClockCount) == previousState.oldBpmClockCount)) {
-        previousState.old16thClockCount = DATAOBJ.get(FrankData::bpm16thCount);
+        // previousState.old16thClockCount = DATAOBJ.get(FrankData::bpm16thCount);
         previousState.oldBpmClockCount = DATAOBJ.get(FrankData::bpmClockCount);
 
-        if (DATAOBJ.get(FrankData::bpm16thCount) % 4 < 2) {
+        if (DATAOBJ.get(FrankData::bpmClockCount) % 24 < 12) {
             if (!previousState.clockLED) {
                 clkLed.setClkLed(1);
                 previousState.clockLED = 1;
