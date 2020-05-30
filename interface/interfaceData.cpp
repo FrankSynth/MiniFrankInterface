@@ -1,7 +1,8 @@
 #include "interfaceData.hpp"
+#include "interfaceMidi.hpp"
 
 // Debug logging
-#define DEBUG 0
+#define DEBUG 1
 
 #if DEBUG == 1
 #define PRINTLN(x) Serial.println(x)
@@ -453,11 +454,11 @@ void FrankData::receivedKeyPressed(const byte &channel, const byte &note, const 
             // live midi
             if (config.routing[x].outSource == 0) {
                 liveMidi[x].triggered = 1;
-                if (liveMidi[x].arpRestarted) {
-                    // liveMidi[x].arpOffsetTime = millis() - stat.last16thTime + 1; // at least 1 ms time
-                    // if (bpmSync)
-                    // nextArpStep(x);
-                }
+                // if (liveMidi[x].arpRestarted) {
+                // liveMidi[x].arpOffsetTime = millis() - stat.last16thTime + 1; // at least 1 ms time
+                // if (bpmSync)
+                // nextArpStep(x);
+                // }
                 liveMidi[x].midiUpdateWaitTimer = 0;
             }
         }
@@ -502,53 +503,170 @@ void FrankData::init() {
 void FrankData::receivedMidiClock() {
     if (stat.bpmSync) {
         increaseBpmCount();
+        PRINT(millis());
+
+        PRINT(": midi clock: ");
+        PRINTLN(stat.bpmClockCounter);
+
+        if (!(stat.bpmClockCounter % 6)) {
+            calcBPM();
+        }
     }
 }
 
 void FrankData::receivedMidiSongPosition(unsigned int spp) {
+    DebugTimer debug("spp");
+    if (stat.bpmSync) {
+        stat.bpm16thCount = spp % 32;
+        stat.bpmClockCounter = 0;
+        for (byte out = 0; out < OUTPUTS; out++) {
+            // liveMidi[out].stepSeq = 0;
+            // liveMidi[out].stepArp = 0;
+            // liveMidi[out].arpRestarted = 1;
+            // liveMidi[out].midiUpdateWaitTimer = 0;
+        }
+        PRINT(millis());
 
-    // stat.midiClockCount = 0;
-    stat.bpm16thCount = spp % 32;
-    stat.bpmClockCounter = spp * 16;
-    stat.receivedNewSPP = 1;
+        PRINT(": ssp ");
+        PRINTLN(spp);
+        uint16_t stepcounter[OUTPUTS];
+        uint16_t doNotCheckClocksCounter[OUTPUTS];
+        uint16_t stepClockCount[OUTPUTS];
+        uint16_t clockClockCount[OUTPUTS];
 
-    for (byte out = 0; out < OUTPUTS; out++) {
-        // liveMidi[out].stepSeq = (spp / (int)pow(2, (int)(config.routing[out].stepSpeed))) % (config.routing[out].nbPages * STEPSPERPAGE);
-        liveMidi[out].stepSeq = ((spp * 6) / clockSteppingCounts(config.routing[out].stepSpeed)) % (config.routing[out].nbPages * STEPSPERPAGE);
+        for (byte out = 0; out < OUTPUTS; out++) {
+            stepcounter[out] = 0;
+            stepClockCount[out] = clockSteppingCounts(config.routing[out].stepSpeed);
+            doNotCheckClocksCounter[out] = (stat.bpmClockCounter + 1) % stepClockCount[out];
+            if (doNotCheckClocksCounter[out])
+                doNotCheckClocksCounter[out] = stepClockCount[out] - doNotCheckClocksCounter[out];
+
+            if (config.routing[out].polyRhythm > 1) {
+                clockClockCount[out] = clockSteppingCounts(config.routing[out].clockSpeed);
+                uint16_t clockPoly = (stat.bpmClockCounter + 1) % clockClockCount[out];
+                if (clockPoly)
+                    clockPoly = clockClockCount[out] - clockPoly;
+                doNotCheckClocksCounter[out] = min(doNotCheckClocksCounter[out], clockPoly);
+            }
+            if (out == 1) {
+                PRINT("doNotCheckClocksCounter ");
+                PRINTLN(doNotCheckClocksCounter[out]);
+            }
+        }
+
+        for (unsigned int i = 0; i < (spp * 6); i++) {
+            stat.bpmClockCounter++;
+            if (stat.bpmClockCounter > 2303) {
+                stat.bpmClockCounter = 0;
+            }
+
+            for (byte out = 0; out < OUTPUTS; out++) {
+                if (config.routing[out].outSource) {
+                    if (doNotCheckClocksCounter[out] == 0) {
+                        stepcounter[out]++;
+                        // liveMidi[out].midiUpdateWaitTimer = 0;
+
+                        doNotCheckClocksCounter[out] = (stat.bpmClockCounter + 1) % stepClockCount[out];
+                        if (doNotCheckClocksCounter[out])
+                            doNotCheckClocksCounter[out] = stepClockCount[out] - doNotCheckClocksCounter[out];
+
+                        if (config.routing[out].polyRhythm > 1) {
+                            uint16_t clockPoly = (stat.bpmClockCounter + 1) % clockClockCount[out];
+                            if (clockPoly)
+                                clockPoly = clockClockCount[out] - clockPoly;
+                            doNotCheckClocksCounter[out] = min(doNotCheckClocksCounter[out], clockPoly);
+                        }
+                        if (out == 1) {
+                            PRINT("doNotCheckClocksCounter ");
+                            PRINTLN(doNotCheckClocksCounter[out]);
+                        }
+                    }
+                    else {
+                        doNotCheckClocksCounter[out]--;
+                    }
+                }
+            }
+        }
+        // updateClockCounter();
+        stat.receivedSPPclockCount = stat.bpmClockCounter;
+
+        for (byte out = 0; out < OUTPUTS; out++) {
+            liveMidi[out].stepSeq = 0;
+
+            // liveMidi[out].midiUpdateWaitTimer = 0;
+
+            if (config.routing[out].outSource) {
+
+                stepcounter[out] = stepcounter[out] % (config.routing[out].nbPages * (STEPSPERPAGE - seq[out].sequence.pageEndOffset));
+
+                if (config.direction) {
+                    for (unsigned int i = 0; i < stepcounter[out]; i++)
+                        increaseSeqStep(out);
+                }
+                else {
+                    for (unsigned int i = 0; i < stepcounter[out]; i++)
+                        decreaseSeqStep(out);
+                }
+            }
+        }
+        for (byte out = 0; out < OUTPUTS; out++) {
+            liveMidi[out].midiUpdateWaitTimer = 0;
+        }
+
+        stat.receivedNewSPP = 1;
     }
 }
 
 void FrankData::receivedStart() {
+    PRINTLN("start");
+
     if (stat.bpmSync) {
 
         stat.receivedNewSPP = 1;
         // stat.midiClockCount = 0;
         stat.bpm16thCount = 0;
+        stat.bpmClockCounter = 0;
         for (byte out = 0; out < OUTPUTS; out++) {
-            liveMidi[out].stepSeq = config.routing[out].nbPages * STEPSPERPAGE;
+            // liveMidi[out].stepSeq = config.routing[out].nbPages * STEPSPERPAGE;
+            liveMidi[out].stepArp = 0;
             liveMidi[out].arpRetrigger = 1;
+            liveMidi[out].midiUpdateWaitTimer = 0;
         }
         stat.play = 1;
     }
 }
 void FrankData::receivedContinue() {
+    PRINT(millis());
+    PRINTLN(": continue");
     if (stat.bpmSync) {
+        // sendMidiAllNotesOff();
+
+        stat.receivedNewSPP = 1;
 
         for (byte out = 0; out < OUTPUTS; out++) {
             liveMidi[out].stepArp = 0;
             liveMidi[out].arpRetrigger = 1;
             liveMidi[out].arpRestarted = 1;
+            liveMidi[out].midiUpdateWaitTimer = 0;
         }
+        stat.bpmClockCounter = stat.receivedSPPclockCount;
+
         stat.play = 1;
     }
 }
 void FrankData::receivedStop() {
+    PRINT(millis());
+    PRINTLN(": stop");
+
     if (stat.bpmSync) {
         stat.play = 0;
-        for (byte out = 0; out < OUTPUTS; out++) {
-            liveMidi[out].arpRetrigger = 1;
-        }
+        // for (byte out = 0; out < OUTPUTS; out++) {
+        //     liveMidi[out].arpRetrigger = 1;
+        // }
+        for (byte out = 0; out < OUTPUTS; out++)
+            liveMidi[out].midiUpdateWaitTimer = 0;
     }
+    // sendMidiAllNotesOff();
 }
 
 void FrankData::receivedReset() {
@@ -557,14 +675,14 @@ void FrankData::receivedReset() {
 
 void FrankData::reset() {
     // stat.midiClockCount = 0;
-    stat.bpm16thCount = 0;
-    stat.bpmClockCounter = 0;
-    stat.receivedNewSPP = 1;
+    // stat.bpm16thCount = 0;
+    // stat.bpmClockCounter = 0;
 
     for (byte out = 0; out < OUTPUTS; out++) {
         liveMidi[out].reset();
         liveMidi[out].updateArpArray(config.routing[out].arpMode);
     }
+    // sendMidiAllNotesOff();
 }
 
 void FrankData::increaseBpmCount() {
@@ -575,6 +693,7 @@ void FrankData::increaseBpmCount() {
             if (checkClockStepping(out, stepSpeed)) {
                 liveMidi[out].triggered = 1;
                 liveMidi[out].arpTriggeredNewNote = 1;
+                liveMidi[out].arpRestarted = 1;
             }
         }
         return;
@@ -598,12 +717,6 @@ void FrankData::increaseBpmCount() {
                     decreaseSeqStep(out);
                 }
             }
-        }
-    }
-
-    if (stat.bpmSync) {
-        if (!(stat.bpmClockCounter % 6)) {
-            calcBPM();
         }
     }
 }
@@ -694,8 +807,8 @@ void FrankData::updateClockCounter(const bool restartCounter) {
                 // count time for MidiTicks, 1 bpm would have 24 ticks/seconds
                 uint32_t bpmTiming = 60000000 / ((uint32_t)stat.bpm * 24);
                 if (timer >= bpmTiming) {
-                    increaseBpmCount();
                     timer -= bpmTiming;
+                    increaseBpmCount();
                 }
             }
         }
@@ -718,6 +831,8 @@ void FrankData::updateClockCounter(const bool restartCounter) {
             }
 
             if (liveMidi[out].midiUpdateWaitTimer > MIDIARPUPDATEDELAY && checkArpStep[out]) {
+                PRINTLN("new Arp step");
+
                 nextArpStep(out);
                 checkArpStep[out] = 0;
             }
@@ -757,7 +872,7 @@ bool FrankData::checkClockStepping(const byte &array, const frankData &clockSour
         if (!(stat.bpmClockCounter % clockSteppingCounts(config.routing[array].stepSpeed)))
             return true;
     }
-    if (clockSource == outputClock || config.routing[array].polyRhythm == 2 || config.routing[array].polyRhythm == 3) {
+    if (clockSource == outputClock || config.routing[array].polyRhythm > 1) {
         if (!(stat.bpmClockCounter % clockSteppingCounts(config.routing[array].clockSpeed)))
             return true;
     }
@@ -1334,6 +1449,7 @@ int16_t FrankData::get(const frankData &frankDataType, const byte &array) {
         case outputArpOctave: return config.routing[array].arpOctaves;
         case outputArpMode: return config.routing[array].arpMode;
         case outputPolyRhythm: return config.routing[array].polyRhythm;
+        case outputMidiNotes: return config.routing[array].midiNoteOut;
 
         case liveKeysPressed: return liveMidi[array].keysPressed();
 
@@ -1429,7 +1545,11 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data) {
         case liveCalNote: stat.noteToCalibrate = testByte(data, 0, NOTERANGE - 1); break;
         case liveCalCv: stat.cvToCalibrate = testInt(data, -1, 2); break;
         case bpm: stat.bpm = testByte(data, 0, 255); break;
-        case play: stat.play = testByte(data, 0, 1); break;
+        case play:
+            stat.play = testByte(data, 0, 1);
+            if (stat.play == 0)
+                sendMidiAllNotesOff();
+            break;
         case rec: stat.rec = testByte(data, 0, 1); break;
         case error: stat.error = testByte(data, 0, 1); break;
         case bpmSync:
@@ -1483,6 +1603,10 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data, const b
             updateArp(array);
             break;
         case outputPolyRhythm: config.routing[array].polyRhythm = testByte(data, 0, 3); break;
+        case outputMidiNotes:
+            config.routing[array].midiNoteOut = testByte(data, 0, 3);
+            sendMidiAllNotesOff();
+            break;
 
         case cvCalOffset: cal[array].cvOffset = testInt(data, -500, 500); break;
         case cvCalLower: cal[array].cvLowerLimit = testInt(data, 0, 1000); break;
@@ -1839,6 +1963,7 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
         case outputLiveMode: setStr("Key"); break;
 
         case outputClock: setStr("Clock"); break;
+        case outputMidiNotes: setStr("NtOut"); break;
 
         case screenOutputChannel: setStr("Rout"); break;
         case screenConfig: setStr("Conf"); break;
@@ -2000,6 +2125,15 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType, const byte 
                 case 1: setStr("Cl"); break;
                 case 2: setStr("Step"); break;
                 case 3: setStr("C+S"); break;
+                default: setStr("ERR"); break;
+            }
+            break;
+        case outputMidiNotes:
+            switch (config.routing[stat.screen.channel].midiNoteOut) {
+                case 0: setStr("-"); break;
+                case 1: setStr("DIN"); break;
+                case 2: setStr("USB"); break;
+                case 3: setStr("U+D"); break;
                 default: setStr("ERR"); break;
             }
             break;

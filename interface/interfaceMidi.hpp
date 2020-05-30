@@ -9,3 +9,6 @@
 
 void initMidi();
 void updateMidi();
+void sendMidiNoteOn(byte &note, byte &velocity, byte &outChannel);
+void sendMidiNoteOff(byte &note, byte &outChannel);
+void sendMidiAllNotesOff();

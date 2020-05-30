@@ -1,6 +1,7 @@
 #pragma once
 
 #include "interfaceData.hpp"
+#include "interfaceMidi.hpp"
 #include "interfaceOut.hpp"
 #include <Arduino.h>
 
@@ -10,12 +11,15 @@
 class PreviousOutputs {
   public:
     byte note = 0;
+    byte velocity = 0;
     int cv = 0;
     byte ratchet = 0;
     byte gateActivated = 0;
     uint32_t gateCloseTime = 0;
-    uint32_t reactivateTime = 0;
+    // uint32_t reactivateTime = 0;
     uint32_t ratchetOffsetTime = 0;
+
+    elapsedMicros gateTimer = 0;
 
     byte stepSeq = 0;
 

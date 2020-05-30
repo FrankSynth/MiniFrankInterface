@@ -11,7 +11,7 @@
 #define OUTPUTS 2 // Number of output lanes
 #define MAXSTRINGSIZE 8
 
-#define MIDIARPUPDATEDELAY 2 // in millis
+#define MIDIARPUPDATEDELAY 2500 // in micros
 
 #define DATAOBJ FrankData::getDataObj()
 #define CHANNEL DATAOBJ.get(FrankData::screenOutputChannel)
@@ -32,6 +32,7 @@ typedef struct {
     int8_t seqOctaves = 0; // Seq Octave Offset
     int8_t seqNotes = 0;   // Seq single Note Offset
     byte polyRhythm = 0;   // 0 = None, 1 = Clock, 2 = StepSpeed, 3 = Steps + Clock
+    byte midiNoteOut = 0;  // output Midi Notes back out, 0 = off, 1 = din, 2 = usb, 3 = both
 } structOutputRouting;
 
 typedef struct {
@@ -99,6 +100,8 @@ typedef struct {
     int16_t bpmClockCounter = 0; // Midiclock Counter counting up to up to 2304 (common multiplier of all possible timings)
 
     byte receivedNewSPP = 1;
+
+    int16_t receivedSPPclockCount = 0;
 
     byte editMode = 0;
     byte editStep = 0;
@@ -169,7 +172,7 @@ class LiveMidi {
     structKey arpKey;              // always holds the last played key, if no keys are pressed
     PressedNotesList arpList;      // Key List for arpeggiator
     structKey arpArray[NOTERANGE]; // sorted array for arpeggiator
-    elapsedMillis midiUpdateWaitTimer = 0;
+    elapsedMicros midiUpdateWaitTimer = 0;
 
     byte stepArp = 0; // current arp step
     byte stepSeq = 0; // current seq step
@@ -307,6 +310,7 @@ class FrankData {
         outputLiveMode,
         outputClock,
         outputPolyRhythm,
+        outputMidiNotes,
 
         // Screen Settings, needs value
         screenOutputChannel,

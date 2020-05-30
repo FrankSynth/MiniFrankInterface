@@ -179,10 +179,12 @@ void initMidi() {
 // Midi Loop
 void updateMidi() {
 
-    while (usbMIDI.read()) {
-    }
-    while (MIDI.read()) {
-    }
+    usbMIDI.read();
+    MIDI.read();
+    // while (usbMIDI.read()) {
+    // }
+    // while (MIDI.read()) {
+    // }
 }
 
 // Midi actions
@@ -359,7 +361,7 @@ void midiCC(const byte &channel, const byte &cc, const byte &midiData) {
     }
 
     // reset all
-    if (cc == 121) {
+    if (cc == 123) {
         DATAOBJ.receivedReset();
     }
 }
@@ -405,4 +407,37 @@ void midiStop() {
 
 void midiSystemReset() {
     DATAOBJ.receivedReset();
+}
+
+void sendMidiNoteOn(byte &note, byte &velocity, byte &outChannel) {
+    byte midiChannel = testByte(DATAOBJ.get(FrankData::outputChannel, outChannel), 1, 16);
+
+    if (DATAOBJ.get(FrankData::outputMidiNotes, outChannel) > 1) { // usb
+        usbMIDI.sendNoteOn(note + 21, velocity, midiChannel);
+        // usbMIDI.send_now();
+    }
+    if (DATAOBJ.get(FrankData::outputMidiNotes, outChannel) == 1 || DATAOBJ.get(FrankData::outputMidiNotes, outChannel) == 3) { // din
+        MIDI.sendNoteOn(note + 21, velocity, midiChannel);
+    }
+}
+void sendMidiNoteOff(byte &note, byte &outChannel) {
+    byte midiChannel = testByte(DATAOBJ.get(FrankData::outputChannel, outChannel), 1, 16);
+
+    if (DATAOBJ.get(FrankData::outputMidiNotes, outChannel) > 1) { // usb
+        usbMIDI.sendNoteOff(note + 21, 0, midiChannel);
+        // usbMIDI.send_now();
+    }
+    if (DATAOBJ.get(FrankData::outputMidiNotes, outChannel) == 1 || DATAOBJ.get(FrankData::outputMidiNotes, outChannel) == 3) { // din
+        MIDI.sendNoteOff(note + 21, 0, midiChannel);
+    }
+}
+
+void sendMidiAllNotesOff() {
+    for (byte i = 1; i < 17; i++) {
+        // usbMIDI.sendControlChange(64, 0, i);
+        // usbMIDI.sendControlChange(121, 0, i);
+        usbMIDI.sendControlChange(123, 0, i);
+    }
+    PRINTLN("midi reset sent");
+    // usbMIDI.send_now();
 }
