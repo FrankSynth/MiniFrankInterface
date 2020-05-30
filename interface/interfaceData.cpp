@@ -510,7 +510,7 @@ void FrankData::receivedMidiClock() {
 }
 
 void FrankData::receivedMidiSongPosition(unsigned int spp) {
-    DebugTimer debug("spp");
+    // DebugTimer debug("spp");
     if (stat.bpmSync) {
         // stat.bpm16thCount = spp % 32;
         stat.bpmClockCounter = 0;
