@@ -15,11 +15,10 @@
 #define PRINT2(x, y)
 #endif
 
-////Sequencer////
 FrankData::frankData mappingSeqConfig[] = {FrankData::seqNoteOffset,
                                            FrankData::seqOctaveOffset,
-                                           FrankData::load,
-                                           FrankData::save,
+                                           FrankData::nbPages,
+                                           FrankData::seqPageEndOffset,
                                            FrankData::outputRatchet,
                                            FrankData::stepSpeed,
                                            FrankData::direction,
@@ -27,7 +26,7 @@ FrankData::frankData mappingSeqConfig[] = {FrankData::seqNoteOffset,
                                            SUBSCREEN,
                                            STEP}; // CV Config Mapping
 FrankData::frankData mappingSeqConfigPush[] = {FrankData::seqNoteOffset, FrankData::seqOctaveOffset,
-                                               FrankData::load,          FrankData::save,
+                                               FrankData::nbPages,       FrankData::seqPageEndOffset,
                                                FrankData::outputRatchet, FrankData::stepSpeed,
                                                FrankData::direction,     FrankData::seqGateLengthOffset,
                                                FrankData::screenRouting, PLAY}; // GATE Mapping Push
@@ -36,15 +35,17 @@ FrankData::frankData mappingSeqConfig2[] = {FrankData::resetStepCounters,
                                             FrankData::seqResetCC,
                                             FrankData::seqResetNotes,
                                             FrankData::seqResetGates,
+                                            FrankData::load,
                                             FrankData::copySeq,
-                                            FrankData::nbPages,
                                             FrankData::seqTuning,
-                                            FrankData::seqPageEndOffset,
+                                            FrankData::save,
                                             SUBSCREEN,
                                             STEP}; // CV Config Mapping
 FrankData::frankData mappingSeqConfig2Push[] = {
-    FrankData::resetStepCounters, FrankData::seqResetCC, FrankData::seqResetNotes,    FrankData::seqResetGates, FrankData::copySeq,
-    FrankData::nbPages,           FrankData::seqTuning,  FrankData::seqPageEndOffset, FrankData::screenRouting, PLAY}; // GATE Mapping Push
+    FrankData::resetStepCounters, FrankData::seqResetCC, FrankData::seqResetNotes, FrankData::seqResetGates, FrankData::load,
+    FrankData::copySeq,           FrankData::seqTuning,  FrankData::save,          FrankData::screenRouting, PLAY}; // GATE Mapping Push
+
+/////////////////
 
 FrankData::frankData mappingSeqNote[] = {NOTE, NOTE, NOTE, NOTE, NOTE, NOTE, NOTE, NOTE, SUBSCREEN, STEP};                    // NOTE Mapping  Rotary
 FrankData::frankData mappingSeqNotePush[] = {GATE, GATE, GATE, GATE, GATE, GATE, GATE, GATE, FrankData::screenRouting, PLAY}; // NOTE Mapping Push
