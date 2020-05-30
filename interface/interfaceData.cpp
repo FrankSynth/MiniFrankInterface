@@ -454,11 +454,6 @@ void FrankData::receivedKeyPressed(const byte &channel, const byte &note, const 
             // live midi
             if (config.routing[x].outSource == 0) {
                 liveMidi[x].triggered = 1;
-                // if (liveMidi[x].arpRestarted) {
-                // liveMidi[x].arpOffsetTime = millis() - stat.last16thTime + 1; // at least 1 ms time
-                // if (bpmSync)
-                // nextArpStep(x);
-                // }
                 liveMidi[x].midiUpdateWaitTimer = 0;
             }
         }
@@ -492,8 +487,6 @@ void FrankData::init() {
         loadMenuSettings();
     }
     else {
-        // memset(cal, 0, sizeof(cal));
-        // saveNoteCalibration();
         loadNoteCalibration();
         saveMenuSettings();
         EEPROM.update(0, checkByte);
@@ -512,14 +505,10 @@ void FrankData::receivedMidiClock() {
 void FrankData::receivedMidiSongPosition(unsigned int spp) {
     // DebugTimer debug("spp");
     if (stat.bpmSync) {
-        // stat.bpm16thCount = spp % 32;
         stat.bpmClockCounter = 0;
         for (byte out = 0; out < OUTPUTS; out++) {
-            // liveMidi[out].stepSeq = 0;
-            // liveMidi[out].stepArp = 0;
             liveMidi[out].arpRestarted = 1;
             liveMidi[out].arpRetrigger = 1;
-            // liveMidi[out].midiUpdateWaitTimer = 0;
         }
         PRINT(millis());
 
@@ -547,10 +536,6 @@ void FrankData::receivedMidiSongPosition(unsigned int spp) {
                     clockPoly = clockClockCount[out] - clockPoly;
                 doNotCheckClocksCounter[out] = min(doNotCheckClocksCounter[out], clockPoly);
             }
-            // if (out == 1) {
-            //     PRINT("doNotCheckClocksCounter ");
-            //     PRINTLN(doNotCheckClocksCounter[out]);
-            // }
         }
 
         for (unsigned int i = 0; i < (spp * 6); i++) {
@@ -575,10 +560,6 @@ void FrankData::receivedMidiSongPosition(unsigned int spp) {
                                 clockPoly = clockClockCount[out] - clockPoly;
                             doNotCheckClocksCounter[out] = min(doNotCheckClocksCounter[out], clockPoly);
                         }
-                        // if (out == 1) {
-                        //     PRINT("doNotCheckClocksCounter ");
-                        //     PRINTLN(doNotCheckClocksCounter[out]);
-                        // }
                     }
                     else {
                         doNotCheckClocksCounter[out]--;
@@ -586,7 +567,6 @@ void FrankData::receivedMidiSongPosition(unsigned int spp) {
                 }
             }
         }
-        // updateClockCounter();
         stat.receivedSPPclockCount = stat.bpmClockCounter;
 
         for (byte out = 0; out < OUTPUTS; out++) {
@@ -857,10 +837,10 @@ void FrankData::updateClockCounter(const bool restartCounter) {
 void FrankData::calcBPM() {
     static elapsedMicros bpm16thTimer;
     static elapsedMillis averagingStartTime;
-    static double averageTimer = 0;
+    static uint32_t averageTimer = 0;
     static byte counter = 0;
 
-    averageTimer += 60000000.0 / (double)bpm16thTimer;
+    averageTimer += 60000000.0 / bpm16thTimer;
     bpm16thTimer = 0;
     counter++;
 
@@ -1301,8 +1281,6 @@ void FrankData::nextArpStep(const byte &array) {
             default:;
         }
 
-        // PRINT("Arp Step ");
-        // PRINTLN(liveMidi[array].stepArp);
         structKey key;
 
         if (config.routing[array].arpMode == 7) {
@@ -1435,7 +1413,6 @@ int16_t FrankData::get(const frankData &frankDataType) {
         case error: return stat.error;
         case bpmSync: return stat.bpmSync;
         case bpmPoti: return stat.bpmPot;
-        // case bpm16thCount: return stat.bpm16thCount;
         case bpmClockCount: return stat.bpmClockCounter;
         case save:
         case load: return stat.loadSaveSlot;
@@ -1675,10 +1652,7 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data, const b
         case seqNote: seq[array].setNote(step, data); break;
         case seqGate: seq[array].setGate(step, data); break;
         case seqGateLength: seq[array].sequence.gateLength[step] = testByte(data, 0, 100); break;
-        case seqCc:
-            seq[array].sequence.cc[step] = testByte(data, 0, 127);
-            break;
-            // case seqVelocity: seq[array].sequence.velocity[step] = testByte(data, 0, 127); break;
+        case seqCc: seq[array].sequence.cc[step] = testByte(data, 0, 127); break;
 
         case noteCalOffset: cal[array].noteCalibration[step] = testInt(data, -100, 100); break;
         case none: break;
@@ -2661,13 +2635,6 @@ const char *tuningToChar(const byte &tuning) {
     }
 }
 
-int sort_desc(const void *cmp1, const void *cmp2) {
-    // Need to cast the void * to int *
-    byte a = ((structKey *)cmp1)->note;
-    byte b = ((structKey *)cmp2)->note;
-    // The comparison
-    return a > b ? -1 : (a < b ? 1 : 0);
-}
 int sort_asc(const void *cmp1, const void *cmp2) {
     // Need to cast the void * to int *
     byte a = ((structKey *)cmp1)->note;

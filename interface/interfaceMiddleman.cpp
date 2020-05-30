@@ -85,10 +85,8 @@ void updateNoteOut() {
                         DATAOBJ.set(FrankData::liveArpTriggeredNewNote, 0, output);
                         continue;
                     }
-                    // if (DATAOBJ.get(FrankData::outputArp, output) == 1) {
                     if (DATAOBJ.get(FrankData::liveMidiUpdateWaitTimer, output) < MIDIARPUPDATEDELAY)
                         continue;
-                    // }
                     newNote = DATAOBJ.get(FrankData::liveKeyArpNoteEvaluated, output);
                     newVel = DATAOBJ.get(FrankData::liveKeyArpVelEvaluated, output);
                     if (DATAOBJ.get(FrankData::liveArpTriggeredNewNote, output)) {
@@ -175,7 +173,6 @@ void updateNoteOut() {
                     uint32_t divider = ((uint32_t)DATAOBJ.get(FrankData::bpm) * 24 * (uint32_t)(DATAOBJ.get(FrankData::outputRatchet, output) + 1));
                     previousOutputs[output].ratchetOffsetTime = (countsToNextClock * 60000000) / divider;
                     previousOutputs[output].gateCloseTime = previousOutputs[output].ratchetOffsetTime * gateDuration;
-                    // previousOutputs[output].reactivateTime = previousOutputs[output].ratchetOffsetTime;
 
                     // PRINT("current Time is ");
                     // PRINT(millis());
@@ -254,7 +251,6 @@ void reactivateRatchet() {
                 }
 
                 previousOutputs[output].gateCloseTime = previousOutputs[output].ratchetOffsetTime * gateDuration;
-                // previousOutputs[output].reactivateTime = millis() + previousOutputs[output].ratchetOffsetTime;
                 PRINT(", New gate Close Time is ");
                 PRINTLN(previousOutputs[output].gateCloseTime);
 
@@ -314,21 +310,10 @@ void updateCVOut() {
 
             if (DATAOBJ.get(FrankData::outputCc, output) == 2) {
                 newCV = DATAOBJ.get(FrankData::outputCcEvaluated, output) / 4; // returns -8192 - 8191, now -2048 - 2047
-                // if (newCV == previousOutputs[output].cv) {
-                //     return;
-                // }
-                // else {
-                //     previousOutputs[output].cv = newCV;
-                // }
             }
             else {
                 newCV = DATAOBJ.get(FrankData::outputCcEvaluated, output);
-                // if (newCV == previousOutputs[output].cv) {
-                //     return;
-                // }
-                // else {
-                //     previousOutputs[output].cv = newCV;
-                // }
+
                 if (newCV < 64) {
                     newCV = map(newCV, 0, 64, -2048, 0);
                 }
@@ -342,12 +327,6 @@ void updateCVOut() {
             if (currentStep != previousOutputs[output].stepSeq || !DATAOBJ.get(FrankData::play)) {
                 previousOutputs[output].stepSeq = currentStep;
                 newCV = DATAOBJ.get(FrankData::seqCc, DATAOBJ.get(FrankData::outputSource, output) - 1, currentStep);
-                // if (newCV == previousOutputs[output].cv) {
-                //     return;
-                // }
-                // else {
-                //     previousOutputs[output].cv = newCV;
-                // }
                 if (newCV < 64) {
                     newCV = map(newCV, 0, 64, -2048, 0);
                 }
@@ -436,7 +415,7 @@ void updateClockOut() {
     static elapsedMillis timer[2];
 
     if (!(DATAOBJ.get(FrankData::bpmClockCount) == previousState.oldBpmClockCount)) {
-        // previousState.old16thClockCount = DATAOBJ.get(FrankData::bpm16thCount);
+
         previousState.oldBpmClockCount = DATAOBJ.get(FrankData::bpmClockCount);
 
         if (DATAOBJ.get(FrankData::bpmClockCount) % 24 < 12) {
@@ -456,7 +435,6 @@ void updateClockOut() {
 
             if (DATAOBJ.get(FrankData::bpmClockCount) != previousOutputs[output].clockPulseStep) {
 
-                // if ((int)(DATAOBJ.get(FrankData::bpm16thCount)) % (int)pow(2, (int)DATAOBJ.get(FrankData::outputClock, output)) == 0) {
                 if (DATAOBJ.checkClockStepping(output, FrankData::outputClock)) {
                     outputClock[output].setClock(1);
                     previousOutputs[output].clockPulseActivated = 1;
@@ -492,13 +470,11 @@ void closeTriggers() {
 }
 
 int16_t changeNote(const int16_t &value, const int16_t &change, const int16_t &minimum, const int16_t &maximum) {
-
     if (value + change > maximum) { // test max
-
-        return value + change - 12;
+        return (value + change - 12);
     }
     else if (value + change < minimum) { // test min
-        return value + change + 12;
+        return (value + change + 12);
     }
     else {
         return (value + change); // return new value

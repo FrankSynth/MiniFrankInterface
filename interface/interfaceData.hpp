@@ -87,25 +87,23 @@ typedef struct {
     byte loadSaveSlot = 0; // laod save 1-10
 
     uint16_t bpm = 120; // current bpm
-    byte play = 1;      // play stop
+    byte play = 0;      // play stop
     byte rec = 0;       // Rec Active
     byte error = 0;     // ErrorFlag
 
     byte noteToCalibrate = 0; // note value that gets calibrated
     int8_t cvToCalibrate = 0; // cv value * 2048 that gets calibrated
 
-    byte bpmSync = 0; // Sync Active
-    // byte midiClockCount = 5;      // counts incoming midiclock signals (6 ticks per 16th)
-    // byte bpm16thCount = 0;       // general 16th counter for clock outputs
+    byte bpmSync = 0;            // Sync Active
     int16_t bpmClockCounter = 0; // Midiclock Counter counting up to up to 2304 (common multiplier of all possible timings)
 
-    byte receivedNewSPP = 1;
-    byte doNotCalcBpm = 0;
+    byte receivedNewSPP = 1; // received new SPP, so next midiclock will be starting at this position
+    byte doNotCalcBpm = 0;   // because of delays, don't usw this 16th to calculate momentary bpm speed
 
-    int16_t receivedSPPclockCount = 0;
+    int16_t receivedSPPclockCount = 0; // save the last received spp
 
-    byte editMode = 0;
-    byte editStep = 0;
+    byte editMode = 0; // edit mode activated
+    byte editStep = 0; // step on page for activated edit mode
 
     uint16_t bpmPot = 120; // sync= 0 ? 0-1023 bpm log : divider /4, /2, 1, *2, *4 ; Range is 0-1023 (not yet implemented)
 } structStatus;
@@ -163,7 +161,6 @@ class LiveMidi {
     byte arpTriggeredNewNote = 0; // Arp has a new step to send out via middleman
     byte arpStepRepeat = 1;       // arp repeats step, for upRdownR, etc
     byte arpRestarted = 0;        // arp was reset
-    uint32_t arpOffsetTime = 0;
 
     byte recModePlayback = 0; // status for rec mode playback (last recorded note will be played instead of current step)
 
@@ -503,7 +500,6 @@ const char *valueToOctave(const byte &noteIn);
 char valueToSharp(const byte &noteIn);
 const char *tuningToChar(const byte &tuning);
 
-int sort_desc(const void *cmp1, const void *cmp2);
 int sort_asc(const void *cmp1, const void *cmp2);
 
 class DebugTimer {

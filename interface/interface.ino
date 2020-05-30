@@ -189,8 +189,8 @@ void loop() {
     }
 
     updateMidi();
-    // count all clocks forward if not synced
 
+    // count all clocks forward if not synced
     DATAOBJ.updateClockCounter();
 
     // activate middleman

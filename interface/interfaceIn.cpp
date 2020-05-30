@@ -319,20 +319,21 @@ void inputControls::readSeq() {
 }
 
 void inputControls::readBPMSpeed() {
-    static elapsedMillis timer;
-    static elapsedMillis timerFast;
-    static uint16_t tempRead;
+    static elapsedMillis timerFast = 0;
+    static uint32_t tempRead = 0;
+    static uint8_t readAmount = 0;
 
     if (DATAOBJ.get(FrankData::bpmSync))
         return;
 
     if (timerFast > 9) {
-        tempRead = analogRead(BPMPOT);
-        timerFast = 0;
-    }
-    if (timer > 15) {
-        DATAOBJ.set(FrankData::bpmPoti, 1023 - (analogRead(BPMPOT) + tempRead) / 2);
-        timer = 0;
+        tempRead += analogRead(BPMPOT);
+        readAmount++;
+        if (readAmount > 3) {
+            DATAOBJ.set(FrankData::bpmPoti, 1023 - (tempRead / readAmount));
+            readAmount = 0;
+            tempRead = 0;
+        }
         timerFast = 0;
     }
 }
