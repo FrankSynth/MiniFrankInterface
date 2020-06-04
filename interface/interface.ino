@@ -56,7 +56,16 @@ void updateTLC() { // update interrupt
         for (int x = 0; x < 2; x++) {
 
             for (int i = 0; i < 4; i++) {
-                if (DATAOBJ.get(FrankData::seqGate, source - 1, DATAOBJ.get(FrankData::activePage, source - 1) * 8 + i + 4 * x)) { // gate an?,
+
+                byte page;
+
+                if (DATAOBJ.get(FrankData::editMode)) {
+                    page = DATAOBJ.get(FrankData::activeEditPage);
+                }
+                else {
+                    page = DATAOBJ.get(FrankData::activePage, source - 1);
+                }
+                if (DATAOBJ.get(FrankData::seqGate, source - 1, page * 8 + i + 4 * x)) { // gate an?,
                     if (x == 0) {
                         send = send | 1 << i;
                     }

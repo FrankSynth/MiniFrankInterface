@@ -302,13 +302,13 @@ void inputControls::readSwitches() {
     // PRINT("INPUT: REC set: ");
     // PRINTLN(!digitalRead(SWREC));
 
-    DATAOBJ.set(FrankData::bpmSync, !digitalRead(SWSYNC));
+    DATAOBJ.set(FrankData::bpmSync, digitalRead(SWSYNC));
     DATAOBJ.set(FrankData::screenOutputChannel, digitalRead(SWSEQ));
     DATAOBJ.set(FrankData::rec, !digitalRead(SWREC));
 }
 
 void inputControls::readSync() {
-    DATAOBJ.set(FrankData::bpmSync, !digitalRead(SWSYNC));
+    DATAOBJ.set(FrankData::bpmSync, digitalRead(SWSYNC));
 }
 void inputControls::readRec() {
     DATAOBJ.set(FrankData::rec, !digitalRead(SWREC));
