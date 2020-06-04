@@ -66,16 +66,16 @@ void updateTLC() { // update interrupt
                 }
             }
         }
-        if (send != sendOld) {
+        //if (send != sendOld) {
             tlc.sendByte(send);
-            sendOld = send;
-        }
+        //    sendOld = send;
+        //}
     }
     else {
-        if (sendOld) {
+        //if (sendOld) {
             tlc.sendByte(0);
-            sendOld = 0;
-        }
+        //    sendOld = 0;
+       // }
     }
 }
 
