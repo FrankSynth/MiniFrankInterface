@@ -1418,7 +1418,7 @@ int16_t FrankData::get(const frankData &frankDataType) {
         case load: return stat.loadSaveSlot;
         case editMode: return stat.editMode;
         case editStep: return stat.editStep;
-        case activeEditPage: return (stat.editStep / STEPSPERPAGE);
+        case activeEditPage: return (stat.editStep >> 3);
         case stepOnEditPage: return (stat.editStep - (get(activeEditPage) * STEPSPERPAGE));
 
         case pulseLength:
@@ -1475,7 +1475,7 @@ int16_t FrankData::get(const frankData &frankDataType, const byte &array) {
         case stepArp: return liveMidi[array].stepArp;
         case stepSeq: return liveMidi[array].stepSeq;
         case stepSpeed: return config.routing[array].stepSpeed;
-        case activePage: return (liveMidi[array].stepSeq / STEPSPERPAGE);
+        case activePage: return (liveMidi[array].stepSeq >> 3);
 
         case stepOnPage: return (liveMidi[array].stepSeq - (get(activePage, array) * STEPSPERPAGE));
 
