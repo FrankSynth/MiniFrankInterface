@@ -650,9 +650,10 @@ void TLC5916::sendByte(byte send) {
     SPI.beginTransaction(SPISettings(30000000, MSBFIRST, SPI_MODE0));
     SPI.transfer(send);
     digitalWrite(pinTLC, HIGH);
+    delayNanoseconds(50);
     digitalWrite(pinTLC, LOW);
     SPI.endTransaction();
-}
+    }
 
 void TLC5916::init(byte pin) {
     pinTLC = pin;
