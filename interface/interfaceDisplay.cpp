@@ -402,7 +402,8 @@ void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
 
                 switch (mapping(dataField)) {
                     case FrankData::seqGateLengthOffset:
-                    case FrankData::seqTuning: data = DATAOBJ.getValueAsStr(mapping(dataField), SEQCHANNEL); break;
+                    case FrankData::seqTuning:
+                    case FrankData::seqPageEndOffset: data = DATAOBJ.getValueAsStr(mapping(dataField), SEQCHANNEL); break;
                     default: data = DATAOBJ.getValueAsStr(mapping(dataField), CHANNEL);
                 }
 
