@@ -648,11 +648,9 @@ void DispBuffer16::byteSwap(void) {
 void TLC5916::sendByte(byte send) {
 
     SPI.beginTransaction(SPISettings(30000000, MSBFIRST, SPI_MODE0));
-    digitalWrite(pinTLC, LOW);
     SPI.transfer(send);
     digitalWrite(pinTLC, HIGH);
     digitalWrite(pinTLC, LOW);
-
     SPI.endTransaction();
 }
 
