@@ -57,6 +57,17 @@ class DispBuffer16 : public Adafruit_GFX {
     uint16_t *buffer;
 };
 
+class TLC5916 {
+  public:
+    void init(byte pin);
+    void sendByte(byte send);
+    void toggleCLK();
+    void updateTLC();
+
+  private:
+    byte pinTLC;
+};
+
 class Display {
   public:
     Display(byte w, byte h, byte rotation) // constructor
@@ -68,6 +79,7 @@ class Display {
     void refresh();                                                 // refresh display
     void displayBrightness(byte brigthness);                        // set display display brightness
     Adafruit_ST7735 lcd = Adafruit_ST7735(LCD_CS, LCD_DC, LCD_RST); // initialize LCD
+    TLC5916 tlc;
 
   private:
     // Build display buffers
@@ -103,14 +115,4 @@ class Display {
     void BodyTemplateCal();
 
     void updateDisplay();
-};
-
-class TLC5916 {
-  public:
-    void init(byte pin);
-    void sendByte(byte send);
-    void toggleCLK();
-
-  private:
-    byte pinTLC;
 };

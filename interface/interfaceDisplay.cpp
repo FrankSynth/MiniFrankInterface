@@ -549,6 +549,8 @@ void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t
         updateMidi();
         DATAOBJ.updateClockCounter();
         updateAllOutputs();
+        tlc.updateTLC();
+
         for (int16_t i = 0; i < w; i++) {
             int16_t index = j * w + i;
 
@@ -654,7 +656,7 @@ void TLC5916::sendByte(byte send) {
     delayNanoseconds(50);
     digitalWrite(pinTLC, LOW);
     SPI.endTransaction();
-    }
+}
 
 void TLC5916::init(byte pin) {
     pinTLC = pin;
@@ -662,4 +664,47 @@ void TLC5916::init(byte pin) {
     digitalWrite(pin, LOW);
 
     // sendByte(0); // set to Black
+}
+
+void TLC5916::updateTLC() { // update interrupt
+    static byte sendOld = 0;
+    static elapsedMicros flickerTimer = 0;
+    static byte flickerOff = 0;
+    static uint16_t flickerTime = 0;
+
+    if (flickerTimer > flickerTime) {
+        flickerOff = !flickerOff;
+        flickerTimer = 0;
+        if (flickerOff)
+            flickerTime = 1000; // off time
+        else
+            flickerTime = 200; // on time
+    }
+
+    if (DATAOBJ.get(FrankData::outputSource, CHANNEL)) { // seq modus an?
+        byte send = 0;
+        byte page;
+
+        if (flickerOff) {
+            page = 0;
+        }
+        else {
+            page = DATAOBJ.get(FrankData::activeGateByte);
+        }
+
+        page = page | (1 << DATAOBJ.get(FrankData::activeStepOnPage));
+
+        send = (0x0F & page) | (0x80 & page) >> 3 | (0x40 & page) >> 1 | (0x20 & page) << 1 | (0x10 & page) << 3;
+
+        if (send != sendOld) {
+            sendByte(send);
+            sendOld = send;
+        }
+    }
+    else {
+        if (sendOld) {
+            sendByte(0);
+            sendOld = 0;
+        }
+    }
 }

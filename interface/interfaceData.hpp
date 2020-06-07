@@ -274,6 +274,8 @@ class FrankData {
         stepSeq,
         activePage,
         activeEditPage,
+        activeGateByte,
+        activeStepOnPage,
         seqResetNotes,
         seqResetGates,
         seqResetGateLengths,

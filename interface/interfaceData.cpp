@@ -320,11 +320,11 @@ void Seq::setGates(const byte &gate) { // set note value
 }
 
 byte Seq::getGate(const byte &index) {
-    return bitRead(sequence.gate[index / 8], index % 8);
+    return bitRead(sequence.gate[index >> 3], index & 0x07);
 }
 
 void Seq::setGate(const byte &index, const byte &gate) {
-    bitWrite(sequence.gate[index / 8], index % 8, testByte(gate, 0, 1));
+    bitWrite(sequence.gate[index >> 3], index & 0x07, testByte(gate, 0, 1));
 }
 
 void Seq::increaseNote(const byte &index) { // increase note value and return new note
@@ -1419,6 +1419,15 @@ int16_t FrankData::get(const frankData &frankDataType) {
         case editMode: return stat.editMode;
         case editStep: return stat.editStep;
         case activeEditPage: return (stat.editStep >> 3);
+        case activeGateByte:
+            if (stat.editMode) {
+                return seq[config.routing[stat.screen.channel].outSource - 1].sequence.gate[stat.editStep >> 3];
+            }
+            else {
+                return seq[config.routing[stat.screen.channel].outSource - 1].sequence.gate[liveMidi[stat.screen.channel].stepSeq >> 3];
+            }
+        case activeStepOnPage: return liveMidi[stat.screen.channel].stepSeq & 0x07;
+
         case stepOnEditPage: return (stat.editStep - (get(activeEditPage) * STEPSPERPAGE));
 
         case pulseLength:
@@ -1477,7 +1486,7 @@ int16_t FrankData::get(const frankData &frankDataType, const byte &array) {
         case stepSpeed: return config.routing[array].stepSpeed;
         case activePage: return (liveMidi[array].stepSeq >> 3);
 
-        case stepOnPage: return (liveMidi[array].stepSeq - (get(activePage, array) * STEPSPERPAGE));
+        case stepOnPage: return (liveMidi[array].stepSeq & 0x07);
 
         case currentPageNumber: return getCurrentPageNumber(array);
 
@@ -1525,8 +1534,8 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data) {
 
         case screenOutputChannel:
             stat.screen.channel = testByte(data, 0, OUTPUTS - 1);
-            if (config.routing[stat.screen.channel].nbPages < stat.editStep / STEPSPERPAGE) {
-                stat.editStep = (config.routing[stat.screen.channel].nbPages - 1) * STEPSPERPAGE;
+            if (config.routing[stat.screen.channel].nbPages < (stat.editStep >> 3)) {
+                stat.editStep = (config.routing[stat.screen.channel].nbPages - 1) << 3;
             }
             break;
         case screenConfig: stat.screen.config = testByte(data, 0, 1); break;
@@ -1567,7 +1576,7 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data) {
             stat.editStep = get(activePage, stat.screen.channel) * 8;
             break;
 
-        case editStep: stat.editStep = testByte(data, 0, STEPSPERPAGE * config.routing[stat.screen.channel].nbPages - 1); break;
+        case editStep: stat.editStep = testByte(data, 0, (config.routing[stat.screen.channel].nbPages - 1) << 3); break;
 
         case pulseLength: config.pulseLength = testInt(data, 0, 1000); break;
         case none: break;
@@ -1619,13 +1628,13 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data, const b
         case liveRecModePlayback: liveMidi[array].recModePlayback = testByte(data, 0, 1); break;
 
         case stepArp: liveMidi[array].stepArp = testByte(data, 0, NOTERANGE - 1); break;
-        case stepSeq: liveMidi[array].stepSeq = testByte(data, 0, STEPSPERPAGE * config.routing[array].nbPages - 1); break;
+        case stepSeq: liveMidi[array].stepSeq = testByte(data, 0, (config.routing[stat.screen.channel].nbPages - 1) << 3); break;
         case stepSpeed: config.routing[array].stepSpeed = testByte(data, 0, 22); break;
         case nbPages:
             config.routing[array].nbPages = testByte(data, 1, PAGES);
             if (stat.editMode) {
                 if (stat.editStep / STEPSPERPAGE > config.routing[stat.screen.channel].nbPages - 1)
-                    stat.editStep = (config.routing[stat.screen.channel].nbPages - 1) * STEPSPERPAGE;
+                    stat.editStep = (config.routing[stat.screen.channel].nbPages - 1) << 3;
             }
             break;
 

@@ -29,7 +29,7 @@
 inputControls cntrl;
 
 Display lcd = Display(160, 128, 3); // create display object, (width, heigh, rotation)
-TLC5916 tlc;
+// TLC5916 tlc;
 
 void ISRSwitch(); // Switch Interrupt
 
@@ -46,45 +46,6 @@ void readSerial3() {
 
 void updateDisplay() { // update interrupt
     lcd.refresh();
-}
-
-void updateTLC() { // update interrupt
-    static byte sendOld = 0;
-    byte source = DATAOBJ.get(FrankData::outputSource, CHANNEL);
-    if (source) { // seq modus an?
-        byte send = 0;
-        byte page;
-        if (DATAOBJ.get(FrankData::editMode)) {
-            page = DATAOBJ.get(FrankData::activeEditPage);
-        }
-        else {
-            page = DATAOBJ.get(FrankData::activePage, CHANNEL);
-        }
-        for (int x = 0; x < 2; x++) {
-
-            for (int i = 0; i < 4; i++) {
-
-                if (DATAOBJ.get(FrankData::seqGate, source - 1, page * 8 + i + 4 * x)) { // gate an?,
-                    if (x == 0) {
-                        send = send | 1 << i;
-                    }
-                    else {
-                        send = send | 1 << (7 - i);
-                    }
-                }
-            }
-        }
-        if (send != sendOld) {
-            tlc.sendByte(send);
-            sendOld = send;
-        }
-    }
-    else {
-        if (sendOld) {
-            tlc.sendByte(0);
-        sendOld = 0;
-        }
-    }
 }
 
 void setup() {
@@ -110,7 +71,7 @@ void setup() {
     lcd.displayBrightness(200);
     initMidi();
     initMiddleman();
-    tlc.init(7);
+    lcd.tlc.init(7);
     cntrl.init();
 
     ////////////////////////
@@ -183,7 +144,6 @@ void loop() {
     if (screenTimer > 16) {
 
         updateDisplay();
-        updateTLC();
 
         screenTimer = 0;
     }
@@ -195,6 +155,9 @@ void loop() {
 
         readSerial3();
     }
+
+    // update and flicker lEDs
+    lcd.tlc.updateTLC();
 
     updateMidi();
 
