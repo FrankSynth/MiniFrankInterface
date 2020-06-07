@@ -171,7 +171,7 @@ void updateNoteOut() {
 
                     // 24 Ticks / BPM
                     uint32_t divider = ((uint32_t)DATAOBJ.get(FrankData::bpm) * 24 * (uint32_t)(DATAOBJ.get(FrankData::outputRatchet, output) + 1));
-                    previousOutputs[output].ratchetOffsetTime = (countsToNextClock * 60000000) / divider;
+                    previousOutputs[output].ratchetOffsetTime = (countsToNextClock * 60000) / divider;
                     previousOutputs[output].gateCloseTime = previousOutputs[output].ratchetOffsetTime * gateDuration;
 
                     // PRINT("current Time is ");

@@ -119,7 +119,7 @@ void setup() {
 void loop() {
 
     // static elapsedMillis performanceTimer;
-    // static elapsedMillis loopTimer;
+    // static elapsedMicros loopTimer;
     // static uint32_t counter = 0;
     // static uint32_t loopTime = 0;
     // counter++;

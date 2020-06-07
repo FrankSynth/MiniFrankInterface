@@ -16,7 +16,7 @@ class PreviousOutputs {
     uint32_t gateCloseTime = 0;
     uint32_t ratchetOffsetTime = 0;
 
-    elapsedMicros gateTimer = 0;
+    elapsedMillis gateTimer = 0;
 
     byte stepSeq = 0;
 
