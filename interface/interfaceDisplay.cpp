@@ -678,7 +678,7 @@ void TLC5916::updateTLC() { // update interrupt
         if (flickerOff)
             flickerTime = 1000; // off time
         else
-            flickerTime = 200; // on time
+            flickerTime = 400; // on time
     }
 
     if (DATAOBJ.get(FrankData::outputSource, CHANNEL)) { // seq modus an?
