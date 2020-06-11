@@ -203,8 +203,11 @@ void midiNoteOff(const byte &channel, const byte &note, const byte &velocity) {
 }
 
 void midiCC(const byte &channel, const byte &cc, const byte &midiData) {
-    PRINT("Midi CC ");
-    PRINTLN(cc);
+    PRINT(millis());
+    PRINT(": Midi CC ");
+    PRINT(cc);
+    PRINT(", Data: ");
+    PRINTLN(midiData);
 
     switch (cc) {
 
@@ -313,7 +316,8 @@ void midiCC(const byte &channel, const byte &cc, const byte &midiData) {
         case 25:
             for (byte x = 0; x < OUTPUTS; x++) {
                 if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
-                    DATAOBJ.set(FrankData::seqGateLengthOffset, map(midiData, 0, 127, 0, 200), x);
+                    if (DATAOBJ.get(FrankData::outputSource, x))
+                        DATAOBJ.set(FrankData::seqGateLengthOffset, map(midiData, 0, 127, -100, 100), DATAOBJ.get(FrankData::outputSource, x) - 1);
                 }
             }
             break;
@@ -330,7 +334,7 @@ void midiCC(const byte &channel, const byte &cc, const byte &midiData) {
             for (byte x = 0; x < OUTPUTS; x++) {
                 if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
                     if (DATAOBJ.get(FrankData::outputSource, x))
-                        DATAOBJ.set(FrankData::seqPageEndOffset, midiData / 16, DATAOBJ.get(FrankData::outputSource, x) - 1);
+                        DATAOBJ.set(FrankData::seqPageEndOffset, -midiData / 16, DATAOBJ.get(FrankData::outputSource, x) - 1);
                 }
             }
             break;

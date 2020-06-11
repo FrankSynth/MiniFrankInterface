@@ -665,11 +665,11 @@ void FrankData::reset() {
 }
 
 void FrankData::increaseBpmCount() {
-    PRINT(millis());
+    // PRINT(millis());
 
     if (stat.receivedNewSPP) {
 
-        PRINTLN(": increaseBPM receivednewSPP");
+        // PRINTLN(": increaseBPM receivednewSPP");
 
         stat.receivedNewSPP = 0;
         stat.doNotCalcBpm = 1;
@@ -683,7 +683,7 @@ void FrankData::increaseBpmCount() {
         return;
     }
 
-    PRINTLN(": increaseBPM");
+    // PRINTLN(": increaseBPM");
 
     // LCM of all timings is 2304
     stat.bpmClockCounter++;

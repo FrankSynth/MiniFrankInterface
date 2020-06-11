@@ -52,7 +52,7 @@ typedef struct {
     byte gate[(LENGTH / 8)]; // optimize data to single bits! middleman seq check, if gate
     byte gateLength[LENGTH]; //
     byte tuning;             // tuning offset
-    int8_t gateLengthOffset; // 100 = no offset
+    int8_t gateLengthOffset; // additional gate length offset
     int8_t pageEndOffset;    // shorten pages
 } structSequence;
 
