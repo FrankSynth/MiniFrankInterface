@@ -702,7 +702,7 @@ void TLC5916::updateTLC() { // update interrupt
         }
     }
     else if (DATAOBJ.get(FrankData::outputArp, CHANNEL)) {
-        byte page = 0x00 | (1 << (DATAOBJ.get(FrankData::stepArp) & 0x07));
+        byte page = 0x00 | (1 << (DATAOBJ.get(FrankData::stepArp, CHANNEL) & 0x07));
 
         byte send = (0x0F & page) | (0x80 & page) >> 3 | (0x40 & page) >> 1 | (0x20 & page) << 1 | (0x10 & page) << 3;
 

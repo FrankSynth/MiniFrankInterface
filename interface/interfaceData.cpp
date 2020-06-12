@@ -1038,6 +1038,8 @@ void FrankData::nextArpStep(const byte &array) {
             PRINTLN(array);
         }
 
+        static byte randomCounter = 0;
+
         switch (config.routing[array].arpMode) {
             case 1: // down
 
@@ -1076,17 +1078,18 @@ void FrankData::nextArpStep(const byte &array) {
                 }
                 break;
             case 7: // random
-                if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
+                if (randomCounter == liveMidi[array].arpList.size - 1) {
                     increaseArpOct(array);
                 }
                 if (liveMidi[array].arpRestarted) {
                     increaseArpOct(array);
-                    liveMidi[array].stepArp = 0;
+                    randomCounter = 0;
                     liveMidi[array].arpRestarted = 0;
                 }
                 else {
-                    liveMidi[array].stepArp = changeByteReverse(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1);
+                    randomCounter = changeByteReverse(randomCounter, 1, 0, liveMidi[array].arpList.size - 1);
                 }
+                liveMidi[array].stepArp = random(0, liveMidi[array].arpList.size);
                 break;
             case 2: // updown
                 if (liveMidi[array].arpRestarted) {
@@ -1266,12 +1269,7 @@ void FrankData::nextArpStep(const byte &array) {
 
         structKey key;
 
-        if (config.routing[array].arpMode == 7) {
-            key = liveMidi[array].getArpKey(random(0, liveMidi[array].arpList.size));
-        }
-        else {
-            key = liveMidi[array].getArpKey(liveMidi[array].stepArp);
-        }
+        key = liveMidi[array].getArpKey(liveMidi[array].stepArp);
 
         // lower octaves
         if (liveMidi[array].arpOctave < 0) {
