@@ -150,17 +150,17 @@ void updateNoteOut() {
                     // ratchet calc
                     previousOutputs[output].ratchet = DATAOBJ.get(FrankData::outputRatchet, output);
 
-                    DATAOBJ.clockSteppingCounts(DATAOBJ.get(FrankData::stepSpeed, output));
+                    DATAOBJ.clockSteppingCounts[DATAOBJ.get(FrankData::stepSpeed, output)];
 
-                    uint32_t countsToNextClock = DATAOBJ.clockSteppingCounts(DATAOBJ.get(FrankData::stepSpeed, output));
+                    uint32_t countsToNextClock = DATAOBJ.clockSteppingCounts[DATAOBJ.get(FrankData::stepSpeed, output)];
 
                     if (DATAOBJ.get(FrankData::outputPolyRhythm, output) > 1) {
                         countsToNextClock -=
-                            DATAOBJ.get(FrankData::bpmClockCount) % DATAOBJ.clockSteppingCounts(DATAOBJ.get(FrankData::stepSpeed, output));
+                            DATAOBJ.get(FrankData::bpmClockCount) % DATAOBJ.clockSteppingCounts[DATAOBJ.get(FrankData::stepSpeed, output)];
 
                         uint32_t outClockCounts =
-                            DATAOBJ.clockSteppingCounts(DATAOBJ.get(FrankData::outputClock, output)) -
-                            DATAOBJ.get(FrankData::bpmClockCount) % DATAOBJ.clockSteppingCounts(DATAOBJ.get(FrankData::outputClock, output));
+                            DATAOBJ.clockSteppingCounts[DATAOBJ.get(FrankData::outputClock, output)] -
+                            DATAOBJ.get(FrankData::bpmClockCount) % DATAOBJ.clockSteppingCounts[DATAOBJ.get(FrankData::outputClock, output)];
                         if (outClockCounts < countsToNextClock) {
                             countsToNextClock = outClockCounts;
                         }

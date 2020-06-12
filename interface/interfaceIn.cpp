@@ -118,6 +118,7 @@ void inputControls::rotate(byte id, byte dir) {
         case FrankData::outputChannel:
         case FrankData::outputSource:
         case FrankData::outputPolyRhythm:
+        case FrankData::outputClockingOffset:
 
         case FrankData::nbPages:
 

@@ -524,13 +524,13 @@ void FrankData::receivedMidiSongPosition(unsigned int spp) {
 
         for (byte out = 0; out < OUTPUTS; out++) {
             stepcounter[out] = 0;
-            stepClockCount[out] = clockSteppingCounts(config.routing[out].stepSpeed);
+            stepClockCount[out] = clockSteppingCounts[config.routing[out].stepSpeed];
             doNotCheckClocksCounter[out] = (stat.bpmClockCounter + 1) % stepClockCount[out];
             if (doNotCheckClocksCounter[out])
                 doNotCheckClocksCounter[out] = stepClockCount[out] - doNotCheckClocksCounter[out];
 
             if (config.routing[out].polyRhythm > 1) {
-                clockClockCount[out] = clockSteppingCounts(config.routing[out].clockSpeed);
+                clockClockCount[out] = clockSteppingCounts[config.routing[out].clockSpeed];
                 uint16_t clockPoly = (stat.bpmClockCounter + 1) % clockClockCount[out];
                 if (clockPoly)
                     clockPoly = clockClockCount[out] - clockPoly;
@@ -540,7 +540,7 @@ void FrankData::receivedMidiSongPosition(unsigned int spp) {
 
         for (unsigned int i = 0; i < (spp * 6); i++) {
             stat.bpmClockCounter++;
-            if (stat.bpmClockCounter > 2303) {
+            if (stat.bpmClockCounter > MAXBPMCOUNT) {
                 stat.bpmClockCounter = 0;
             }
 
@@ -687,7 +687,7 @@ void FrankData::increaseBpmCount() {
 
     // LCM of all timings is 2304
     stat.bpmClockCounter++;
-    if (stat.bpmClockCounter > 2303) {
+    if (stat.bpmClockCounter > MAXBPMCOUNT) {
         stat.bpmClockCounter = 0;
     }
 
@@ -724,7 +724,7 @@ void FrankData::increaseStepCounters(const byte &channel) {
         while (!steppingDone) {
 
             stat.bpmClockCounter++;
-            if (stat.bpmClockCounter > 2303) {
+            if (stat.bpmClockCounter > MAXBPMCOUNT) {
                 stat.bpmClockCounter = 0;
             }
 
@@ -764,7 +764,7 @@ void FrankData::decreaseStepCounters(const byte &channel) {
 
             stat.bpmClockCounter--;
             if (stat.bpmClockCounter < 0) {
-                stat.bpmClockCounter = 2303;
+                stat.bpmClockCounter = MAXBPMCOUNT;
             }
 
             for (byte out = 0; out < OUTPUTS; out++) {
@@ -863,45 +863,28 @@ void FrankData::calcBPM() {
 }
 
 bool FrankData::checkClockStepping(const byte &array, const frankData &clockSource) {
+    uint16_t checkClock = stat.bpmClockCounter;
+
+    if (config.routing[array].clockingOffset) {
+        uint16_t clockStepsOffset = clockSteppingCounts[config.routing[array].clockingOffset - 1];
+        if (clockStepsOffset > stat.bpmClockCounter) {
+            clockStepsOffset -= stat.bpmClockCounter;
+            checkClock = MAXBPMCOUNT + 1 - clockStepsOffset;
+        }
+        else {
+            checkClock -= clockStepsOffset;
+        }
+    }
+
     if (clockSource == stepSpeed || config.routing[array].polyRhythm == 1 || config.routing[array].polyRhythm == 3) {
-        if (!(stat.bpmClockCounter % clockSteppingCounts(config.routing[array].stepSpeed)))
+        if (!(checkClock % clockSteppingCounts[config.routing[array].stepSpeed]))
             return true;
     }
     if (clockSource == outputClock || config.routing[array].polyRhythm > 1) {
-        if (!(stat.bpmClockCounter % clockSteppingCounts(config.routing[array].clockSpeed)))
+        if (!(checkClock % clockSteppingCounts[config.routing[array].clockSpeed]))
             return true;
     }
     return false;
-}
-
-uint16_t FrankData::clockSteppingCounts(const uint16_t &clockSetting) {
-    switch (clockSetting) {
-        case 0: return 1;
-        case 1: return 2;
-        case 2: return 3;
-        case 3: return 4;
-        case 4: return 6;
-        case 5: return 8;
-        case 6: return 9;
-        case 7: return 12;
-        case 8: return 16;
-        case 9: return 18;
-        case 10: return 24;
-        case 11: return 32;
-        case 12: return 36;
-        case 13: return 48;
-        case 14: return 64;
-        case 15: return 72;
-        case 16: return 96;
-        case 17: return 128;
-        case 18: return 144;
-        case 19: return 192;
-        case 20: return 256;
-        case 21: return 288;
-        case 22: return 384;
-
-        default: return 1;
-    }
 }
 
 void FrankData::increaseSeqStep(const byte &array) {
@@ -1453,6 +1436,7 @@ int16_t FrankData::get(const frankData &frankDataType, const byte &array) {
         case outputArpMode: return config.routing[array].arpMode;
         case outputPolyRhythm: return config.routing[array].polyRhythm;
         case outputMidiNotes: return config.routing[array].midiNoteOut;
+        case outputClockingOffset: return config.routing[array].clockingOffset;
 
         case liveKeysPressed: return liveMidi[array].keysPressed();
 
@@ -1599,6 +1583,7 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data, const b
             liveMidi[array].triggered = 1;
             break;
         case outputClock: config.routing[array].clockSpeed = testByte(data, 0, 22); break;
+        case outputClockingOffset: config.routing[array].clockingOffset = testByte(data, 0, 23); break;
         case outputRatchet: config.routing[array].arpRatchet = testByte(data, 0, 3); break;
         case outputArpOctave: config.routing[array].arpOctaves = testInt(data, -3, 3); break;
         case outputArpMode:
@@ -1747,6 +1732,7 @@ void FrankData::toggle(const frankData &frankDataType) {
     static int16_t bufferedOutputSource[OUTPUTS] = {0, 0};
     static int16_t bufferedSeqNotes[OUTPUTS] = {0, 0};
     static int16_t bufferedSeqOctaves[OUTPUTS] = {0, 0};
+    static int16_t bufferedClockingOffset[OUTPUTS] = {0, 0};
     int16_t temp;
 
     switch (frankDataType) {
@@ -1830,6 +1816,11 @@ void FrankData::toggle(const frankData &frankDataType) {
             temp = config.routing[stat.screen.channel].clockSpeed;
             config.routing[stat.screen.channel].clockSpeed = bufferedClockSpeed[stat.screen.channel];
             bufferedClockSpeed[stat.screen.channel] = temp;
+            break;
+        case outputClockingOffset:
+            temp = config.routing[stat.screen.channel].clockingOffset;
+            config.routing[stat.screen.channel].clockingOffset = bufferedClockingOffset[stat.screen.channel];
+            bufferedClockingOffset[stat.screen.channel] = temp;
             break;
         case outputSource:
             temp = config.routing[stat.screen.channel].outSource;
@@ -1963,6 +1954,7 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
         case outputLiveMode: setStr("Key"); break;
 
         case outputClock: setStr("Clock"); break;
+        case outputClockingOffset: setStr("ClOff"); break;
         case outputMidiNotes: setStr("NtOut"); break;
 
         case screenOutputChannel: setStr("Rout"); break;
@@ -2367,6 +2359,35 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType, const byte 
                 case 20: setStr("4/1T"); break;
                 case 21: setStr("2/1."); break;
                 case 22: setStr("4/1"); break;
+                default: setStr("ERR");
+            }
+            break;
+        case outputClockingOffset:
+            switch (config.routing[channel].clockingOffset) {
+                case 0: setStr("-"); break;
+                case 1: setStr("/64T"); break;
+                case 2: setStr("/32T"); break;
+                case 3: setStr("/32"); break;
+                case 4: setStr("/16T"); break;
+                case 5: setStr("/16"); break;
+                case 6: setStr("1/8T"); break;
+                case 7: setStr("/16."); break;
+                case 8: setStr("1/8"); break;
+                case 9: setStr("1/4T"); break;
+                case 10: setStr("1/8."); break;
+                case 11: setStr("1/4"); break;
+                case 12: setStr("1/2T"); break;
+                case 13: setStr("1/4."); break;
+                case 14: setStr("1/2"); break;
+                case 15: setStr("1/1T"); break;
+                case 16: setStr("1/2."); break;
+                case 17: setStr("1/1"); break;
+                case 18: setStr("2/1T"); break;
+                case 19: setStr("1/1."); break;
+                case 20: setStr("2/1"); break;
+                case 21: setStr("4/1T"); break;
+                case 22: setStr("2/1."); break;
+                case 23: setStr("4/1"); break;
                 default: setStr("ERR");
             }
             break;

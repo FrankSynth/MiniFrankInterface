@@ -10,6 +10,7 @@
 #define STEPSPERPAGE 8
 #define OUTPUTS 2 // Number of output lanes
 #define MAXSTRINGSIZE 8
+#define MAXBPMCOUNT 2303 // max Number of bpmClockCount, resulting in 2304 counting steps
 
 #define MIDIARPUPDATEDELAY 2000 // in micros
 
@@ -24,15 +25,16 @@ typedef struct {
     byte arpMode = 0;      // 0 = up, 1 = down, 2 = updown, 3= downup, 4 = upRdownR, 5 = downRupR, 6 = order, 7 = random
     byte cc = 0;           // 0 = vel, 1 = mod, 2 = pitchbend, 3 = aftertouch, 4 = sustain
     byte liveMidiMode = 0; // 0 = latest, 1 = lowest, 2 = highest
-    byte clockSpeed = 2;   // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = 1 bar, 5 = 2 bars
+    byte clockSpeed = 2;
     byte arpRatchet = 0;   // repeats per step, 1 = 1 repeat (2 notes total), up to 3 repeats
     int8_t arpOctaves = 0; // Octaves -3 ... 0 ... 3
-    byte stepSpeed = 2;    // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = 1 bar, 5 = 2 bars
-    byte nbPages = 8;      // nb Pages  1-16
-    int8_t seqOctaves = 0; // Seq Octave Offset
-    int8_t seqNotes = 0;   // Seq single Note Offset
-    byte polyRhythm = 0;   // 0 = None, 1 = Clock, 2 = StepSpeed, 3 = Steps + Clock
-    byte midiNoteOut = 0;  // output Midi Notes back out, 0 = off, 1 = din, 2 = usb, 3 = both
+    byte stepSpeed = 2;
+    byte clockingOffset = 0; // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = 1 bar, 5 = 2 bars
+    byte nbPages = 8;        // nb Pages  1-16
+    int8_t seqOctaves = 0;   // Seq Octave Offset
+    int8_t seqNotes = 0;     // Seq single Note Offset
+    byte polyRhythm = 0;     // 0 = None, 1 = Clock, 2 = StepSpeed, 3 = Steps + Clock
+    byte midiNoteOut = 0;    // output Midi Notes back out, 0 = off, 1 = din, 2 = usb, 3 = both
 } structOutputRouting;
 
 typedef struct {
@@ -311,6 +313,7 @@ class FrankData {
         outputClock,
         outputPolyRhythm,
         outputMidiNotes,
+        outputClockingOffset,
 
         // Screen Settings, needs value
         screenOutputChannel,
@@ -356,6 +359,8 @@ class FrankData {
         liveMidiUpdateWaitTimer,
 
     };
+
+    uint16_t clockSteppingCounts[23] = {1, 2, 3, 4, 6, 8, 9, 12, 16, 18, 24, 32, 36, 48, 64, 72, 96, 128, 144, 192, 256, 288, 384};
 
   private:
     FrankData() {}
@@ -425,7 +430,6 @@ class FrankData {
     void seqCopy(const byte &source, const byte &destination);
 
     bool checkClockStepping(const byte &array, const frankData &clockSource);
-    uint16_t clockSteppingCounts(const uint16_t &clockSetting);
 
     void updateArp(const byte &array);
 

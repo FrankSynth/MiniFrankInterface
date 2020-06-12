@@ -243,15 +243,15 @@ void Display::BodyTemplateCal() { // has 1 dataFields + GateSignal
             }
         }
     }
-
+    // PRINTLN("print note");
     // print frequency target
     byte note = DATAOBJ.get(FrankData::liveCalNote);
     float freq = 27.50 * pow(2, note / 12.);
 
     bufferBody->setFont(&FreeSansBold9pt7b);
-    bufferBody->setCursor(87, 30);
+    bufferBody->setCursor(87, 22);
     bufferBody->print(freq);
-    bufferBody->setCursor(87, 50);
+    bufferBody->setCursor(87, 42);
 
     bufferBody->print("Hz");
 }
@@ -695,6 +695,16 @@ void TLC5916::updateTLC() { // update interrupt
         page = page | (1 << DATAOBJ.get(FrankData::activeStepOnPage));
 
         send = (0x0F & page) | (0x80 & page) >> 3 | (0x40 & page) >> 1 | (0x20 & page) << 1 | (0x10 & page) << 3;
+
+        if (send != sendOld) {
+            sendByte(send);
+            sendOld = send;
+        }
+    }
+    else if (DATAOBJ.get(FrankData::outputArp, CHANNEL)) {
+        byte page = 0x00 | (1 << (DATAOBJ.get(FrankData::stepArp) & 0x07));
+
+        byte send = (0x0F & page) | (0x80 & page) >> 3 | (0x40 & page) >> 1 | (0x20 & page) << 1 | (0x10 & page) << 3;
 
         if (send != sendOld) {
             sendByte(send);
