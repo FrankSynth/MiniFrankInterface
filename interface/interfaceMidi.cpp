@@ -252,7 +252,7 @@ void midiCC(const byte &channel, const byte &cc, const byte &midiData) {
         case 14:
             for (byte x = 0; x < OUTPUTS; x++) {
                 if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
-                    DATAOBJ.set(FrankData::outputArpMode, midiData / 16, x);
+                    DATAOBJ.set(FrankData::outputArpMode, midiData / 12, x);
                 }
             }
             break;
