@@ -18,6 +18,19 @@
 #define CHANNEL DATAOBJ.get(FrankData::screenOutputChannel)
 #define SEQCHANNEL (DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1)
 
+// Arpeggiator defines
+
+#define ARP_UP 0
+#define ARP_DN 1
+#define ARP_UD 2
+#define ARP_DU 3
+#define ARP_URDR 4
+#define ARP_DRUR 5
+#define ARP_UP2 6
+#define ARP_DN2 7
+#define ARP_ORDR 8
+#define ARP_RND 9
+
 typedef struct {
     byte outSource = 0;    // 0 = live, 1 = seq1, 2 = seq2, ...
     byte channel = 0;      // 0 = all, 1 = channel 1, ...
