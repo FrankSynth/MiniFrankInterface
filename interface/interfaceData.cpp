@@ -1583,7 +1583,7 @@ int16_t FrankData::get(const frankData &frankDataType, const byte &array, const 
 // set data
 void FrankData::set(const frankData &frankDataType, const int16_t &data) {
     switch (frankDataType) {
-        case midiSource: config.midiSource = testByte(data, 0, 1); break;
+        case midiSource: config.midiSource = testByte(data, 0, 1); reset(); break;
 
         case direction: config.direction = testByte(data, 0, 1); break;
         case displayBrightness: config.displayBrightness = testByte(data, 0, 100); break; // how high?
