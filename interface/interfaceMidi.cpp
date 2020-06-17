@@ -15,7 +15,7 @@
 #define PRINT2(x, y)
 #endif
 
-MIDI_CREATE_INSTANCE(HardwareSerial, Serial4, MIDI); // Which serial???
+MIDI_CREATE_INSTANCE(HardwareSerial, Serial4, MIDI);
 
 // callback handles
 void midiNoteOn(const byte &channel, const byte &note, const byte &velocity);
@@ -174,6 +174,9 @@ void initMidi() {
     MIDI.setHandleContinue(dinMidiContinue);
     MIDI.setHandleStop(dinMidiStop);
     MIDI.setHandleSystemReset(dinMidiSystemReset);
+
+    usbMIDI.begin();
+    MIDI.begin(MIDI_CHANNEL_OMNI);
 }
 
 // Midi Loop
