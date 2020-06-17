@@ -118,26 +118,26 @@ void setup() {
 
 void loop() {
 
-    // static elapsedMillis performanceTimer;
-    // static elapsedMicros loopTimer;
-    // static uint32_t counter = 0;
-    // static uint32_t loopTime = 0;
-    // counter++;
+    static elapsedMillis performanceTimer;
+    static elapsedMicros loopTimer;
+    static uint32_t counter = 0;
+    static uint32_t loopTime = 0;
+    counter++;
 
-    // if (loopTimer > loopTime) {
-    //     loopTime = loopTimer;
-    // }
-    // loopTimer = 0;
+    if (loopTimer > loopTime) {
+        loopTime = loopTimer;
+    }
+    loopTimer = 0;
 
-    // if (performanceTimer > 1000) {
-    //     PRINT("repeats: ");
-    //     PRINT(counter);
-    //     PRINT(", longest loop: ");
-    //     PRINTLN(loopTime);
-    //     loopTime = 0;
-    //     counter = 0;
-    //     performanceTimer = 0;
-    // }
+    if (performanceTimer > 1000) {
+        PRINT("repeats: ");
+        PRINT(counter);
+        PRINT(", longest loop: ");
+        PRINTLN(loopTime);
+        loopTime = 0;
+        counter = 0;
+        performanceTimer = 0;
+    }
 
     static elapsedMillis screenTimer;
 
