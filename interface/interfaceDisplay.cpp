@@ -99,10 +99,18 @@ void Display::drawFoot() {
     else if (DATAOBJ.get(FrankData::outputSource, CHANNEL) > 0) { // Seq Mode
         FootSeq();
     }
+    updateMidi();
+    DATAOBJ.updateClockCounter();
+    updateAllOutputs();
+    tlc.updateTLC();
 }
 
 void Display::BodyTemplateLive() { // has 1 dataFields + GateSignal
     for (int x = 0; x < 4; x++) {
+        updateMidi();
+        DATAOBJ.updateClockCounter();
+        updateAllOutputs();
+        tlc.updateTLC();
         for (int y = 0; y < 2; y++) {
             if (x < 2 || y != 0) {
                 byte dataField = x + y * 4;       // current DataField
@@ -184,6 +192,10 @@ void Display::BodyTemplateLive() { // has 1 dataFields + GateSignal
 
 void Display::BodyTemplateCal() { // has 1 dataFields + GateSignal
     for (int x = 0; x < 4; x++) {
+        updateMidi();
+        DATAOBJ.updateClockCounter();
+        updateAllOutputs();
+        tlc.updateTLC();
         for (int y = 0; y < 2; y++) {
             if (x < 2 || y != 0) {
                 byte dataField = x + y * 4;       // current DataField
@@ -260,6 +272,10 @@ void Display::BodyTemplateSeq() { // has 2x4 dataField
 
     // DataFields
     for (int x = 0; x < 4; x++) {
+        updateMidi();
+        DATAOBJ.updateClockCounter();
+        updateAllOutputs();
+        tlc.updateTLC();
         for (int y = 0; y < 2; y++) {
             byte dataField = x + y * 4; // current DataField
 
@@ -373,6 +389,10 @@ void Display::BodyTemplateSeq() { // has 2x4 dataField
 
 void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
     for (int x = 0; x < 4; x++) {
+        updateMidi();
+        DATAOBJ.updateClockCounter();
+        updateAllOutputs();
+        tlc.updateTLC();
         for (int y = 0; y < 2; y++) {
             byte dataField = x + y * 4;       // current DataField
             if (mapping(dataField) != NONE) { // not an empty field?
@@ -461,6 +481,10 @@ void Display::drawHead() {
     if (DATAOBJ.get(FrankData::rec)) {
         bufferHead->fillCircle(150, 7, 3, RED);
     }
+    updateMidi();
+    DATAOBJ.updateClockCounter();
+    updateAllOutputs();
+    tlc.updateTLC();
 }
 
 void Display::FootLive() {

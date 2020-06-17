@@ -1,7 +1,7 @@
 #include "interfaceMidi.hpp"
 
 // Debug logging
-#define DEBUG 0
+#define DEBUG 1
 
 #if DEBUG == 1
 #define PRINTLN(x) Serial.println(x)
@@ -463,6 +463,15 @@ void midiPitchBend(const byte &channel, int value) {
 }
 
 void midiClock() {
+    static elapsedMicros midiTimingClock = 0;
+    uint32_t microTime = micros();
+    PRINT(microTime);
+    PRINT(": received new Midi Clock, next clock expected at ");
+    PRINT(microTime + midiTimingClock);
+    PRINT(", passed Time is ");
+    PRINTLN(midiTimingClock);
+    midiTimingClock = 0;
+
     DATAOBJ.receivedMidiClock();
 }
 
