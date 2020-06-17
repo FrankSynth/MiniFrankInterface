@@ -2499,13 +2499,7 @@ void FrankData::setStr(const char *newStr) {
 }
 
 void FrankData::loadSequence(const byte &saveSlot, const byte &sequence) {
-    Serial.print("Load Slot ");
-    Serial.print(saveSlot);
-    Serial.print(" into Sequence ");
-    Serial.println(sequence);
-
     if (sequence > OUTPUTS - 1 || saveSlot > SAVESLOTS - 1) {
-        Serial.println("received wrong settings");
         return;
     }
 
@@ -2515,13 +2509,7 @@ void FrankData::loadSequence(const byte &saveSlot, const byte &sequence) {
 }
 
 void FrankData::saveSequence(const byte &saveSlot, const byte &sequence) {
-    Serial.print("Store Sequence ");
-    Serial.print(sequence);
-    Serial.print(" into Slot ");
-    Serial.println(saveSlot);
-
-    if (sequence > OUTPUTS - 1 || saveSlot > SAVESLOTS - 1) {
-        Serial.println("received wrong settings");
+     if (sequence > OUTPUTS - 1 || saveSlot > SAVESLOTS - 1) {
         return;
     }
 
@@ -2531,28 +2519,24 @@ void FrankData::saveSequence(const byte &saveSlot, const byte &sequence) {
 }
 
 void FrankData::loadMenuSettings() {
-    Serial.println("Load Menu settings");
     int memory = 1;
 
     EEPROM.get(memory, config);
 }
 
 void FrankData::saveMenuSettings() {
-    Serial.println("Save Menu settings");
     int memory = 1;
 
     EEPROM.put(memory, config);
 }
 
 void FrankData::saveNoteCalibration() {
-    Serial.println("Store Note Calibration ");
     int memory = 50; // leave space for menu
 
     EEPROM.put(memory, cal);
 }
 
 void FrankData::loadNoteCalibration() {
-    Serial.println("Get Note Calibration ");
     int memory = 50; // leave space for menu
 
     EEPROM.get(memory, cal);

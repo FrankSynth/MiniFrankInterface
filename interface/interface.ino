@@ -12,7 +12,7 @@
 #include <avr/io.h>
 
 // Debug logging
-#define DEBUG 1
+#define DEBUG 0
 
 #if DEBUG == 1
 #define PRINTLN(x) Serial.println(x)
@@ -49,8 +49,10 @@ void updateDisplay() { // update interrupt
 }
 
 void setup() {
-
+    
+#if DEBUG == 1
     Serial.begin(115200);
+#endif
 
     analogReadAveraging(32);
     analogReadResolution(10);
@@ -118,26 +120,26 @@ void setup() {
 
 void loop() {
 
-    static elapsedMillis performanceTimer;
-    static elapsedMicros loopTimer;
-    static uint32_t counter = 0;
-    static uint32_t loopTime = 0;
-    counter++;
+    // static elapsedMillis performanceTimer;
+    // static elapsedMicros loopTimer;
+    // static uint32_t counter = 0;
+    // static uint32_t loopTime = 0;
+    // counter++;
 
-    if (loopTimer > loopTime) {
-        loopTime = loopTimer;
-    }
-    loopTimer = 0;
+    // if (loopTimer > loopTime) {
+    //     loopTime = loopTimer;
+    // }
+    // loopTimer = 0;
 
-    if (performanceTimer > 1000) {
-        PRINT("repeats: ");
-        PRINT(counter);
-        PRINT(", longest loop: ");
-        PRINTLN(loopTime);
-        loopTime = 0;
-        counter = 0;
-        performanceTimer = 0;
-    }
+    // if (performanceTimer > 1000) {
+    //     PRINT("repeats: ");
+    //     PRINT(counter);
+    //     PRINT(", longest loop: ");
+    //     PRINTLN(loopTime);
+    //     loopTime = 0;
+    //     counter = 0;
+    //     performanceTimer = 0;
+    // }
 
     static elapsedMillis screenTimer;
 

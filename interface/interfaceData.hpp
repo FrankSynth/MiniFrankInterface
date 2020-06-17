@@ -521,7 +521,7 @@ const char *tuningToChar(const byte &tuning);
 
 int sort_asc(const void *cmp1, const void *cmp2);
 
-class DebugTimer {
+/* class DebugTimer {
     elapsedMicros timer;
     const char *name;
 
@@ -537,4 +537,4 @@ class DebugTimer {
         Serial.print(timer);
         Serial.println(" micros");
     }
-};
+}; */
