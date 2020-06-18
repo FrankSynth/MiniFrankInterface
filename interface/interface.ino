@@ -12,7 +12,7 @@
 #include <avr/io.h>
 
 // Debug logging
-#define DEBUG 1
+#define DEBUG 0
 
 #if DEBUG == 1
 #define PRINTLN(x) Serial.println(x)
@@ -29,7 +29,7 @@
 inputControls cntrl;
 
 Display lcd = Display(160, 128, 3); // create display object, (width, heigh, rotation)
-TLC5916 tlc;
+// TLC5916 tlc;
 
 void ISRSwitch(); // Switch Interrupt
 
@@ -48,40 +48,11 @@ void updateDisplay() { // update interrupt
     lcd.refresh();
 }
 
-void updateTLC() { // update interrupt
-    static byte sendOld = 0;
-    byte source = DATAOBJ.get(FrankData::outputSource, CHANNEL);
-    if (source) { // seq modus an?
-        byte send = 0;
-        for (int x = 0; x < 2; x++) {
-
-            for (int i = 0; i < 4; i++) {
-                if (DATAOBJ.get(FrankData::seqGate, source - 1, DATAOBJ.get(FrankData::activePage, source - 1) * 8 + i + 4 * x)) { // gate an?,
-                    if (x == 0) {
-                        send = send | 1 << i;
-                    }
-                    else {
-                        send = send | 1 << (7 - i);
-                    }
-                }
-            }
-        }
-        if (send != sendOld) {
-            tlc.sendByte(send);
-            sendOld = send;
-        }
-    }
-    else {
-        if (sendOld) {
-            tlc.sendByte(0);
-            sendOld = 0;
-        }
-    }
-}
-
 void setup() {
-
+    
+#if DEBUG == 1
     Serial.begin(115200);
+#endif
 
     analogReadAveraging(32);
     analogReadResolution(10);
@@ -102,7 +73,7 @@ void setup() {
     lcd.displayBrightness(200);
     initMidi();
     initMiddleman();
-    tlc.init(7);
+    lcd.tlc.init(7);
     cntrl.init();
 
     ////////////////////////
@@ -138,9 +109,9 @@ void setup() {
         DATAOBJ.set(FrankData::error, 1); // set error status
     }
 
-    attachInterrupt(digitalPinToInterrupt(SWSYNC), ISRSwitch, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(SWSEQ), ISRSwitch, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(SWREC), ISRSwitch, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(SWSYNC), ISRSync, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(SWSEQ), ISRSeq, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(SWREC), ISRRec, CHANGE);
 
     // Set timer interrupt (display refresh)
     // myTimerLCD.begin(updateDisplay, 17000); // display refresh
@@ -150,7 +121,7 @@ void setup() {
 void loop() {
 
     // static elapsedMillis performanceTimer;
-    // static elapsedMillis loopTimer;
+    // static elapsedMicros loopTimer;
     // static uint32_t counter = 0;
     // static uint32_t loopTime = 0;
     // counter++;
@@ -175,7 +146,6 @@ void loop() {
     if (screenTimer > 16) {
 
         updateDisplay();
-        updateTLC();
 
         screenTimer = 0;
     }
@@ -188,9 +158,12 @@ void loop() {
         readSerial3();
     }
 
-    updateMidi();
-    // count all clocks forward if not synced
+    // update and flicker lEDs
+    lcd.tlc.updateTLC();
 
+    updateMidi();
+
+    // count all clocks forward if not synced
     DATAOBJ.updateClockCounter();
 
     // activate middleman
@@ -198,9 +171,16 @@ void loop() {
 
     // read BPM knob
     cntrl.readBPMSpeed();
+
+    cntrl.checkPushedButtons();
 }
 
-void ISRSwitch() {
-    cntrl.readSwitches();
-    //   PRINTLN("INPUT: SWChange");
+void ISRSync() {
+    cntrl.readSync();
+}
+void ISRRec() {
+    cntrl.readRec();
+}
+void ISRSeq() {
+    cntrl.readSeq();
 }

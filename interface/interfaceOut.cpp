@@ -36,7 +36,7 @@ void Channel::setCV(int value) { // 0 - 2048 -> -5V -> 5V
 
     int16_t calOffset = DATAOBJ.get(FrankData::cvCalOffset, outputChannel);
 
-    if (DATAOBJ.get(FrankData::outputCc, outputChannel) == 2) {
+    if (DATAOBJ.get(FrankData::outputCc, outputChannel) == 2) { // pitchbend
         if (value < 0) {
             value =
                 map(value, -2048, 0, DATAOBJ.get(FrankData::cvPitchbendCalLower, outputChannel) + DATAOBJ.get(FrankData::cvCalLower, outputChannel),
@@ -47,7 +47,7 @@ void Channel::setCV(int value) { // 0 - 2048 -> -5V -> 5V
                         4095 + DATAOBJ.get(FrankData::cvPitchbendCalUpper, outputChannel) + DATAOBJ.get(FrankData::cvCalUpper, outputChannel));
         }
     }
-    else {
+    else { // no pitchbend
         if (value < 0) {
             value = map(value, -2048, 0, DATAOBJ.get(FrankData::cvCalLower, outputChannel), 2048 + calOffset);
         }

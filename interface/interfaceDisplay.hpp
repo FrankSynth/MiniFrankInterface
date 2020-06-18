@@ -32,7 +32,9 @@
 
 #define GREYWHITE 0xC638 // Hell Blau
 #define GREY 0x39E7
-#define GREEN 0x4208    // Grün
+#define GREEN 0x04E0 // Grün
+#define MEDIUMGREY 0x4208
+#define LIGHTGREY 0x7BEF
 #define DARKGREY 0x2945 // linien
 #define BACKGROUND 0x3186
 
@@ -55,6 +57,17 @@ class DispBuffer16 : public Adafruit_GFX {
     uint16_t *buffer;
 };
 
+class TLC5916 {
+  public:
+    void init(byte pin);
+    void sendByte(byte send);
+    void toggleCLK();
+    void updateTLC();
+
+  private:
+    byte pinTLC;
+};
+
 class Display {
   public:
     Display(byte w, byte h, byte rotation) // constructor
@@ -66,6 +79,7 @@ class Display {
     void refresh();                                                 // refresh display
     void displayBrightness(byte brigthness);                        // set display display brightness
     Adafruit_ST7735 lcd = Adafruit_ST7735(LCD_CS, LCD_DC, LCD_RST); // initialize LCD
+    TLC5916 tlc;
 
   private:
     // Build display buffers
@@ -101,13 +115,4 @@ class Display {
     void BodyTemplateCal();
 
     void updateDisplay();
-};
-
-class TLC5916 {
-  public:
-    void init(byte pin);
-    void sendByte(byte send);
-
-  private:
-    byte pinTLC;
 };

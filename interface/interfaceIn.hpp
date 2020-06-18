@@ -8,15 +8,17 @@
 #define SWSEQ 23
 #define SWREC 31
 #define BPMPOT 22
+#define BUTTONPRESSTIME 1000
 
 //#define DEBUG
 
 // Controls object for the incoming UART messages
 class inputControls {
   public:
-    void encode(byte message);      // encode message
-    void rotate(byte id, byte dir); // is a rotate message
-    void push(byte id, byte push);  // is a switch message
+    void encode(byte message);        // encode message
+    void rotate(byte id, byte dir);   // is a rotate message
+    void push(byte id, byte push);    // is a switch message
+    void release(byte id, byte push); // is a switch message
 
     void readSwitches(); // readSwitches
 
@@ -27,4 +29,10 @@ class inputControls {
     void readBPMSpeed(); // read sync potentiometer
 
     void init();
+
+    void checkPushedButtons(); // check if timer of pushed buttons elapsed
+
+  private:
+    byte screenRoutingPressed = 0;
+    elapsedMillis screenRoutingPressedTimer = 0;
 };

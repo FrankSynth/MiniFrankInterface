@@ -15,7 +15,7 @@
 #define PRINT2(x, y)
 #endif
 
-MIDI_CREATE_INSTANCE(HardwareSerial, Serial4, MIDI); // Which serial???
+MIDI_CREATE_INSTANCE(HardwareSerial, Serial4, MIDI);
 
 // callback handles
 void midiNoteOn(const byte &channel, const byte &note, const byte &velocity);
@@ -174,11 +174,16 @@ void initMidi() {
     MIDI.setHandleContinue(dinMidiContinue);
     MIDI.setHandleStop(dinMidiStop);
     MIDI.setHandleSystemReset(dinMidiSystemReset);
+
+    usbMIDI.begin();
+    MIDI.begin(MIDI_CHANNEL_OMNI);
 }
 
 // Midi Loop
 void updateMidi() {
 
+    // usbMIDI.read();
+    // MIDI.read();
     while (usbMIDI.read()) {
     }
     while (MIDI.read()) {
@@ -201,167 +206,246 @@ void midiNoteOff(const byte &channel, const byte &note, const byte &velocity) {
 }
 
 void midiCC(const byte &channel, const byte &cc, const byte &midiData) {
-    // CCs for Live performance
-    if (cc == 1) {
-        for (byte x = 0; x < OUTPUTS; x++) {
-            if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
-                DATAOBJ.set(FrankData::liveMod, midiData, x);
-            }
-        }
-    }
+    PRINT(millis());
+    PRINT(": Midi CC ");
+    PRINT(cc);
+    PRINT(", Data: ");
+    PRINTLN(midiData);
 
-    if (cc == 64) {
-        for (byte x = 0; x < OUTPUTS; x++) {
-            if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
-                DATAOBJ.set(FrankData::liveSustain, midiData, x);
+    switch (cc) {
 
-                if (DATAOBJ.get(FrankData::outputArp, x) && !DATAOBJ.get(FrankData::outputSource, x)) {
-                    DATAOBJ.updateArp(x);
+            // CCs for Live performance
+        case 1:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    DATAOBJ.set(FrankData::liveMod, midiData, x);
                 }
             }
-        }
-    }
+            break;
 
-    // CCs to access settings
-    if (cc == 12) {
-        for (byte x = 0; x < OUTPUTS; x++) {
-            if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
-                DATAOBJ.set(FrankData::outputSource, midiData / 43, x);
-            }
-        }
-    }
-    if (cc == 13) {
-        for (byte x = 0; x < OUTPUTS; x++) {
-            if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
-                DATAOBJ.set(FrankData::outputArp, midiData / 43, x);
-            }
-        }
-    }
-    if (cc == 14) {
-        for (byte x = 0; x < OUTPUTS; x++) {
-            if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
-                DATAOBJ.set(FrankData::outputArpMode, midiData / 16, x);
-            }
-        }
-    }
-    if (cc == 15) {
-        for (byte x = 0; x < OUTPUTS; x++) {
-            if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
-                DATAOBJ.set(FrankData::outputArpOctave, midiData / 18, x);
-            }
-        }
-    }
-    if (cc == 17) {
-        for (byte x = 0; x < OUTPUTS; x++) {
-            if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
-                DATAOBJ.set(FrankData::outputCc, midiData / 25, x);
-            }
-        }
-    }
-    if (cc == 18) {
-        for (byte x = 0; x < OUTPUTS; x++) {
-            if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
-                DATAOBJ.set(FrankData::outputRatchet, midiData / 32, x);
-            }
-        }
-    }
-    if (cc == 19) {
-        for (byte x = 0; x < OUTPUTS; x++) {
-            if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
-                DATAOBJ.set(FrankData::stepSpeed, midiData / 21, x);
-            }
-        }
-    }
-    if (cc == 21) {
-        for (byte x = 0; x < OUTPUTS; x++) {
-            if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
-                DATAOBJ.set(FrankData::outputLiveMode, midiData / 43, x);
-            }
-        }
-    }
-    if (cc == 23) {
-        for (byte x = 0; x < OUTPUTS; x++) {
-            if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
-                DATAOBJ.set(FrankData::direction, midiData / 64);
-            }
-        }
-    }
-    if (cc == 24) {
-        for (byte x = 0; x < OUTPUTS; x++) {
-            if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
-                DATAOBJ.set(FrankData::play, midiData / 64);
-            }
-        }
-    }
-    if (cc == 25) {
-        for (byte x = 0; x < OUTPUTS; x++) {
-            if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
-                DATAOBJ.set(FrankData::seqGateLengthOffset, map(midiData, 0, 127, 0, 200), x);
-            }
-        }
-    }
-    if (cc == 26) {
-        for (byte x = 0; x < OUTPUTS; x++) {
-            if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
-                DATAOBJ.set(FrankData::nbPages, midiData / 8, x);
-            }
-        }
-    }
-    if (cc == 27) {
-        for (byte x = 0; x < OUTPUTS; x++) {
-            if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
-                if (midiData > 63)
-                    DATAOBJ.seqResetAllGates(x);
-            }
-        }
-    }
-    if (cc == 28) {
-        for (byte x = 0; x < OUTPUTS; x++) {
-            if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
-                if (midiData > 63)
-                    DATAOBJ.seqResetAllGateLengths(x);
-            }
-        }
-    }
-    if (cc == 29) {
-        for (byte x = 0; x < OUTPUTS; x++) {
-            if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
-                if (midiData > 63)
-                    DATAOBJ.seqResetAllNotes(x);
-            }
-        }
-    }
-    if (cc == 30) {
-        for (byte x = 0; x < OUTPUTS; x++) {
-            if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
-                if (midiData > 63)
-                    DATAOBJ.seqResetAllCC(x);
-            }
-        }
-    }
-    if (cc == 32) {
-        for (byte x = 0; x < OUTPUTS; x++) {
-            if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
-                DATAOBJ.set(FrankData::outputClock, midiData / 21, x);
-            }
-        }
-    }
-    if (cc == 33) {
-        for (byte x = 0; x < OUTPUTS; x++) {
-            if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
-                if (midiData > 63)
-                    DATAOBJ.resetAllStepCounter();
-            }
-        }
-    }
+        case 64:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    DATAOBJ.set(FrankData::liveSustain, midiData, x);
 
-    // reset all
-    if (cc == 121) {
-        DATAOBJ.receivedReset();
+                    if (DATAOBJ.get(FrankData::outputArp, x) && !DATAOBJ.get(FrankData::outputSource, x)) {
+                        DATAOBJ.updateArp(x);
+                    }
+                }
+            }
+            break;
+
+        // CCs to access settings
+        case 12:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    DATAOBJ.set(FrankData::outputSource, midiData / 43, x);
+                }
+            }
+            break;
+
+        case 13:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    DATAOBJ.set(FrankData::outputArp, midiData / 43, x);
+                }
+            }
+            break;
+
+        case 14:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    DATAOBJ.set(FrankData::outputArpMode, midiData / 12, x);
+                }
+            }
+            break;
+
+        case 15:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    DATAOBJ.set(FrankData::outputArpOctave, midiData / 18, x);
+                }
+            }
+            break;
+
+        case 17:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    DATAOBJ.set(FrankData::outputCc, midiData / 25, x);
+                }
+            }
+            break;
+
+        case 18:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    DATAOBJ.set(FrankData::outputRatchet, midiData / 32, x);
+                }
+            }
+            break;
+
+        case 19:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    DATAOBJ.set(FrankData::stepSpeed, midiData / 5, x);
+                }
+            }
+            break;
+
+        case 21:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    DATAOBJ.set(FrankData::outputLiveMode, midiData / 43, x);
+                }
+            }
+            break;
+
+        case 23:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    DATAOBJ.set(FrankData::direction, midiData / 64);
+                }
+            }
+            break;
+
+        case 24:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    DATAOBJ.set(FrankData::play, midiData / 64);
+                }
+            }
+            break;
+
+        case 25:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    if (DATAOBJ.get(FrankData::outputSource, x))
+                        DATAOBJ.set(FrankData::seqGateLengthOffset, map(midiData, 0, 127, -100, 100), DATAOBJ.get(FrankData::outputSource, x) - 1);
+                }
+            }
+            break;
+
+        case 26:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    DATAOBJ.set(FrankData::nbPages, midiData / 8 + 1, x);
+                }
+            }
+            break;
+
+        case 27:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    if (DATAOBJ.get(FrankData::outputSource, x))
+                        DATAOBJ.set(FrankData::seqPageEndOffset, -midiData / 16, DATAOBJ.get(FrankData::outputSource, x) - 1);
+                }
+            }
+            break;
+
+        case 28:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    DATAOBJ.set(FrankData::seqNoteOffset, midiData / 5 - 12, x);
+                }
+            }
+            break;
+
+        case 29:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    DATAOBJ.set(FrankData::seqOctaveOffset, midiData / 11 - 5, x);
+                }
+            }
+            break;
+
+        case 30:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    if (midiData > 63)
+                        DATAOBJ.seqResetAllGates(x);
+                }
+            }
+            break;
+
+        case 31:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    if (midiData > 63)
+                        DATAOBJ.seqResetAllGateLengths(x);
+                }
+            }
+            break;
+
+        case 32:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    if (midiData > 63)
+                        DATAOBJ.seqResetAllNotes(x);
+                }
+            }
+            break;
+
+        case 33:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    if (midiData > 63)
+                        DATAOBJ.seqResetAllCC(x);
+                }
+            }
+            break;
+
+        case 34:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    if (midiData > 63)
+                        DATAOBJ.resetAllStepCounter();
+                }
+            }
+            break;
+
+        case 36:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    DATAOBJ.set(FrankData::outputClock, midiData / 5, x);
+                }
+            }
+            break;
+
+        case 37:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    DATAOBJ.set(FrankData::outputPolyRhythm, midiData / 32, x);
+                }
+            }
+            break;
+
+        case 38:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    DATAOBJ.set(FrankData::outputMidiNotes, midiData / 32, x);
+                }
+            }
+            break;
+
+            // general
+        case 40:
+            for (byte x = 0; x < OUTPUTS; x++) {
+                if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
+                    DATAOBJ.set(FrankData::pulseLength, midiData);
+                }
+            }
+            break;
+
+        // reset all
+        case 123: DATAOBJ.receivedReset(); break;
+
+        default:;
     }
 }
 
 void midiAfterTouch(const byte &channel, const byte &midiData) {
+    PRINTLN("Midi AT");
+
     for (byte x = 0; x < OUTPUTS; x++) {
         if (DATAOBJ.get(FrankData::outputChannel, x) == 0 || DATAOBJ.get(FrankData::outputChannel, x) == channel) {
             DATAOBJ.set(FrankData::liveAftertouch, midiData, x);
@@ -379,6 +463,17 @@ void midiPitchBend(const byte &channel, int value) {
 }
 
 void midiClock() {
+#if DEBUG
+    static elapsedMicros midiTimingClock = 0;
+    uint32_t microTime = micros();
+    PRINT(microTime);
+    PRINT(": received new Midi Clock, next clock expected at ");
+    PRINT(microTime + midiTimingClock);
+    PRINT(", passed Time is ");
+    PRINTLN(midiTimingClock);
+    midiTimingClock = 0;
+#endif
+
     DATAOBJ.receivedMidiClock();
 }
 
@@ -400,4 +495,37 @@ void midiStop() {
 
 void midiSystemReset() {
     DATAOBJ.receivedReset();
+}
+
+void sendMidiNoteOn(byte &note, byte &velocity, byte &outChannel) {
+    byte midiChannel = testByte(DATAOBJ.get(FrankData::outputChannel, outChannel), 1, 16);
+
+    if (DATAOBJ.get(FrankData::outputMidiNotes, outChannel) > 1) { // usb
+        usbMIDI.sendNoteOn(note + 21, velocity, midiChannel);
+        // usbMIDI.send_now();
+    }
+    if (DATAOBJ.get(FrankData::outputMidiNotes, outChannel) == 1 || DATAOBJ.get(FrankData::outputMidiNotes, outChannel) == 3) { // din
+        MIDI.sendNoteOn(note + 21, velocity, midiChannel);
+    }
+}
+void sendMidiNoteOff(byte &note, byte &outChannel) {
+    byte midiChannel = testByte(DATAOBJ.get(FrankData::outputChannel, outChannel), 1, 16);
+
+    if (DATAOBJ.get(FrankData::outputMidiNotes, outChannel) > 1) { // usb
+        usbMIDI.sendNoteOff(note + 21, 0, midiChannel);
+        // usbMIDI.send_now();
+    }
+    if (DATAOBJ.get(FrankData::outputMidiNotes, outChannel) == 1 || DATAOBJ.get(FrankData::outputMidiNotes, outChannel) == 3) { // din
+        MIDI.sendNoteOff(note + 21, 0, midiChannel);
+    }
+}
+
+void sendMidiAllNotesOff() {
+    for (byte i = 1; i < 17; i++) {
+        // usbMIDI.sendControlChange(64, 0, i);
+        // usbMIDI.sendControlChange(121, 0, i);
+        usbMIDI.sendControlChange(123, 0, i);
+    }
+    PRINTLN("midi reset sent");
+    // usbMIDI.send_now();
 }

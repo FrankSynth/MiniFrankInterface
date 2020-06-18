@@ -24,6 +24,10 @@ void inputControls::encode(byte message) {
             push(id, message & B00010000);
             PRINT("Push : ");
         }
+        else {
+            PRINT("Release : ");
+            release(id, message & B00010000);
+        }
     }
     else { // seems to be an encoder
         PRINT("Encoder : ");
@@ -35,11 +39,19 @@ void inputControls::encode(byte message) {
 void inputControls::rotate(byte id, byte dir) {
     PRINTLN(id);
     PRINT("Direction: ");
-    PRINTLN(dir);
+    PRINT(dir);
 
     FrankData::frankData mappedID = mapping(id);
 
-    id = id + DATAOBJ.get(FrankData::activePage, CHANNEL) * 8;
+    if (DATAOBJ.get(FrankData::editMode)) {
+        id = id + DATAOBJ.get(FrankData::activeEditPage) * 8;
+    }
+    else {
+        id = id + DATAOBJ.get(FrankData::activePage, CHANNEL) * 8;
+    }
+
+    PRINT(" ,step: ");
+    PRINTLN(id);
 
     switch (mappedID) {
 
@@ -82,6 +94,12 @@ void inputControls::rotate(byte id, byte dir) {
         case FrankData::screenMainMenu:
         case FrankData::screenOutputChannel:
         case FrankData::screenConfig:
+        case FrankData::resetStepCounters:
+        case FrankData::seqResetCC:
+        case FrankData::seqResetGateLengths:
+        case FrankData::seqResetGates:
+        case FrankData::seqResetNotes:
+        case FrankData::copySeq:
         case FrankData::saveCal: break;
 
         // Type, Channel;
@@ -90,6 +108,8 @@ void inputControls::rotate(byte id, byte dir) {
         case FrankData::outputRatchet:
         case FrankData::outputArpMode:
         case FrankData::outputArp:
+        case FrankData::outputMidiNotes:
+        case FrankData::outputPitchbendRange:
 
         // case FrankData::midiSource :
         case FrankData::outputLiveMode:
@@ -98,6 +118,8 @@ void inputControls::rotate(byte id, byte dir) {
         case FrankData::outputCc:
         case FrankData::outputChannel:
         case FrankData::outputSource:
+        case FrankData::outputPolyRhythm:
+        case FrankData::outputClockingOffset:
 
         case FrankData::nbPages:
 
@@ -106,6 +128,9 @@ void inputControls::rotate(byte id, byte dir) {
         case FrankData::cvCalUpper:
         case FrankData::cvPitchbendCalLower:
         case FrankData::cvPitchbendCalUpper:
+
+        case FrankData::seqOctaveOffset:
+        case FrankData::seqNoteOffset:
 
         case FrankData::liveCalNote:
         case FrankData::noteScaleOffset:
@@ -139,6 +164,7 @@ void inputControls::rotate(byte id, byte dir) {
             }
 
             break;
+        case FrankData::seqPageEndOffset:
         case FrankData::seqTuning:
 
             if (dir) {
@@ -203,10 +229,17 @@ void inputControls::rotate(byte id, byte dir) {
             }
     }
 }
+
 void inputControls::push(byte id, byte push) { // switch message
 
     FrankData::frankData mappedID = mappingPush(id);
-    id = id + DATAOBJ.get(FrankData::activePage, CHANNEL) * 8;
+
+    if (DATAOBJ.get(FrankData::editMode)) {
+        id = id + DATAOBJ.get(FrankData::activeEditPage) * 8;
+    }
+    else {
+        id = id + DATAOBJ.get(FrankData::activePage, CHANNEL) * 8;
+    }
 
     PRINTLN(id);
     PRINT("Mapping:");
@@ -214,6 +247,10 @@ void inputControls::push(byte id, byte push) { // switch message
 
     switch (mappedID) {
         case FrankData::noteCalOffset: DATAOBJ.toggle(mappedID, CHANNEL, DATAOBJ.get(FrankData::liveCalNote)); break;
+        case FrankData::screenRouting:
+            screenRoutingPressedTimer = 0;
+            screenRoutingPressed = 1;
+            break;
 
         case GATE: DATAOBJ.toggle(mappedID, (byte)SEQCHANNEL, id); break;
 
@@ -221,16 +258,53 @@ void inputControls::push(byte id, byte push) { // switch message
     }
 }
 
+void inputControls::release(byte id, byte push) { // switch message
+
+    FrankData::frankData mappedID = mappingPush(id);
+
+    if (DATAOBJ.get(FrankData::editMode)) {
+        id = id + DATAOBJ.get(FrankData::activeEditPage) * 8;
+    }
+    else {
+        id = id + DATAOBJ.get(FrankData::activePage, CHANNEL) * 8;
+    }
+
+    PRINTLN(id);
+    PRINT("Mapping:");
+    PRINTLN(mappedID);
+
+    switch (mappedID) {
+        case FrankData::screenRouting:
+            if (screenRoutingPressed) {
+                DATAOBJ.toggle(mappedID);
+                screenRoutingPressed = 0;
+            }
+            break;
+        default: break;
+    }
+}
+
+void inputControls::checkPushedButtons() {
+    if (screenRoutingPressed) {
+        if (screenRoutingPressedTimer > BUTTONPRESSTIME) {
+            screenRoutingPressed = 0;
+            DATAOBJ.toggle(FrankData::editMode);
+        }
+    }
+}
+
 void inputControls::readSwitches() {
 
-    PRINT("INPUT: SYNC set: ");
-    PRINTLN(!digitalRead(SWSYNC));
-    PRINT("INPUT: SEQ set: ");
-    PRINTLN(digitalRead(SWSEQ));
-    PRINT("INPUT: REC set: ");
-    PRINTLN(!digitalRead(SWREC));
+    // PRINTLN("Interrupt");
 
-    DATAOBJ.set(FrankData::bpmSync, !digitalRead(SWSYNC));
+    // PRINT("INPUT: SYNC set: ");
+    // PRINTLN(!digitalRead(SWSYNC));
+    // PRINT("INPUT: SEQ set: ");
+    // PRINTLN(digitalRead(SWSEQ));
+    // PRINT("INPUT: REC set: ");
+    // PRINTLN(!digitalRead(SWREC));
+
+    DATAOBJ.set(FrankData::bpmSync, digitalRead(SWSYNC));
     DATAOBJ.set(FrankData::screenOutputChannel, digitalRead(SWSEQ));
     DATAOBJ.set(FrankData::rec, !digitalRead(SWREC));
 }
@@ -239,7 +313,7 @@ void inputControls::readSync() {
     DATAOBJ.set(FrankData::bpmSync, digitalRead(SWSYNC));
 }
 void inputControls::readRec() {
-    DATAOBJ.set(FrankData::rec, digitalRead(SWREC));
+    DATAOBJ.set(FrankData::rec, !digitalRead(SWREC));
 }
 
 void inputControls::readSeq() {
@@ -247,20 +321,21 @@ void inputControls::readSeq() {
 }
 
 void inputControls::readBPMSpeed() {
-    static elapsedMillis timer;
-    static elapsedMillis timerFast;
-    static uint16_t tempRead;
+    static elapsedMillis timerFast = 0;
+    static uint32_t tempRead = 0;
+    static uint8_t readAmount = 0;
 
     if (DATAOBJ.get(FrankData::bpmSync))
         return;
 
     if (timerFast > 9) {
-        tempRead = analogRead(BPMPOT);
-        timerFast = 0;
-    }
-    if (timer > 15) {
-        DATAOBJ.set(FrankData::bpmPoti, 1023 - (analogRead(BPMPOT) + tempRead) / 2);
-        timer = 0;
+        tempRead += analogRead(BPMPOT);
+        readAmount++;
+        if (readAmount > 3) {
+            DATAOBJ.set(FrankData::bpmPoti, 1023 - (tempRead / readAmount));
+            readAmount = 0;
+            tempRead = 0;
+        }
         timerFast = 0;
     }
 }

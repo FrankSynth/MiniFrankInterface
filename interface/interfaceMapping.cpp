@@ -15,43 +15,37 @@
 #define PRINT2(x, y)
 #endif
 
-////Sequencer////
-FrankData::frankData mappingSeqConfig[] = {FrankData::direction,
+FrankData::frankData mappingSeqConfig[] = {FrankData::seqNoteOffset,
+                                           FrankData::seqOctaveOffset,
                                            FrankData::nbPages,
-                                           FrankData::save,
-                                           FrankData::load,
+                                           FrankData::seqPageEndOffset,
                                            FrankData::outputRatchet,
                                            FrankData::stepSpeed,
-                                           FrankData::seqTuning,
+                                           FrankData::direction,
                                            FrankData::seqGateLengthOffset,
                                            SUBSCREEN,
                                            STEP}; // CV Config Mapping
-FrankData::frankData mappingSeqConfigPush[] = {FrankData::direction,     FrankData::nbPages,
-                                               FrankData::save,          FrankData::load,
+FrankData::frankData mappingSeqConfigPush[] = {FrankData::seqNoteOffset, FrankData::seqOctaveOffset,
+                                               FrankData::nbPages,       FrankData::seqPageEndOffset,
                                                FrankData::outputRatchet, FrankData::stepSpeed,
-                                               FrankData::seqTuning,     FrankData::seqGateLengthOffset,
+                                               FrankData::direction,     FrankData::seqGateLengthOffset,
                                                FrankData::screenRouting, PLAY}; // GATE Mapping Push
 
 FrankData::frankData mappingSeqConfig2[] = {FrankData::resetStepCounters,
                                             FrankData::seqResetCC,
                                             FrankData::seqResetNotes,
                                             FrankData::seqResetGates,
+                                            FrankData::load,
                                             FrankData::copySeq,
-                                            NONE,
-                                            NONE,
-                                            FrankData::seqResetGateLengths,
+                                            FrankData::seqTuning,
+                                            FrankData::save,
                                             SUBSCREEN,
                                             STEP}; // CV Config Mapping
-FrankData::frankData mappingSeqConfig2Push[] = {FrankData::resetStepCounters,
-                                                FrankData::seqResetCC,
-                                                FrankData::seqResetNotes,
-                                                FrankData::seqResetGates,
-                                                FrankData::copySeq,
-                                                NONE,
-                                                NONE,
-                                                FrankData::seqResetGateLengths,
-                                                FrankData::screenRouting,
-                                                PLAY}; // GATE Mapping Push
+FrankData::frankData mappingSeqConfig2Push[] = {
+    FrankData::resetStepCounters, FrankData::seqResetCC, FrankData::seqResetNotes, FrankData::seqResetGates, FrankData::load,
+    FrankData::copySeq,           FrankData::seqTuning,  FrankData::save,          FrankData::screenRouting, PLAY}; // GATE Mapping Push
+
+/////////////////
 
 FrankData::frankData mappingSeqNote[] = {NOTE, NOTE, NOTE, NOTE, NOTE, NOTE, NOTE, NOTE, SUBSCREEN, STEP};                    // NOTE Mapping  Rotary
 FrankData::frankData mappingSeqNotePush[] = {GATE, GATE, GATE, GATE, GATE, GATE, GATE, GATE, FrankData::screenRouting, PLAY}; // NOTE Mapping Push
@@ -63,13 +57,23 @@ FrankData::frankData mappingSeqGatePush[] = {GATE, GATE, GATE, GATE, GATE, GATE,
 FrankData::frankData mappingSeqCV[] = {CV, CV, CV, CV, CV, CV, CV, CV, SUBSCREEN, STEP};                                    // CV Mapping
 FrankData::frankData mappingSeqCVPush[] = {GATE, GATE, GATE, GATE, GATE, GATE, GATE, GATE, FrankData::screenRouting, PLAY}; // CV Mapping Push
 
-FrankData::frankData mappingLive[] = {
-    FrankData::outputArp, FrankData::outputLiveMode, NONE, NONE, NONE, NONE, NONE, FrankData::outputCcEvaluated, NONE, NONE}; // Live Mapping
+FrankData::frankData mappingLive[] = {FrankData::outputArp,
+                                      FrankData::outputLiveMode,
+                                      NONE,
+                                      NONE,
+                                      NONE,
+                                      FrankData::outputClock,
+                                      NONE,
+                                      FrankData::outputCcEvaluated,
+                                      NONE,
+                                      NONE}; // Live Mapping
 FrankData::frankData mappingLivePush[] = {
-    FrankData::outputArp, FrankData::outputLiveMode, NONE, NONE, NONE, NONE, NONE, NONE, FrankData::screenRouting, PLAY}; // Live Mapping
+    FrankData::outputArp, FrankData::outputLiveMode, NONE, NONE, NONE, FrankData::outputClock, NONE, NONE, FrankData::screenRouting, PLAY}; // Live
+                                                                                                                                            // Mapping
 
-FrankData::frankData mappingLiveArp[] = {FrankData::outputArp, FrankData::outputArpOctave, NONE, NONE, FrankData::outputArpMode,
-                                         FrankData::stepSpeed, FrankData::outputRatchet,   FrankData::outputCcEvaluated, NONE, NONE}; // Live Arp Mapping
+FrankData::frankData mappingLiveArp[] = {
+    FrankData::outputArp,     FrankData::outputArpOctave,   NONE, NONE, FrankData::outputArpMode, FrankData::stepSpeed,
+    FrankData::outputRatchet, FrankData::outputCcEvaluated, NONE, NONE}; // Live Arp Mapping
 FrankData::frankData mappingLiveArpPush[] = {FrankData::outputArp,
                                              FrankData::outputArpOctave,
                                              NONE,
@@ -89,8 +93,8 @@ FrankData::frankData mappingMenu[] = {FrankData::midiSource,
                                       NONE,
                                       FrankData::screenCalCv /*CalibrationMenu*/,
                                       FrankData::screenCalNote /*CalibrationMenu*/,
-                                      NONE,
-                                      NONE,
+                                      FrankData::outputMidiNotes,
+                                      FrankData::outputPitchbendRange,
                                       FrankData::pulseLength /*CLKLength*/,
                                       FrankData::displayBrightness,
                                       NONE,
@@ -106,19 +110,20 @@ FrankData::frankData mappingMenuPush[] = {NONE,
                                           FrankData::screenRouting,
                                           PLAY}; // Menu Mapping
 
-FrankData::frankData mappingMenuRouting[] = {FrankData::outputSource,
-                                             FrankData::outputChannel,
-                                             FrankData::outputCc,
-                                             NONE,
-                                             FrankData::outputClock,
-                                             FrankData::stepSpeed,
-                                             NONE,
-                                             MENU,
-                                             NONE,
-                                             NONE}; // Routing Menu
-                                                    // Mapping
-FrankData::frankData mappingMenuRoutingPush[] = {FrankData::outputSource,  NONE, NONE, NONE, FrankData::outputClock, FrankData::stepSpeed, NONE, MENU,
-                                                 FrankData::screenRouting, PLAY}; // Routing Menu Mapping
+FrankData::frankData mappingMenuRouting[] = {
+    FrankData::outputSource, FrankData::outputChannel,        FrankData::outputCc,         MENU, FrankData::outputClock,
+    FrankData::stepSpeed,    FrankData::outputClockingOffset, FrankData::outputPolyRhythm, NONE, NONE}; // Routing Menu
+                                                                                                        // Mapping
+FrankData::frankData mappingMenuRoutingPush[] = {FrankData::outputSource,
+                                                 NONE,
+                                                 NONE,
+                                                 MENU,
+                                                 FrankData::outputClock,
+                                                 FrankData::stepSpeed,
+                                                 FrankData::outputClockingOffset,
+                                                 FrankData::outputPolyRhythm,
+                                                 FrankData::screenRouting,
+                                                 PLAY}; // Routing Menu Mapping
 
 FrankData::frankData mappingMenuCalNote[] = {FrankData::liveCalNote, NONE, NONE, NONE, FrankData::noteCalOffset, FrankData::noteScaleOffset, NONE,
                                              FrankData::saveCal,     NONE, NONE}; // Routing Menu Mapping

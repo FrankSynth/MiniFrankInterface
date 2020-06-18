@@ -1,31 +1,31 @@
 #pragma once
 
 #include "interfaceData.hpp"
+#include "interfaceMidi.hpp"
 #include "interfaceOut.hpp"
 #include <Arduino.h>
-
-#define TRIGGERLENGTH 20 // default trigger and clock pulse length in ms
 
 // save state for each output lane
 class PreviousOutputs {
   public:
     byte note = 0;
+    byte velocity = 0;
     int cv = 0;
     byte ratchet = 0;
     byte gateActivated = 0;
     uint32_t gateCloseTime = 0;
-    uint32_t reactivateTime = 0;
     uint32_t ratchetOffsetTime = 0;
+
+    elapsedMillis gateTimer = 0;
 
     byte stepSeq = 0;
 
     byte clockPulseActivated = 0;
-    byte clockPulseStep = 100;
+    uint16_t clockPulseStep = 100;
 
     byte triggerActivated = 0;
     elapsedMillis triggerTimer = 0;
 
-  public:
     PreviousOutputs() {}
 };
 
@@ -33,7 +33,7 @@ class PreviousOutputs {
 class PreviousState {
   public:
     byte clockLED = 0;
-    byte old16thClockCount = 0;
+    uint16_t oldBpmClockCount = 0;
 
     PreviousState() {}
 };
@@ -51,3 +51,5 @@ void closeGates();
 void updateClockOut();
 void closeTriggers();
 void reactivateRatchet();
+
+int16_t changeNote(const int16_t &value, const int16_t &change, const int16_t &minimum, const int16_t &maximum);

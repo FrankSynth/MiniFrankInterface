@@ -29,7 +29,7 @@ void Display::initLCD(byte w, byte h, byte rotation) {
 
     //////////////
 
-    lcd.initR(INITR_GREENTAB); // Init ST7735S chip, green tab
+    lcd.initR(INITR_GREENTAB); // Init ST7735S chip, MEDIUMGREY tab
     lcd.setRotation(rotation); // set display rotation
     lcd.fillScreen(BLACK);     // init black
 }
@@ -99,10 +99,18 @@ void Display::drawFoot() {
     else if (DATAOBJ.get(FrankData::outputSource, CHANNEL) > 0) { // Seq Mode
         FootSeq();
     }
+    updateMidi();
+    DATAOBJ.updateClockCounter();
+    updateAllOutputs();
+    tlc.updateTLC();
 }
 
 void Display::BodyTemplateLive() { // has 1 dataFields + GateSignal
     for (int x = 0; x < 4; x++) {
+        updateMidi();
+        DATAOBJ.updateClockCounter();
+        updateAllOutputs();
+        tlc.updateTLC();
         for (int y = 0; y < 2; y++) {
             if (x < 2 || y != 0) {
                 byte dataField = x + y * 4;       // current DataField
@@ -184,6 +192,10 @@ void Display::BodyTemplateLive() { // has 1 dataFields + GateSignal
 
 void Display::BodyTemplateCal() { // has 1 dataFields + GateSignal
     for (int x = 0; x < 4; x++) {
+        updateMidi();
+        DATAOBJ.updateClockCounter();
+        updateAllOutputs();
+        tlc.updateTLC();
         for (int y = 0; y < 2; y++) {
             if (x < 2 || y != 0) {
                 byte dataField = x + y * 4;       // current DataField
@@ -243,15 +255,15 @@ void Display::BodyTemplateCal() { // has 1 dataFields + GateSignal
             }
         }
     }
-
+    // PRINTLN("print note");
     // print frequency target
     byte note = DATAOBJ.get(FrankData::liveCalNote);
     float freq = 27.50 * pow(2, note / 12.);
 
     bufferBody->setFont(&FreeSansBold9pt7b);
-    bufferBody->setCursor(87, 30);
+    bufferBody->setCursor(87, 22);
     bufferBody->print(freq);
-    bufferBody->setCursor(87, 50);
+    bufferBody->setCursor(87, 42);
 
     bufferBody->print("Hz");
 }
@@ -260,25 +272,57 @@ void Display::BodyTemplateSeq() { // has 2x4 dataField
 
     // DataFields
     for (int x = 0; x < 4; x++) {
+        updateMidi();
+        DATAOBJ.updateClockCounter();
+        updateAllOutputs();
+        tlc.updateTLC();
         for (int y = 0; y < 2; y++) {
             byte dataField = x + y * 4; // current DataField
 
-            byte dataFieldIndex = x + y * 4 + DATAOBJ.get(FrankData::activePage, CHANNEL) * 8; // current index
+            byte dataFieldIndex;
+            if (DATAOBJ.get(FrankData::editMode)) {
+                dataFieldIndex = dataField + DATAOBJ.get(FrankData::activeEditPage) * 8; // current index
+            }
+            else {
+                dataFieldIndex = dataField + DATAOBJ.get(FrankData::activePage, CHANNEL) * 8; // current index
+            }
 
             /////Draw the squares/////
             bufferBody->drawRect(x * 40, y * 36 - 1 + y, 40, 38, DARKGREY); //
 
             /////Draw red bar for the ActiveDataField (STEP) /////
-            if (DATAOBJ.get(FrankData::stepOnPage, CHANNEL) == (x + y * 4)) {
-                bufferBody->fillRect(x * 40 + 1, y * 35 + 32 + y, 38, 4, RED); // red bar for active Step
+            if (DATAOBJ.get(FrankData::editMode)) {
+
+                if (DATAOBJ.get(FrankData::stepOnPage, CHANNEL) == (x + y * 4)) {
+                    bufferBody->fillRect(x * 40 + 1, y * 35 + 32 + y, 38, 4,
+                                         DATAOBJ.get(FrankData::activeEditPage) == DATAOBJ.get(FrankData::activePage, CHANNEL)
+                                             ? RED
+                                             : LIGHTGREY); // red bar for active Step
+                }
+                // if (DATAOBJ.get(FrankData::stepOnEditPage) == (x + y * 4)) {
+                //     bufferBody->fillRect(x * 40 + 1, y * 35 + 32 + y, 38, 4, GREEN); // red bar for active Step
+                // }
+            }
+            else {
+
+                if (DATAOBJ.get(FrankData::stepOnPage, CHANNEL) == (x + y * 4)) {
+                    bufferBody->fillRect(x * 40 + 1, y * 35 + 32 + y, 38, 4, RED); // red bar for active Step
+                }
             }
 
             // Font Color depends on Gate status
 
-            bufferBody->setTextColor(WHITE, BACKGROUND); // Note  Color GateOn
+            if (dataField < STEPSPERPAGE + DATAOBJ.get(FrankData::seqPageEndOffset, SEQCHANNEL)) {
+                bufferBody->setTextColor(WHITE, BACKGROUND); // Note  Color GateOn
+            }
+            else {
+                bufferBody->setTextColor(DARKGREY, BACKGROUND); // Note  Color GateOn
+            }
 
             // PRINT("DataFieldType:");
             // PRINTLN(mapping(dataField));
+
+            // check if page end has offset
 
             // Data is NOTE type
             if (mapping(dataField) == NOTE) {
@@ -328,17 +372,27 @@ void Display::BodyTemplateSeq() { // has 2x4 dataField
     byte offset = (160 - DATAOBJ.get(FrankData::currentPageNumber, CHANNEL) * width) / 2; // center blocks
 
     for (int x = 0; x < DATAOBJ.get(FrankData::currentPageNumber, CHANNEL); x++) {
-        bufferBody->drawRect(x * width + offset, 73, width, 25, DARKGREY);          // dark Rectangle
-        bufferBody->fillRect(x * width + 1 + offset, 73 + 1, width - 2, 23, GREEN); // grey box
+        bufferBody->drawRect(x * width + offset, 73, width, 25, DARKGREY);               // dark Rectangle
+        bufferBody->fillRect(x * width + 1 + offset, 73 + 1, width - 2, 23, MEDIUMGREY); // grey box
 
         if (x == DATAOBJ.get(FrankData::activePage, CHANNEL)) {
             bufferBody->fillRect(x * width + 1 + offset, 73 + 1, width - 2, 23, RED); // Red Block (active)
+        }
+
+        if (DATAOBJ.get(FrankData::editMode)) {
+            if (x == DATAOBJ.get(FrankData::activeEditPage)) {
+                bufferBody->fillRect(x * width + 1 + offset, 73 + 1, width - 2, 23, GREEN); // Red Block (active)
+            }
         }
     }
 }
 
 void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
     for (int x = 0; x < 4; x++) {
+        updateMidi();
+        DATAOBJ.updateClockCounter();
+        updateAllOutputs();
+        tlc.updateTLC();
         for (int y = 0; y < 2; y++) {
             byte dataField = x + y * 4;       // current DataField
             if (mapping(dataField) != NONE) { // not an empty field?
@@ -368,7 +422,8 @@ void Display::BodyTemplateMenu() { // has 2x4 dataFields + PageBar
 
                 switch (mapping(dataField)) {
                     case FrankData::seqGateLengthOffset:
-                    case FrankData::seqTuning: data = DATAOBJ.getValueAsStr(mapping(dataField), SEQCHANNEL); break;
+                    case FrankData::seqTuning:
+                    case FrankData::seqPageEndOffset: data = DATAOBJ.getValueAsStr(mapping(dataField), SEQCHANNEL); break;
                     default: data = DATAOBJ.getValueAsStr(mapping(dataField), CHANNEL);
                 }
 
@@ -426,6 +481,10 @@ void Display::drawHead() {
     if (DATAOBJ.get(FrankData::rec)) {
         bufferHead->fillCircle(150, 7, 3, RED);
     }
+    updateMidi();
+    DATAOBJ.updateClockCounter();
+    updateAllOutputs();
+    tlc.updateTLC();
 }
 
 void Display::FootLive() {
@@ -514,6 +573,8 @@ void Display::writeRGBMap(int16_t x, int16_t y, DispBuffer16 *bufferObj, int16_t
         updateMidi();
         DATAOBJ.updateClockCounter();
         updateAllOutputs();
+        tlc.updateTLC();
+
         for (int16_t i = 0; i < w; i++) {
             int16_t index = j * w + i;
 
@@ -614,11 +675,10 @@ void DispBuffer16::byteSwap(void) {
 void TLC5916::sendByte(byte send) {
 
     SPI.beginTransaction(SPISettings(30000000, MSBFIRST, SPI_MODE0));
-    digitalWrite(pinTLC, LOW);
     SPI.transfer(send);
     digitalWrite(pinTLC, HIGH);
+    delayNanoseconds(50);
     digitalWrite(pinTLC, LOW);
-
     SPI.endTransaction();
 }
 
@@ -628,4 +688,57 @@ void TLC5916::init(byte pin) {
     digitalWrite(pin, LOW);
 
     // sendByte(0); // set to Black
+}
+
+void TLC5916::updateTLC() { // update interrupt
+    static byte sendOld = 0;
+    static elapsedMicros flickerTimer = 0;
+    static byte flickerOff = 0;
+    static uint16_t flickerTime = 0;
+
+    if (flickerTimer > flickerTime) {
+        flickerOff = !flickerOff;
+        flickerTimer = 0;
+        if (flickerOff)
+            flickerTime = 1000; // off time
+        else
+            flickerTime = 400; // on time
+    }
+
+    if (DATAOBJ.get(FrankData::outputSource, CHANNEL)) { // seq modus an?
+        byte send = 0;
+        byte page;
+
+        if (flickerOff) {
+            page = 0;
+        }
+        else {
+            page = DATAOBJ.get(FrankData::activeGateByte);
+        }
+
+        page = page | (1 << DATAOBJ.get(FrankData::activeStepOnPage));
+
+        send = (0x0F & page) | (0x80 & page) >> 3 | (0x40 & page) >> 1 | (0x20 & page) << 1 | (0x10 & page) << 3;
+
+        if (send != sendOld) {
+            sendByte(send);
+            sendOld = send;
+        }
+    }
+    else if (DATAOBJ.get(FrankData::outputArp, CHANNEL)) {
+        byte page = 0x00 | (1 << (DATAOBJ.get(FrankData::stepArp, CHANNEL) & 0x07));
+
+        byte send = (0x0F & page) | (0x80 & page) >> 3 | (0x40 & page) >> 1 | (0x20 & page) << 1 | (0x10 & page) << 3;
+
+        if (send != sendOld) {
+            sendByte(send);
+            sendOld = send;
+        }
+    }
+    else {
+        if (sendOld) {
+            sendByte(0);
+            sendOld = 0;
+        }
+    }
 }

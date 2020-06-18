@@ -10,12 +10,26 @@
 #define STEPSPERPAGE 8
 #define OUTPUTS 2 // Number of output lanes
 #define MAXSTRINGSIZE 8
+#define MAXBPMCOUNT 2303 // max Number of bpmClockCount, resulting in 2304 counting steps
 
-#define MIDIARPUPDATEDELAY 3 // in millis
+#define MIDIARPUPDATEDELAY 2000 // in micros
 
 #define DATAOBJ FrankData::getDataObj()
 #define CHANNEL DATAOBJ.get(FrankData::screenOutputChannel)
 #define SEQCHANNEL (DATAOBJ.get(FrankData::outputSource, DATAOBJ.get(FrankData::screenOutputChannel)) - 1)
+
+// Arpeggiator defines
+
+#define ARP_UP 0
+#define ARP_DN 1
+#define ARP_UD 2
+#define ARP_DU 3
+#define ARP_URDR 4
+#define ARP_DRUR 5
+#define ARP_UP2 6
+#define ARP_DN2 7
+#define ARP_ORDR 8
+#define ARP_RND 9
 
 typedef struct {
     byte outSource = 0;    // 0 = live, 1 = seq1, 2 = seq2, ...
@@ -24,11 +38,17 @@ typedef struct {
     byte arpMode = 0;      // 0 = up, 1 = down, 2 = updown, 3= downup, 4 = upRdownR, 5 = downRupR, 6 = order, 7 = random
     byte cc = 0;           // 0 = vel, 1 = mod, 2 = pitchbend, 3 = aftertouch, 4 = sustain
     byte liveMidiMode = 0; // 0 = latest, 1 = lowest, 2 = highest
-    byte clockSpeed = 2;   // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = 1 bar, 5 = 2 bars
+    byte clockSpeed = 2;
     byte arpRatchet = 0;   // repeats per step, 1 = 1 repeat (2 notes total), up to 3 repeats
     int8_t arpOctaves = 0; // Octaves -3 ... 0 ... 3
-    byte stepSpeed = 2;    // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = 1 bar, 5 = 2 bars
-    byte nbPages = 8;      // nb Pages  1-16
+    byte stepSpeed = 2;
+    byte clockingOffset = 0;  // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = 1 bar, 5 = 2 bars
+    byte nbPages = 8;         // nb Pages  1-16
+    int8_t seqOctaves = 0;    // Seq Octave Offset
+    int8_t seqNotes = 0;      // Seq single Note Offset
+    byte polyRhythm = 0;      // 0 = None, 1 = Clock, 2 = StepSpeed, 3 = Steps + Clock
+    byte midiNoteOut = 0;     // output Midi Notes back out, 0 = off, 1 = din, 2 = usb, 3 = both
+    byte pitchbendRange = 24; // PB Range in Semitones
 } structOutputRouting;
 
 typedef struct {
@@ -48,7 +68,8 @@ typedef struct {
     byte gate[(LENGTH / 8)]; // optimize data to single bits! middleman seq check, if gate
     byte gateLength[LENGTH]; //
     byte tuning;             // tuning offset
-    int8_t gateLengthOffset; // 100 = no offset
+    int8_t gateLengthOffset; // additional gate length offset
+    int8_t pageEndOffset;    // shorten pages
 } structSequence;
 
 // Settings struct for all settings that need to be saved permanently
@@ -82,22 +103,24 @@ typedef struct {
     byte loadSaveSlot = 0; // laod save 1-10
 
     uint16_t bpm = 120; // current bpm
-    byte play = 1;      // play stop
+    byte play = 0;      // play stop
     byte rec = 0;       // Rec Active
     byte error = 0;     // ErrorFlag
 
     byte noteToCalibrate = 0; // note value that gets calibrated
     int8_t cvToCalibrate = 0; // cv value * 2048 that gets calibrated
 
-    byte bpmSync = 0;        // Sync Active
-    byte midiClockCount = 5; // counts incoming midiclock signals (6 ticks per 16th)
-    byte bpm16thCount = 0;   // general 16th counter for clock outputs
+    byte bpmSync = 0;            // Sync Active
+    int16_t bpmClockCounter = 0; // Midiclock Counter counting up to up to 2304 (common multiplier of all possible timings)
 
-    byte receivedNewSPP = 1;
+    byte receivedNewSPP = 1; // received new SPP, so next midiclock will be starting at this position
+    byte doNotCalcBpm = 0;   // because of delays, don't usw this 16th to calculate momentary bpm speed
 
-    // byte receivedNewMidiDataArp = 0;
+    int16_t receivedSPPclockCount = 0; // save the last received spp
 
-    // uint32_t last16thTime = 0;
+    byte editMode = 0; // edit mode activated
+    byte editStep = 0; // step on page for activated edit mode
+
     uint16_t bpmPot = 120; // sync= 0 ? 0-1023 bpm log : divider /4, /2, 1, *2, *4 ; Range is 0-1023 (not yet implemented)
 } structStatus;
 
@@ -137,7 +160,7 @@ class PressedNotesList {
     PressedNotesElement *getElement(const byte &element);
 };
 
-// save live midi data
+// live midi data, won't be saved between sessions
 class LiveMidi {
   public:
     PressedNotesList noteList; // Key List for Live Midi
@@ -154,8 +177,6 @@ class LiveMidi {
     byte arpTriggeredNewNote = 0; // Arp has a new step to send out via middleman
     byte arpStepRepeat = 1;       // arp repeats step, for upRdownR, etc
     byte arpRestarted = 0;        // arp was reset
-    uint32_t arpOffsetTime = 0;
-    byte arp16thCount = 0;
 
     byte recModePlayback = 0; // status for rec mode playback (last recorded note will be played instead of current step)
 
@@ -165,12 +186,10 @@ class LiveMidi {
     structKey arpKey;              // always holds the last played key, if no keys are pressed
     PressedNotesList arpList;      // Key List for arpeggiator
     structKey arpArray[NOTERANGE]; // sorted array for arpeggiator
-    elapsedMillis midiUpdateWaitTimer = 0;
+    elapsedMicros midiUpdateWaitTimer = 0;
 
     byte stepArp = 0; // current arp step
     byte stepSeq = 0; // current seq step
-
-    uint16_t channel16thCount = 0; // individual 16th counter for asynchronous playback
 
     LiveMidi() {
         // initialize with a default key
@@ -270,15 +289,22 @@ class FrankData {
         nbPages,
         stepSeq,
         activePage,
+        activeEditPage,
+        activeGateByte,
+        activeStepOnPage,
         seqResetNotes,
         seqResetGates,
         seqResetGateLengths,
         seqResetCC,
         seqOctaveUp,
         seqOctaveDown,
+        seqOctaveOffset,
+        seqNoteOffset,
         copySeq,
         stepOnPage,
+        stepOnEditPage,
         currentPageNumber,
+        seqPageEndOffset,
 
         // general Settings, needs value
         midiSource,
@@ -299,6 +325,10 @@ class FrankData {
         outputCcEvaluated,
         outputLiveMode,
         outputClock,
+        outputPolyRhythm,
+        outputMidiNotes,
+        outputClockingOffset,
+        outputPitchbendRange,
 
         // Screen Settings, needs value
         screenOutputChannel,
@@ -315,11 +345,14 @@ class FrankData {
         rec,
         error,
         bpmSync,
-        bpm16thCount,
+        // bpm16thCount,
+        bpmClockCount,
         bpmPoti,
         load,
         save,
         pulseLength,
+        editMode,
+        editStep,
 
         // liveMidi, needs value, array
         liveMod,
@@ -338,10 +371,11 @@ class FrankData {
         liveLatestKey,
         liveHighestKey,
         liveLowestKey,
-        // liveNewMidiDataArp,
         liveMidiUpdateWaitTimer,
 
     };
+
+    uint16_t clockSteppingCounts[23] = {1, 2, 3, 4, 6, 8, 9, 12, 16, 18, 24, 32, 36, 48, 64, 72, 96, 128, 144, 192, 256, 288, 384};
 
   private:
     FrankData() {}
@@ -371,7 +405,7 @@ class FrankData {
 
     // internal helper functions
   private:
-    void increaseMidiClock();
+    void increaseBpmCount();
     void calcBPM();
     void increaseSeqStep(const byte &array);
     void decreaseSeqStep(const byte &array);
@@ -392,7 +426,7 @@ class FrankData {
 
     byte getPitchbendAsByte(const byte &channel);
 
-    void increaseBpm16thCount();
+    // void increaseBpm16thCount();
     structKey getLiveKeyEvaluated(const byte &array);
     structKey getKeyHighest(const byte &array);
     structKey getKeyLowest(const byte &array);
@@ -409,6 +443,8 @@ class FrankData {
     void seqAllOctaveUp(const byte &array);
     void seqAllOctaveDown(const byte &array);
     void seqCopy(const byte &source, const byte &destination);
+
+    bool checkClockStepping(const byte &array, const frankData &clockSource);
 
     void updateArp(const byte &array);
 
@@ -485,10 +521,9 @@ const char *valueToOctave(const byte &noteIn);
 char valueToSharp(const byte &noteIn);
 const char *tuningToChar(const byte &tuning);
 
-int sort_desc(const void *cmp1, const void *cmp2);
 int sort_asc(const void *cmp1, const void *cmp2);
 
-class DebugTimer {
+/* class DebugTimer {
     elapsedMicros timer;
     const char *name;
 
@@ -504,4 +539,4 @@ class DebugTimer {
         Serial.print(timer);
         Serial.println(" micros");
     }
-};
+}; */
