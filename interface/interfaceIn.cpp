@@ -109,6 +109,7 @@ void inputControls::rotate(byte id, byte dir) {
         case FrankData::outputArpMode:
         case FrankData::outputArp:
         case FrankData::outputMidiNotes:
+        case FrankData::outputPitchbendRange:
 
         // case FrankData::midiSource :
         case FrankData::outputLiveMode:

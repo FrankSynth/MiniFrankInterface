@@ -309,7 +309,8 @@ void updateCVOut() {
             }
 
             if (DATAOBJ.get(FrankData::outputCc, output) == 2) {
-                newCV = DATAOBJ.get(FrankData::outputCcEvaluated, output) / 4; // returns -8192 - 8191, now -2048 - 2047
+                newCV = DATAOBJ.get(FrankData::outputCcEvaluated, output) / 4 * DATAOBJ.get(FrankData::outputPitchbendRange, output) /
+                        24; // returns -8192 - 8191, convert to -2048 - 2047 plus PB range
             }
             else {
                 newCV = DATAOBJ.get(FrankData::outputCcEvaluated, output);

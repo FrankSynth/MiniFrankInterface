@@ -1507,6 +1507,7 @@ int16_t FrankData::get(const frankData &frankDataType, const byte &array) {
         case outputPolyRhythm: return config.routing[array].polyRhythm;
         case outputMidiNotes: return config.routing[array].midiNoteOut;
         case outputClockingOffset: return config.routing[array].clockingOffset;
+        case outputPitchbendRange: return config.routing[array].pitchbendRange;
 
         case liveKeysPressed: return liveMidi[array].keysPressed();
 
@@ -1664,6 +1665,7 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data, const b
             updateArp(array);
             break;
         case outputPolyRhythm: config.routing[array].polyRhythm = testByte(data, 0, 3); break;
+        case outputPitchbendRange: config.routing[array].pitchbendRange = testByte(data, 0, 24); break;
         case outputMidiNotes:
             config.routing[array].midiNoteOut = testByte(data, 0, 3);
             sendMidiAllNotesOff();
@@ -2029,6 +2031,7 @@ const char *FrankData::getNameAsStr(const frankData &frankDataType) {
             break;
 
         case outputPolyRhythm: setStr("Poly"); break;
+        case outputPitchbendRange: setStr("PB Ra"); break;
 
         case outputRatchet: setStr("Reps"); break;
         case outputArpOctave: setStr("Oct"); break;
@@ -2169,6 +2172,7 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType, const byte 
 
         case outputRatchet:
         case outputArpOctave:
+        case outputPitchbendRange:
 
         case liveMod:
         case livePitchbend:

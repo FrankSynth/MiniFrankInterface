@@ -42,12 +42,13 @@ typedef struct {
     byte arpRatchet = 0;   // repeats per step, 1 = 1 repeat (2 notes total), up to 3 repeats
     int8_t arpOctaves = 0; // Octaves -3 ... 0 ... 3
     byte stepSpeed = 2;
-    byte clockingOffset = 0; // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = 1 bar, 5 = 2 bars
-    byte nbPages = 8;        // nb Pages  1-16
-    int8_t seqOctaves = 0;   // Seq Octave Offset
-    int8_t seqNotes = 0;     // Seq single Note Offset
-    byte polyRhythm = 0;     // 0 = None, 1 = Clock, 2 = StepSpeed, 3 = Steps + Clock
-    byte midiNoteOut = 0;    // output Midi Notes back out, 0 = off, 1 = din, 2 = usb, 3 = both
+    byte clockingOffset = 0;  // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = 1 bar, 5 = 2 bars
+    byte nbPages = 8;         // nb Pages  1-16
+    int8_t seqOctaves = 0;    // Seq Octave Offset
+    int8_t seqNotes = 0;      // Seq single Note Offset
+    byte polyRhythm = 0;      // 0 = None, 1 = Clock, 2 = StepSpeed, 3 = Steps + Clock
+    byte midiNoteOut = 0;     // output Midi Notes back out, 0 = off, 1 = din, 2 = usb, 3 = both
+    byte pitchbendRange = 24; // PB Range in Semitones
 } structOutputRouting;
 
 typedef struct {
@@ -327,6 +328,7 @@ class FrankData {
         outputPolyRhythm,
         outputMidiNotes,
         outputClockingOffset,
+        outputPitchbendRange,
 
         // Screen Settings, needs value
         screenOutputChannel,
