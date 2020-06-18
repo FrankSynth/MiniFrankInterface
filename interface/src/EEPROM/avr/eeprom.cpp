@@ -35,7 +35,7 @@
 
 #define DEBUG 0
 
-#if DEBUG == 0
+#if DEBUG == 1
 #define PRINTLN(x) Serial.println(x)
 #define PRINTLN2(x, y) Serial.println(x, y)
 #define PRINT(x) Serial.print(x)
@@ -51,7 +51,6 @@
 #include "imxrt.h"
 #include <arduino.h>
 #include <string.h>
-
 
 #define FLASH_BASEADDR 0x601F0000
 #define FLASH_SECTORS 15
@@ -162,7 +161,7 @@ void eeprom_write_byte(uint8_t *addr_ptr, uint8_t data) {
         PRINTLN(sector_index[sector]);
     }
     else {
-     
+
         // printf("ee_wr, erase then write\n");
         memset(buf, 0xFF, sizeof(buf));
 

@@ -96,8 +96,9 @@ void updateNoteOut() {
                     }
                 }
                 else {
-                    // if after release the next note would be the same like the one already played by the other output, stay on the released note
-                    if (DATAOBJ.get(FrankData::liveReleased, output) &&
+                    // if after release the next note would be the same like the one already played by the other output, stay on the released note, if
+                    // mode is high or low, not late
+                    if (DATAOBJ.get(FrankData::liveReleased, output) && DATAOBJ.get(FrankData::outputLiveMode, output) &&
                         DATAOBJ.get(FrankData::liveKeyNoteEvaluated, output) == previousOutputs[!output].note) {
                         newNote = previousOutputs[output].note;
                         newVel = previousOutputs[output].velocity;
