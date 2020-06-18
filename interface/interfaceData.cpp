@@ -1424,7 +1424,10 @@ void FrankData::seqCopy(const byte &source, const byte &destination) {
 void FrankData::resetAllStepCounter() {
     for (byte out = 0; out < OUTPUTS; out++) {
         liveMidi[out].stepSeq = 0;
+        liveMidi[out].triggered = 1;
     }
+    stat.bpmClockCounter = 0;
+    stat.doNotCalcBpm = 1;
 }
 
 void FrankData::updateArp(const byte &array) {
@@ -2509,7 +2512,7 @@ void FrankData::loadSequence(const byte &saveSlot, const byte &sequence) {
 }
 
 void FrankData::saveSequence(const byte &saveSlot, const byte &sequence) {
-     if (sequence > OUTPUTS - 1 || saveSlot > SAVESLOTS - 1) {
+    if (sequence > OUTPUTS - 1 || saveSlot > SAVESLOTS - 1) {
         return;
     }
 
