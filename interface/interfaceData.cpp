@@ -1083,12 +1083,56 @@ void FrankData::nextArpStep(const byte &array) {
                             }
                         }
                         else {
-                            liveMidi[array].stepArp = changeInt(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1);
+                            liveMidi[array].stepArp = changeInt(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1, true);
 
                             liveMidi[array].arpDirection = 0;
                         }
                     } while (liveMidi[array].getArpKey(liveMidi[array].stepArp).note == liveMidi[array].arpKey.note &&
                              liveMidi[array].arpList.size > 1);
+                }
+                break;
+            case ARP_DN3: // down
+                if (liveMidi[array].stepArp == 0) {
+                    decreaseArpOct(array);
+                }
+                if (liveMidi[array].arpRestarted) {
+                    decreaseArpOct(array);
+                    liveMidi[array].stepArp = liveMidi[array].arpList.size - 1;
+                    liveMidi[array].arpRestarted = 0;
+                    liveMidi[array].arpDirection = 0;
+                }
+                else {
+                    // if arp size increased by one, a note would be repeated, so instead, we increase further
+                    if (liveMidi[array].arpDirection < 2) {
+                        do {
+                            if (liveMidi[array].stepArp == 0) {
+                                liveMidi[array].stepArp = liveMidi[array].arpList.size - 1;
+                                liveMidi[array].arpDirection = 0 - 1;
+                            }
+                            else {
+                                liveMidi[array].stepArp = changeInt(liveMidi[array].stepArp, -1, 0, liveMidi[array].arpList.size - 1, true);
+                            }
+                        } while (liveMidi[array].getArpKey(liveMidi[array].stepArp).note == liveMidi[array].arpKey.note &&
+                                 liveMidi[array].arpList.size > 1);
+                        liveMidi[array].arpDirection++;
+                    }
+                    else {
+                        do {
+                            if (liveMidi[array].stepArp == 0) {
+                                liveMidi[array].stepArp = liveMidi[array].arpList.size - 1;
+                            }
+                            else {
+                                if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
+                                    liveMidi[array].stepArp = 0;
+                                }
+                                else {
+                                    liveMidi[array].stepArp = changeInt(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1, true);
+                                }
+                            }
+                        } while (liveMidi[array].getArpKey(liveMidi[array].stepArp).note == liveMidi[array].arpKey.note &&
+                                 liveMidi[array].arpList.size > 1);
+                        liveMidi[array].arpDirection = 0;
+                    }
                 }
                 break;
             case ARP_UP:   // up
@@ -1110,7 +1154,7 @@ void FrankData::nextArpStep(const byte &array) {
                 }
                 break;
             case ARP_UP2: // arpup2
-                if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1 && liveMidi[array].arpDirection) {
+                if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1 && liveMidi[array].arpDirection > 0) {
                     increaseArpOct(array);
                 }
                 if (liveMidi[array].arpRestarted) {
@@ -1122,7 +1166,7 @@ void FrankData::nextArpStep(const byte &array) {
                 else {
                     // if arp size increased by one, a note would be repeated, so instead, we increase further
                     do {
-                        if (liveMidi[array].arpDirection) {
+                        if (liveMidi[array].arpDirection > 0) {
                             int8_t nextArpStep = liveMidi[array].stepArp + 2;
                             if (nextArpStep == liveMidi[array].arpList.size) {
                                 liveMidi[array].stepArp = liveMidi[array].arpList.size - 1;
@@ -1139,11 +1183,54 @@ void FrankData::nextArpStep(const byte &array) {
                             }
                         }
                         else {
-                            liveMidi[array].stepArp = changeInt(liveMidi[array].stepArp, -1, 0, liveMidi[array].arpList.size - 1);
+                            liveMidi[array].stepArp = changeInt(liveMidi[array].stepArp, -1, 0, liveMidi[array].arpList.size - 1, true);
                             liveMidi[array].arpDirection = 1;
                         }
                     } while (liveMidi[array].getArpKey(liveMidi[array].stepArp).note == liveMidi[array].arpKey.note &&
                              liveMidi[array].arpList.size > 1);
+                }
+                break;
+            case ARP_UP3: // arpup3
+                if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
+                    increaseArpOct(array);
+                }
+                if (liveMidi[array].arpRestarted) {
+                    increaseArpOct(array);
+                    liveMidi[array].stepArp = 0;
+                    liveMidi[array].arpRestarted = 0;
+                    liveMidi[array].arpDirection = 2;
+                }
+                else {
+                    // if arp size increased by one, a note would be repeated, so instead, we increase further
+                    if (liveMidi[array].arpDirection > 0) {
+                        do {
+                            if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
+                                liveMidi[array].stepArp = 0;
+                                liveMidi[array].arpDirection = 2 + 1;
+                            }
+                            else {
+                                liveMidi[array].stepArp = changeInt(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1, true);
+                            }
+                        } while (liveMidi[array].getArpKey(liveMidi[array].stepArp).note == liveMidi[array].arpKey.note &&
+                                 liveMidi[array].arpList.size > 1);
+                        liveMidi[array].arpDirection--;
+                    }
+                    else {
+                        do {
+
+                            if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
+                                liveMidi[array].stepArp = 0;
+                            }
+                            else {
+                                if (liveMidi[array].stepArp == 0)
+                                    liveMidi[array].stepArp = liveMidi[array].arpList.size - 1;
+                                else
+                                    liveMidi[array].stepArp = changeInt(liveMidi[array].stepArp, -1, 0, liveMidi[array].arpList.size - 1, true);
+                            }
+                        } while (liveMidi[array].getArpKey(liveMidi[array].stepArp).note == liveMidi[array].arpKey.note &&
+                                 liveMidi[array].arpList.size > 1);
+                        liveMidi[array].arpDirection = 2;
+                    }
                 }
                 break;
             case ARP_RND: // random
@@ -1174,7 +1261,7 @@ void FrankData::nextArpStep(const byte &array) {
                     do {
 
                         // going up
-                        if (liveMidi[array].arpDirection) {
+                        if (liveMidi[array].arpDirection > 0) {
                             liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1);
                             if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
                                 liveMidi[array].arpDirection = 0;
@@ -1211,7 +1298,7 @@ void FrankData::nextArpStep(const byte &array) {
                     do {
 
                         // going up
-                        if (liveMidi[array].arpDirection) {
+                        if (liveMidi[array].arpDirection > 0) {
                             liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1);
                             if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
                                 if (!liveMidi[array].arpStepRepeat) {
@@ -1259,7 +1346,7 @@ void FrankData::nextArpStep(const byte &array) {
                     do {
 
                         // going up
-                        if (liveMidi[array].arpDirection) {
+                        if (liveMidi[array].arpDirection > 0) {
                             liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1);
                             if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
 
@@ -1297,7 +1384,7 @@ void FrankData::nextArpStep(const byte &array) {
                     do {
 
                         // going up
-                        if (liveMidi[array].arpDirection) {
+                        if (liveMidi[array].arpDirection > 0) {
                             liveMidi[array].stepArp = changeByte(liveMidi[array].stepArp, 1, 0, liveMidi[array].arpList.size - 1);
                             if (liveMidi[array].stepArp == liveMidi[array].arpList.size - 1) {
                                 if (!liveMidi[array].arpStepRepeat) {
@@ -1661,7 +1748,7 @@ void FrankData::set(const frankData &frankDataType, const int16_t &data, const b
         case outputRatchet: config.routing[array].arpRatchet = testByte(data, 0, 3); break;
         case outputArpOctave: config.routing[array].arpOctaves = testInt(data, -3, 3); break;
         case outputArpMode:
-            config.routing[array].arpMode = testByte(data, 0, 9);
+            config.routing[array].arpMode = testByte(data, 0, 11);
             updateArp(array);
             break;
         case outputPolyRhythm: config.routing[array].polyRhythm = testByte(data, 0, 3); break;
@@ -2288,6 +2375,8 @@ const char *FrankData::getValueAsStr(const frankData &frankDataType, const byte 
                 case ARP_DRUR: setStr("drur"); break;
                 case ARP_UP2: setStr("up2"); break;
                 case ARP_DN2: setStr("dn2"); break;
+                case ARP_UP3: setStr("up3"); break;
+                case ARP_DN3: setStr("dn3"); break;
                 case ARP_ORDR: setStr("ordr"); break;
                 case ARP_RND: setStr("rnd"); break;
                 default:

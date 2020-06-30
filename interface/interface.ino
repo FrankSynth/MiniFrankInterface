@@ -49,10 +49,6 @@ void updateDisplay() { // update interrupt
 }
 
 void setup() {
-    
-#if DEBUG == 1
-    Serial.begin(115200);
-#endif
 
     analogReadAveraging(32);
     analogReadResolution(10);

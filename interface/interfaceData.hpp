@@ -3,13 +3,13 @@
 #include "src/EEPROM/EEPROM.h"
 #include <Arduino.h>
 
-#define SAVESLOTS 20 // number of possible save slots
-#define LENGTH 128   // max Seq length
-#define PAGES 16
-#define NOTERANGE 88
-#define STEPSPERPAGE 8
-#define OUTPUTS 2 // Number of output lanes
-#define MAXSTRINGSIZE 8
+#define SAVESLOTS 20     // number of possible save slots
+#define LENGTH 128       // max Seq length
+#define PAGES 16         // Seq Pages
+#define NOTERANGE 88     // Supported Midi Note Range
+#define STEPSPERPAGE 8   // Max Steps per Page in Sequencer
+#define OUTPUTS 2        // Number of output lanes
+#define MAXSTRINGSIZE 8  // Max supported String size, not really useful value at the moment
 #define MAXBPMCOUNT 2303 // max Number of bpmClockCount, resulting in 2304 counting steps
 
 #define MIDIARPUPDATEDELAY 2000 // in micros
@@ -28,20 +28,22 @@
 #define ARP_DRUR 5
 #define ARP_UP2 6
 #define ARP_DN2 7
-#define ARP_ORDR 8
-#define ARP_RND 9
+#define ARP_UP3 8
+#define ARP_DN3 9
+#define ARP_ORDR 10
+#define ARP_RND 11
 
 typedef struct {
-    byte outSource = 0;    // 0 = live, 1 = seq1, 2 = seq2, ...
-    byte channel = 0;      // 0 = all, 1 = channel 1, ...
-    byte arp = 0;          // 0 = off, 1 = on, 2 = Latch
-    byte arpMode = 0;      // 0 = up, 1 = down, 2 = updown, 3= downup, 4 = upRdownR, 5 = downRupR, 6 = order, 7 = random
-    byte cc = 0;           // 0 = vel, 1 = mod, 2 = pitchbend, 3 = aftertouch, 4 = sustain
-    byte liveMidiMode = 0; // 0 = latest, 1 = lowest, 2 = highest
-    byte clockSpeed = 2;
-    byte arpRatchet = 0;   // repeats per step, 1 = 1 repeat (2 notes total), up to 3 repeats
-    int8_t arpOctaves = 0; // Octaves -3 ... 0 ... 3
-    byte stepSpeed = 2;
+    byte outSource = 0;       // 0 = live, 1 = seq1, 2 = seq2, ...
+    byte channel = 0;         // 0 = all, 1 = channel 1, ...
+    byte arp = 0;             // 0 = off, 1 = on, 2 = Latch
+    byte arpMode = 0;         // 0 = up, 1 = down, 2 = updown, 3= downup, 4 = upRdownR, 5 = downRupR, 6 = order, 7 = random
+    byte cc = 0;              // 0 = vel, 1 = mod, 2 = pitchbend, 3 = aftertouch, 4 = sustain
+    byte liveMidiMode = 0;    // 0 = latest, 1 = lowest, 2 = highest
+    byte clockSpeed = 2;      // Speed ranging from 1/64 Triplets up to 4 Bars
+    byte arpRatchet = 0;      // repeats per step, 1 = 1 repeat (2 notes total), up to 3 repeats
+    int8_t arpOctaves = 0;    // Octaves -3 ... 0 ... 3
+    byte stepSpeed = 2;       // Speed ranging from 1/64 Triplets up to 4 Bars
     byte clockingOffset = 0;  // 0 = 16th, 1 = 8th, 2 = quarter, 3 = half, 4 = 1 bar, 5 = 2 bars
     byte nbPages = 8;         // nb Pages  1-16
     int8_t seqOctaves = 0;    // Seq Octave Offset
